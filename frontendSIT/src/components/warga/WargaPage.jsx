@@ -1,7 +1,22 @@
 import { Icon } from '../ui/Icon'
+import { useState } from 'react'
+import ComplaintPage from './pages/ComplaintPage'
+import FinancePage from './pages/FinancePage'
+import SiskamlingPage from './pages/SiskamlingPage'
+import HealthPage from './pages/HealthPage'
+import InventoryPage from './pages/InventoryPage'
+import RulesPage from './pages/RulesPage'
+import OrgPage from './pages/OrgPage'
 
 const wargaMenus = [
   { label: 'Beranda', path: '/warga', icon: 'home' },
+  { label: 'Pengaduan', path: '/warga/pengaduan', icon: 'alert' },
+  { label: 'Keuangan', path: '/warga/keuangan', icon: 'receipt' },
+  { label: 'Siskamling', path: '/warga/siskamling', icon: 'shield' },
+  { label: 'Kesehatan', path: '/warga/kesehatan', icon: 'heart' },
+  { label: 'Inventaris', path: '/warga/inventaris', icon: 'box' },
+  { label: 'Peraturan', path: '/warga/peraturan', icon: 'scroll' },
+  { label: 'Struktur Organisasi', path: '/warga/organisasi', icon: 'users' },
   { label: 'Surat Resmi', path: '/warga/surat-resmi', icon: 'file' },
   { label: 'Pengumuman', path: '/warga/pengumuman', icon: 'megaphone' },
   { label: 'Notifikasi', path: '/warga/notifikasi', icon: 'bell' },
@@ -18,6 +33,69 @@ const announcements = [
   { type: 'Berita', date: '24 Okt 2024', title: 'Kerja Bakti Rutin Akhir Bulan' },
   { type: 'Agenda', date: '28 Okt 2024', title: 'Rapat Koordinasi HUT RI ke-80' },
   { type: 'Dokumen', date: '15 Okt 2024', title: 'Laporan Keuangan Kuartal 3 2024' },
+]
+
+const pengaduanTabs = [
+  { id: 'all', label: 'Semua', count: 21 },
+  { id: 'draft', label: 'Draft', count: 3 },
+  { id: 'pending', label: 'Pending', count: 7 },
+  { id: 'diproses', label: 'Diproses', count: 7 },
+  { id: 'selesai', label: 'Selesai', count: 6 },
+]
+
+const complaintReports = [
+  {
+    ticket: '#ADU-2025-001',
+    category: 'Infrastruktur',
+    status: 'selesai',
+    statusLabel: 'Selesai',
+    title: 'Jalan Berlubang di Depan Masjid',
+    description: 'Terdapat lubang besar di jalan depan masjid yang membahayakan pengendara motor.',
+    location: 'Jl. Melati No. 15',
+    reporter: 'Ahmad Fauzi',
+    date: '15 Jan 2024',
+    comments: 1,
+    steps: ['Draft', 'Pending', 'Diproses', 'Selesai'],
+  },
+  {
+    ticket: '#ADU-2025-002',
+    category: 'Penerangan',
+    status: 'diproses',
+    statusLabel: 'Diproses',
+    title: 'Lampu Jalan Mati',
+    description: 'Lampu jalan di gang 3 sudah mati selama seminggu.',
+    location: 'Gang 3, Jl. Mawar',
+    reporter: 'Rizki Ramadan',
+    date: '1 Feb 2024',
+    comments: 0,
+    steps: ['Draft', 'Pending', 'Diproses'],
+  },
+  {
+    ticket: '#ADU-2025-003',
+    category: 'Kebersihan',
+    status: 'pending',
+    statusLabel: 'Pending',
+    title: 'Sampah Menumpuk',
+    description: 'Tempat sampah di pojok jalan sudah penuh dan berbau tidak sedap.',
+    location: 'Jl. Melati',
+    reporter: 'Siti Nurhaliza',
+    date: '7 Feb 2024',
+    comments: 2,
+    steps: ['Draft', 'Pending'],
+  },
+  {
+    ticket: '#ADU-2025-004',
+    category: 'Drainase',
+    status: 'draft',
+    statusLabel: 'Draft',
+    title: 'Saluran Air Tersumbat',
+    description: 'Saluran air di depan rumah tersumbat menyebabkan genangan saat hujan.',
+    location: 'Jl. Cempaka',
+    reporter: 'Rina Sari',
+    date: '10 Feb 2024',
+    comments: 0,
+    steps: ['Draft'],
+  },
 ]
 
 function getCurrentMenu() {
@@ -145,6 +223,8 @@ function HomePage() {
   )
 }
 
+
+
 function LetterPage() {
   return (
     <PageShell
@@ -208,6 +288,8 @@ function AnnouncementPage() {
   )
 }
 
+
+
 function NotificationPage() {
   return (
     <PageShell eyebrow="Notifikasi" title="Notifikasi Warga" description="Pantau kabar terbaru tentang pengajuan, iuran, dan informasi lingkungan.">
@@ -263,6 +345,13 @@ function FeedbackPage() {
 }
 
 function renderPage(activePath) {
+  if (activePath === '/warga/pengaduan') return <ComplaintPage />
+  if (activePath === '/warga/keuangan') return <FinancePage />
+  if (activePath === '/warga/siskamling') return <SiskamlingPage />
+  if (activePath === '/warga/kesehatan') return <HealthPage />
+  if (activePath === '/warga/inventaris') return <InventoryPage />
+  if (activePath === '/warga/peraturan') return <RulesPage />
+  if (activePath === '/warga/organisasi') return <OrgPage />
   if (activePath === '/warga/surat-resmi') return <LetterPage />
   if (activePath === '/warga/pengumuman') return <AnnouncementPage />
   if (activePath === '/warga/notifikasi') return <NotificationPage />

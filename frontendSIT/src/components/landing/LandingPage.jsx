@@ -42,6 +42,8 @@ function ImageFrame({ src, alt, className = '' }) {
 }
 
 export function LandingPage() {
+  const isWargaLoggedIn = localStorage.getItem('authRole') === 'warga'
+
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-900">
       <header className="sticky top-0 z-20 border-b border-neutral-900 bg-neutral-50/95 backdrop-blur">
@@ -51,15 +53,19 @@ export function LandingPage() {
             <span>S.I.W.</span>
           </a>
 
-          <nav className="flex items-center gap-14 text-sm font-bold text-neutral-500 max-md:order-3 max-md:w-full max-md:justify-between max-md:gap-4" aria-label="Navigasi landing page">
-            {landingData.navItems.map((item) => (
-              <a className="no-underline transition hover:text-sky-700" href={item.href} key={item.label}>
-                {item.label}
-              </a>
-            ))}
-          </nav>
+          {isWargaLoggedIn ? (
+            <nav className="flex items-center gap-14 text-sm font-bold text-neutral-500 max-md:order-3 max-md:w-full max-md:justify-between max-md:gap-4" aria-label="Navigasi landing page">
+              {landingData.navItems.map((item) => (
+                <a className="no-underline transition hover:text-sky-700" href={item.href} key={item.label}>
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+          ) : null}
 
-          <LandingButton href="/login">Login</LandingButton>
+          <LandingButton href={isWargaLoggedIn ? '/warga' : '/login'}>
+            {isWargaLoggedIn ? 'Portal Warga' : 'Login'}
+          </LandingButton>
         </div>
       </header>
 

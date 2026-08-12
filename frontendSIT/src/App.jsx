@@ -15,7 +15,7 @@ function App() {
     return <LoginPage />
   }
 
-  if (window.location.pathname === '/warga') {
+  if (window.location.pathname.startsWith('/warga')) {
     return <WargaPage />
   }
 

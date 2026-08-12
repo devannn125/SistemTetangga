@@ -5,7 +5,16 @@ import { CashflowChart } from './CashflowChart'
 import { ComplaintPanel } from './ComplaintPanel'
 import { FinanceCard } from './FinanceCard'
 import { QuickActions } from './QuickActions'
+import { ResidentRequestsPanel } from './ResidentRequestsPanel'
 import { StatCard } from './StatCard'
+
+function getResidentRequests() {
+  try {
+    return JSON.parse(localStorage.getItem('residentRequests') || '[]')
+  } catch {
+    return []
+  }
+}
 
 export function DashboardPage({ data, error, isLoading }) {
   if (isLoading) {
@@ -26,6 +35,8 @@ export function DashboardPage({ data, error, isLoading }) {
     )
   }
 
+  const residentRequests = getResidentRequests()
+
   return (
     <main className="grid min-h-screen grid-cols-[258px_minmax(0,1fr)] bg-neutral-100 text-neutral-900 max-xl:grid-cols-[224px_minmax(0,1fr)] max-md:block">
       <Sidebar items={data.navigation} user={data.user} />
@@ -38,6 +49,8 @@ export function DashboardPage({ data, error, isLoading }) {
             <h2 className="mb-1 text-2xl font-extrabold leading-tight text-black">Selamat datang kembali</h2>
             <p className="text-sm text-neutral-700">Ringkasan data {data.area} hari ini</p>
           </section>
+
+          <ResidentRequestsPanel items={residentRequests} />
 
           <section className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1" aria-label="Ringkasan data">
             {data.summaryCards.map((item) => (

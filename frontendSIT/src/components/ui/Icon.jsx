@@ -1,4 +1,5 @@
 const paths = {
+  home: <path d="m3 11 9-8 9 8v10h-6v-6H9v6H3z" />,
   grid: <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />,
   users: <path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2m10-10a4 4 0 1 0-8 0 4 4 0 0 0 8 0m8 10v-2a4 4 0 0 0-3-3.87m-2-9.95a4 4 0 0 1 0 7.75" />,
   alert: <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0" />,
@@ -10,6 +11,7 @@ const paths = {
   heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8" />,
   clipboard: <path d="M9 5h6M9 12h6M9 16h4M8 3h8l1 3h3v16H4V6h3z" />,
   megaphone: <path d="m3 11 18-5v12L3 13zm0 0v6a2 2 0 0 0 2 2h1l2 3" />,
+  message: <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />,
   building: <path d="M4 21V7l8-4 8 4v14M8 21v-7h8v7M8 9h.01M12 9h.01M16 9h.01" />,
   scroll: <path d="M8 21h10a3 3 0 0 0 3-3V5a2 2 0 0 0-2-2H7a3 3 0 0 0-3 3v13a2 2 0 0 0 2 2 2 2 0 0 0 2-2V5m0 16v-4h8" />,
   trendingUp: <path d="m3 17 6-6 4 4 7-7m0 0h-5m5 0v5" />,

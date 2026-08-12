@@ -30,17 +30,32 @@ function PortalInput({ action, icon, id, label, onChange, placeholder, type = 't
 
 export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [showRequestDialog, setShowRequestDialog] = useState(false)
   const [form, setForm] = useState({
     nik: '',
     password: '',
     role: 'warga',
   })
+  const [requestForm, setRequestForm] = useState({
+    name: '',
+    nik: '',
+    rt: '',
+    address: '',
+    note: '',
+  })
   const [error, setError] = useState('')
+  const [requestMessage, setRequestMessage] = useState('')
 
   function handleChange(event) {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
     setError('')
+  }
+
+  function handleRequestChange(event) {
+    const { name, value } = event.target
+    setRequestForm((current) => ({ ...current, [name]: value }))
+    setRequestMessage('')
   }
 
   function handleSubmit(event) {
@@ -52,7 +67,30 @@ export function LoginPage() {
     }
 
     const destination = form.role === 'admin' ? '/dashboard' : '/warga'
+    localStorage.setItem('authRole', form.role)
+    localStorage.setItem('authNik', form.nik.trim())
     window.location.assign(destination)
+  }
+
+  function handleRequestSubmit(event) {
+    event.preventDefault()
+
+    if (!requestForm.name.trim() || !requestForm.nik.trim() || !requestForm.rt.trim() || !requestForm.address.trim()) {
+      setRequestMessage('Nama lengkap, NIK, RT, dan alamat wajib diisi.')
+      return
+    }
+
+    const requests = JSON.parse(localStorage.getItem('residentRequests') || '[]')
+    const newRequest = {
+      ...requestForm,
+      id: Date.now(),
+      status: 'Menunggu persetujuan Ketua RT',
+      submittedAt: new Date().toISOString(),
+    }
+
+    localStorage.setItem('residentRequests', JSON.stringify([newRequest, ...requests]))
+    setRequestForm({ name: '', nik: '', rt: '', address: '', note: '' })
+    setRequestMessage('Pengajuan berhasil dikirim ke Ketua RT.')
   }
 
   return (
@@ -62,6 +100,14 @@ export function LoginPage() {
           <a className="flex items-center gap-2 text-2xl font-extrabold text-black no-underline" href="/">
             <Icon name="building" className="h-6 w-6" />
             <span>SIW MASYARAKAT</span>
+          </a>
+
+          <a
+            className="inline-flex h-10 items-center gap-2 border border-black bg-black px-4 text-xs font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
+            href="/"
+          >
+            <Icon name="home" className="h-4 w-4" />
+            Kembali ke Beranda
           </a>
         </div>
       </header>
@@ -162,13 +208,122 @@ export function LoginPage() {
 
             <div className="mt-9 border-t border-neutral-300 pt-7 text-center text-base text-neutral-600">
               Belum terdaftar?
-              <a className="ml-2 font-extrabold text-black no-underline transition hover:text-sky-700" href="/">
+              <button
+                className="ml-2 font-extrabold text-black underline-offset-4 transition hover:text-sky-700"
+                onClick={() => {
+                  setRequestMessage('')
+                  setShowRequestDialog(true)
+                }}
+                type="button"
+              >
                 Hubungi Pengurus RT/RW
-              </a>
+              </button>
             </div>
           </form>
         </div>
       </section>
+
+      {showRequestDialog ? (
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/45 px-4 py-8 backdrop-blur-sm">
+          <div className="max-h-[86vh] w-full max-w-lg overflow-hidden border-2 border-neutral-900 bg-white shadow-2xl">
+            <div className="flex items-center justify-between gap-4 border-b border-neutral-900 bg-black px-6 py-4 text-white">
+              <h2 className="flex items-center gap-2 text-xl font-extrabold">
+                <Icon name="userPlus" className="h-5 w-5" />
+                Pengajuan Warga
+              </h2>
+              <button
+                aria-label="Tutup dialog"
+                className="grid h-9 w-9 place-items-center border border-white/70 text-lg font-extrabold transition hover:bg-white hover:text-black"
+                onClick={() => setShowRequestDialog(false)}
+                type="button"
+              >
+                x
+              </button>
+            </div>
+
+            <form className="max-h-[calc(86vh-73px)] overflow-y-auto p-5" onSubmit={handleRequestSubmit}>
+              <div className="grid gap-4">
+                <PortalInput
+                  icon="users"
+                  id="name"
+                  label="Nama Lengkap"
+                  onChange={handleRequestChange}
+                  placeholder="Masukkan nama lengkap"
+                  value={requestForm.name}
+                />
+                <PortalInput
+                  icon="idCard"
+                  id="nik"
+                  label="NIK"
+                  onChange={handleRequestChange}
+                  placeholder="Masukkan NIK"
+                  value={requestForm.nik}
+                />
+                <PortalInput
+                  icon="building"
+                  id="rt"
+                  label="RT Mana"
+                  onChange={handleRequestChange}
+                  placeholder="Contoh: RT 03"
+                  value={requestForm.rt}
+                />
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-extrabold text-black" htmlFor="address">
+                    <span className="h-1.5 w-1.5 bg-black" />
+                    Alamat
+                  </label>
+                  <textarea
+                    className="min-h-20 w-full resize-none border border-neutral-900 bg-neutral-50 px-3 py-3 text-base font-medium text-neutral-800 outline-0 placeholder:text-neutral-500 focus:border-sky-600 focus:bg-white"
+                    id="address"
+                    name="address"
+                    onChange={handleRequestChange}
+                    placeholder="Masukkan alamat rumah"
+                    value={requestForm.address}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-extrabold text-black" htmlFor="note">
+                    <span className="h-1.5 w-1.5 bg-black" />
+                    Catatan
+                  </label>
+                  <textarea
+                    className="min-h-20 w-full resize-none border border-neutral-900 bg-neutral-50 px-3 py-3 text-base font-medium text-neutral-800 outline-0 placeholder:text-neutral-500 focus:border-sky-600 focus:bg-white"
+                    id="note"
+                    name="note"
+                    onChange={handleRequestChange}
+                    placeholder="Tambahkan keterangan bila diperlukan"
+                    value={requestForm.note}
+                  />
+                </div>
+              </div>
+
+              {requestMessage ? (
+                <p className="mt-5 border border-sky-700 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-800">
+                  {requestMessage}
+                </p>
+              ) : null}
+
+              <div className="mt-6 flex justify-end gap-3 max-sm:flex-col">
+                <button
+                  className="h-11 border border-neutral-900 px-5 text-sm font-extrabold text-black transition hover:border-sky-600 hover:text-sky-700"
+                  onClick={() => setShowRequestDialog(false)}
+                  type="button"
+                >
+                  Batal
+                </button>
+                <button
+                  className="h-11 border border-black bg-black px-5 text-sm font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
+                  type="submit"
+                >
+                  Kirim ke Ketua RT
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       <footer className="bg-black px-6 py-12 text-neutral-400">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-8 max-md:flex-col max-md:items-start">

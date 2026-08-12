@@ -71,9 +71,6 @@ export function LandingPage() {
           <p className="mt-7 max-w-lg text-lg leading-8 text-neutral-600">
             Platform digital terintegrasi untuk memudahkan administrasi, pelaporan, dan partisipasi warga dalam membangun lingkungan yang lebih baik dan transparan.
           </p>
-          <div className="mt-9">
-            <LandingButton href="#layanan">Mulai Sekarang</LandingButton>
-          </div>
         </div>
 
         <ImageFrame
@@ -137,7 +134,6 @@ export function LandingPage() {
           Jadilah bagian dari perubahan positif di lingkungan Anda. Akses semua layanan dalam satu genggaman.
         </p>
         <div className="mt-9 flex justify-center gap-4 max-sm:flex-col">
-          <LandingButton href="#layanan">Unduh Aplikasi</LandingButton>
           <LandingButton href="/login" variant="outline">Login Warga</LandingButton>
         </div>
       </section>

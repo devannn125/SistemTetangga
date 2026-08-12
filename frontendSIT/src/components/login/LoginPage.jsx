@@ -1,13 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '../ui/Icon'
 
-const navItems = [
-  { label: 'Laporan', href: '/#layanan' },
-  { label: 'Informasi', href: '/#informasi' },
-  { label: 'Agenda', href: '/#agenda' },
-]
-
-function PortalInput({ action, icon, id, label, placeholder, type = 'text' }) {
+function PortalInput({ action, icon, id, label, onChange, placeholder, type = 'text', value }) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-4">
@@ -23,8 +17,11 @@ function PortalInput({ action, icon, id, label, placeholder, type = 'text' }) {
         <input
           className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0 placeholder:text-neutral-500"
           id={id}
+          name={id}
+          onChange={onChange}
           placeholder={placeholder}
           type={type}
+          value={value}
         />
       </div>
     </div>
@@ -33,10 +30,29 @@ function PortalInput({ action, icon, id, label, placeholder, type = 'text' }) {
 
 export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [form, setForm] = useState({
+    nik: '',
+    password: '',
+    role: 'warga',
+  })
+  const [error, setError] = useState('')
+
+  function handleChange(event) {
+    const { name, value } = event.target
+    setForm((current) => ({ ...current, [name]: value }))
+    setError('')
+  }
 
   function handleSubmit(event) {
     event.preventDefault()
-    window.location.assign('/dashboard')
+
+    if (!form.nik.trim() || !form.password.trim()) {
+      setError('NIK/ID dan kata sandi wajib diisi.')
+      return
+    }
+
+    const destination = form.role === 'admin' ? '/dashboard' : '/warga'
+    window.location.assign(destination)
   }
 
   return (
@@ -47,19 +63,6 @@ export function LoginPage() {
             <Icon name="building" className="h-6 w-6" />
             <span>SIW MASYARAKAT</span>
           </a>
-
-          <nav className="flex items-center gap-14 text-sm font-bold tracking-[0.08em] text-neutral-600 max-md:order-3 max-md:w-full max-md:justify-between max-md:gap-4" aria-label="Navigasi portal">
-            {navItems.map((item) => (
-              <a className="no-underline transition hover:text-sky-700" href={item.href} key={item.label}>
-                {item.label}
-              </a>
-            ))}
-          </nav>
-
-          <label className="flex h-[30px] w-44 items-center gap-2 border border-neutral-900 bg-neutral-50 px-3 text-neutral-500 max-sm:w-full">
-            <Icon name="search" className="h-4 w-4" />
-            <input className="min-w-0 flex-1 border-0 bg-transparent text-sm outline-0" placeholder="Cari..." />
-          </label>
         </div>
       </header>
 
@@ -81,7 +84,35 @@ export function LoginPage() {
             </div>
 
             <div className="mt-10 flex flex-col gap-6">
-              <PortalInput icon="idCard" id="nik" label="Nomor NIK / ID Warga" placeholder="Masukkan 16 digit NIK" />
+              <PortalInput
+                icon="idCard"
+                id="nik"
+                label="Nomor NIK / ID Warga"
+                onChange={handleChange}
+                placeholder="Masukkan NIK atau ID admin"
+                value={form.nik}
+              />
+
+              <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-extrabold text-black" htmlFor="role">
+                  <span className="h-1.5 w-1.5 bg-black" />
+                  Masuk Sebagai
+                </label>
+
+                <div className="flex h-[52px] items-center gap-3 border border-neutral-900 bg-neutral-50 px-3 text-neutral-500 transition focus-within:border-sky-600 focus-within:bg-white focus-within:text-sky-700">
+                  <Icon name="users" className="h-5 w-5" />
+                  <select
+                    className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0"
+                    id="role"
+                    name="role"
+                    onChange={handleChange}
+                    value={form.role}
+                  >
+                    <option value="warga">Warga</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
 
               <div>
                 <div className="mb-2 flex items-center justify-between gap-4">
@@ -99,8 +130,11 @@ export function LoginPage() {
                   <input
                     className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0 placeholder:text-neutral-500"
                     id="password"
+                    name="password"
+                    onChange={handleChange}
                     placeholder="Masukkan kata sandi"
                     type={showPassword ? 'text' : 'password'}
+                    value={form.password}
                   />
                   <button
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
@@ -113,6 +147,10 @@ export function LoginPage() {
                 </div>
               </div>
             </div>
+
+            {error ? (
+              <p className="mt-5 border border-red-700 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{error}</p>
+            ) : null}
 
             <button
               className="mt-14 flex h-[50px] w-full items-center justify-center gap-2 border border-black bg-black text-sm font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"

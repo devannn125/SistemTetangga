@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\HasUuidPrimaryKey;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,7 +12,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasUuidPrimaryKey, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -19,10 +20,20 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'id_users',
+        'nama_users',
         'email',
-        'password',
+        'no_hp',
+        'password_hash',
+        'telegram_chat_id',
+        'telegram_linked_at',
+        'auth_provider',
+        'status',
+        'id_citizen',
+        'last_login_at',
     ];
+
+    protected $primaryKey = 'id_users';
 
     /**
      * The attributes that should be hidden for serialization.
@@ -30,7 +41,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
+        'password_hash',
         'remember_token',
     ];
 
@@ -43,7 +54,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'telegram_linked_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'password_hash' => 'hashed',
         ];
     }
 }

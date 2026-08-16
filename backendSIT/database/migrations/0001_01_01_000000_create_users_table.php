@@ -12,12 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+            $table->char('id_users', 36)->primary();
+            $table->string('nama_users', 150);
+            $table->string('email', 150)->nullable()->unique();
+            $table->string('no_hp', 20)->unique();
+            $table->string('password_hash')->nullable();
+            $table->string('telegram_chat_id', 50)->nullable();
+            $table->dateTime('telegram_linked_at')->nullable();
+            $table->enum('auth_provider', ['EMAIL', 'GOOGLE', 'WHATSAPP_OTP'])->default('WHATSAPP_OTP');
+            $table->enum('status', ['PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED', 'INACTIVE'])->default('PENDING_VERIFICATION');
+            $table->char('id_citizen', 36)->nullable();
+            $table->dateTime('last_login_at')->nullable();
             $table->timestamps();
         });
 

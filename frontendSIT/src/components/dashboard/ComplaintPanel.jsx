@@ -1,23 +1,26 @@
-export function ComplaintPanel({ items }) {
-  const total = items.reduce((sum, item) => sum + item.total, 0)
+export function ComplaintPanel({ items = [] }) {
+  const safeItems = items || []
+  const total = safeItems.reduce((sum, item) => sum + (item.total || 0), 0)
   const radius = 42
   const circumference = 2 * Math.PI * radius
-  const segments = items.reduce(
-    (result, item) => {
-      const dash = (item.total / total) * circumference
-      const segment = {
-        dash,
-        label: item.label,
-        offset: result.offset,
-      }
+  const segments = total > 0
+    ? safeItems.reduce(
+        (result, item) => {
+          const dash = ((item.total || 0) / total) * circumference
+          const segment = {
+            dash,
+            label: item.label,
+            offset: result.offset,
+          }
 
-      return {
-        items: [...result.items, segment],
-        offset: result.offset + dash + 4,
-      }
-    },
-    { items: [], offset: 0 },
-  ).items
+          return {
+            items: [...result.items, segment],
+            offset: result.offset + dash + 4,
+          }
+        },
+        { items: [], offset: 0 },
+      ).items
+    : []
 
   return (
     <article className="flex min-h-[334px] flex-col rounded-xl border border-neutral-300 bg-white p-5 transition duration-200 hover:border-sky-500 hover:shadow-md">

@@ -68,7 +68,11 @@ class AuthController extends Controller
                 'kode' => $role->kode,
                 'nama_role' => $role->nama_role,
             ],
-            'redirect_to' => $role->kode === 'WARGA' ? '/warga' : '/role/'.strtolower($role->kode),
+            'redirect_to' => match ($role->kode) {
+                'WARGA' => '/warga',
+                'ADMIN', 'DUKUH' => '/dashboard',
+                default => '/role/'.strtolower($role->kode),
+            },
         ]);
     }
 

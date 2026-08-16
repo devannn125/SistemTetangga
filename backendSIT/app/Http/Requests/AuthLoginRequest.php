@@ -12,12 +12,21 @@ class AuthLoginRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('role') && is_string($this->role)) {
+            $this->merge([
+                'role' => strtoupper(trim($this->role)),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'identifier' => ['required', 'string', 'max:150'],
             'password' => ['required', 'string', 'max:255'],
-            'role' => ['required', Rule::in(['WARGA', 'ADMIN', 'RT', 'RW', 'DUKUH'])],
+            'role' => ['required', 'string', 'max:50'],
         ];
     }
 }

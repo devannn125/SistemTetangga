@@ -194,6 +194,30 @@ return new class extends Migration
             $table->timestamps();
             $table->foreign('id_pengirim_user')->references('id_users')->on('users')->cascadeOnDelete();
         });
+
+        Schema::create('role', function (Blueprint $table) {
+            $table->char('id_role', 36)->primary();
+            $table->string('kode', 50);
+            $table->string('nama_role', 100);
+            $table->tinyInteger('level');
+            $table->boolean('is_strategic')->default(false);
+            $table->string('deskripsi', 255)->nullable();
+        });
+
+        Schema::create('user_role', function (Blueprint $table) {
+            $table->char('id_user_role', 36)->primary();
+            $table->char('id_users', 36);
+            $table->char('id_role', 36);
+            $table->char('id_wilayah', 36)->nullable();
+            $table->date('periode_mulai')->nullable();
+            $table->date('periode_selesai')->nullable();
+            $table->enum('status', ['ACTIVE', 'ENDED', 'REVOKED'])->default('ACTIVE');
+            $table->char('assigned_by', 36)->nullable();
+            $table->dateTime('assigned_at')->useCurrent();
+            $table->foreign('id_users')->references('id_users')->on('users')->cascadeOnDelete();
+            $table->foreign('id_role')->references('id_role')->on('role')->cascadeOnDelete();
+            $table->foreign('id_wilayah')->references('id_wilayah')->on('wilayah')->cascadeOnDelete();
+        });
     }
 
     public function down(): void
@@ -206,6 +230,8 @@ return new class extends Migration
             $table->dropForeign(['id_family']);
         });
 
+        Schema::dropIfExists('user_role');
+        Schema::dropIfExists('role');
         Schema::dropIfExists('complaint');
         Schema::dropIfExists('iuran_tagihan');
         Schema::dropIfExists('keuangan_transaksi');

@@ -1,7 +1,18 @@
 import { useState } from 'react'
 import { Icon } from '../ui/Icon'
+import { login, setAuthData } from '../../services/authService'
 
-function PortalInput({ action, icon, id, label, onChange, placeholder, type = 'text', value }) {
+function PortalInput({
+  action,
+  disabled = false,
+  icon,
+  id,
+  label,
+  onChange,
+  placeholder,
+  type = 'text',
+  value,
+}) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-4">
@@ -15,7 +26,8 @@ function PortalInput({ action, icon, id, label, onChange, placeholder, type = 't
       <div className="flex h-[52px] items-center gap-3 border border-neutral-900 bg-neutral-50 px-3 text-neutral-500 transition focus-within:border-sky-600 focus-within:bg-white focus-within:text-sky-700">
         <Icon name={icon} className="h-5 w-5" />
         <input
-          className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0 placeholder:text-neutral-500"
+          className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0 placeholder:text-neutral-500 disabled:opacity-50"
+          disabled={disabled}
           id={id}
           name={id}
           onChange={onChange}
@@ -31,6 +43,7 @@ function PortalInput({ action, icon, id, label, onChange, placeholder, type = 't
 export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showRequestDialog, setShowRequestDialog] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [form, setForm] = useState({
     nik: '',
     password: '',
@@ -58,18 +71,52 @@ export function LoginPage() {
     setRequestMessage('')
   }
 
-  function handleSubmit(event) {
+  function fillDemoAccount(identifier, password, role) {
+    setForm({
+      nik: identifier,
+      password,
+      role,
+    })
+    setError('')
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault()
 
     if (!form.nik.trim() || !form.password.trim()) {
-      setError('NIK/ID dan kata sandi wajib diisi.')
+      setError('NIK/Email/ID dan kata sandi wajib diisi.')
       return
     }
 
-    const destination = form.role === 'admin' ? '/dashboard' : '/warga'
-    localStorage.setItem('authRole', form.role)
-    localStorage.setItem('authNik', form.nik.trim())
-    window.location.assign(destination)
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const response = await login({
+        identifier: form.nik,
+        password: form.password,
+        role: form.role,
+      })
+
+      // Save user session to localStorage
+      setAuthData(response.data)
+
+      // Determine redirect destination
+      const roleLower = form.role.toLowerCase()
+      const fallbackDest =
+        roleLower === 'warga'
+          ? '/warga'
+          : ['admin', 'dukuh'].includes(roleLower)
+            ? '/dashboard'
+            : `/role/${roleLower}`
+
+      const destination = response.data?.redirect_to || fallbackDest
+      window.location.assign(destination)
+    } catch (err) {
+      setError(err.message || 'Terjadi kesalahan saat masuk.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   function handleRequestSubmit(event) {
@@ -113,7 +160,7 @@ export function LoginPage() {
       </header>
 
       <section className="grid flex-1 place-items-center px-6 py-10">
-        <div className="w-full max-w-[480px]">
+        <div className="w-full max-w-[500px]">
           <div className="bg-black px-9 py-4 text-2xl font-extrabold text-white">
             <span className="inline-flex items-center gap-2">
               <Icon name="key" className="h-5 w-5" />
@@ -121,21 +168,22 @@ export function LoginPage() {
             </span>
           </div>
 
-          <form className="border-2 border-neutral-900 bg-white px-12 py-12 max-sm:px-6" onSubmit={handleSubmit}>
+          <form className="border-2 border-neutral-900 bg-white px-10 py-10 max-sm:px-6" onSubmit={handleSubmit}>
             <div className="text-center">
               <h1 className="text-4xl font-extrabold leading-tight text-black">Masuk</h1>
               <p className="mx-auto mt-3 max-w-xs text-base leading-7 text-neutral-600">
-                Silakan masukkan kredensial warga Anda untuk melanjutkan.
+                Silakan masukkan kredensial akun Anda untuk melanjutkan.
               </p>
             </div>
 
-            <div className="mt-10 flex flex-col gap-6">
+            <div className="mt-8 flex flex-col gap-5">
               <PortalInput
+                disabled={isLoading}
                 icon="idCard"
                 id="nik"
-                label="Nomor NIK / ID Warga"
+                label="Nomor NIK / Email / No. HP / ID"
                 onChange={handleChange}
-                placeholder="Masukkan NIK atau ID admin"
+                placeholder="Contoh: 3471000000000001 atau email"
                 value={form.nik}
               />
 
@@ -148,14 +196,18 @@ export function LoginPage() {
                 <div className="flex h-[52px] items-center gap-3 border border-neutral-900 bg-neutral-50 px-3 text-neutral-500 transition focus-within:border-sky-600 focus-within:bg-white focus-within:text-sky-700">
                   <Icon name="users" className="h-5 w-5" />
                   <select
-                    className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0"
+                    className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0 disabled:opacity-50"
+                    disabled={isLoading}
                     id="role"
                     name="role"
                     onChange={handleChange}
                     value={form.role}
                   >
                     <option value="warga">Warga</option>
-                    <option value="admin">Admin</option>
+                    <option value="admin">Administrator</option>
+                    <option value="rt">Ketua RT</option>
+                    <option value="rw">Ketua RW</option>
+                    <option value="dukuh">Kepala Dukuh</option>
                   </select>
                 </div>
               </div>
@@ -174,7 +226,8 @@ export function LoginPage() {
                 <div className="flex h-[52px] items-center gap-3 border border-neutral-900 bg-neutral-50 px-3 text-neutral-500 transition focus-within:border-sky-600 focus-within:bg-white focus-within:text-sky-700">
                   <Icon name="lock" className="h-5 w-5" />
                   <input
-                    className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0 placeholder:text-neutral-500"
+                    className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0 placeholder:text-neutral-500 disabled:opacity-50"
+                    disabled={isLoading}
                     id="password"
                     name="password"
                     onChange={handleChange}
@@ -185,6 +238,7 @@ export function LoginPage() {
                   <button
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                     className="grid h-8 w-8 place-items-center text-neutral-500 transition hover:text-sky-700"
+                    disabled={isLoading}
                     onClick={() => setShowPassword((current) => !current)}
                     type="button"
                   >
@@ -195,18 +249,71 @@ export function LoginPage() {
             </div>
 
             {error ? (
-              <p className="mt-5 border border-red-700 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{error}</p>
+              <p className="mt-5 border border-red-700 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">
+                {error}
+              </p>
             ) : null}
 
             <button
-              className="mt-14 flex h-[50px] w-full items-center justify-center gap-2 border border-black bg-black text-sm font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
+              className="mt-8 flex h-[50px] w-full items-center justify-center gap-2 border border-black bg-black text-sm font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isLoading}
               type="submit"
             >
-              Masuk
-              <Icon name="arrowRight" className="h-4 w-4" />
+              {isLoading ? (
+                <span>Memproses Masuk...</span>
+              ) : (
+                <>
+                  <span>Masuk</span>
+                  <Icon name="arrowRight" className="h-4 w-4" />
+                </>
+              )}
             </button>
 
-            <div className="mt-9 border-t border-neutral-300 pt-7 text-center text-base text-neutral-600">
+            {/* Quick Demo Accounts Helper */}
+            <div className="mt-6 border border-neutral-300 bg-neutral-50 p-4">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-neutral-600">
+                Akun Uji Coba Cepat:
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                <button
+                  className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
+                  onClick={() => fillDemoAccount('3471000000000001', 'password', 'warga')}
+                  type="button"
+                >
+                  Warga
+                </button>
+                <button
+                  className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
+                  onClick={() => fillDemoAccount('admin@sukamaju.test', 'password', 'admin')}
+                  type="button"
+                >
+                  Admin
+                </button>
+                <button
+                  className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
+                  onClick={() => fillDemoAccount('budi@example.com', 'password', 'rt')}
+                  type="button"
+                >
+                  Ketua RT
+                </button>
+                <button
+                  className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
+                  onClick={() => fillDemoAccount('dukuh@sukamaju.test', 'password', 'dukuh')}
+                  type="button"
+                >
+                  Kepala Dukuh
+                </button>
+                <button
+                  className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
+                  onClick={() => fillDemoAccount('rudi@example.com', 'password', 'rw')}
+                  type="button"
+                >
+                  Ketua RW
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-neutral-300 pt-5 text-center text-sm text-neutral-600">
               Belum terdaftar?
               <button
                 className="ml-2 font-extrabold text-black underline-offset-4 transition hover:text-sky-700"

@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { Icon } from '../ui/Icon'
+import { clearAuthData, getAuthData } from '../../services/authService'
 
 export function Sidebar({ items, user }) {
   const [openMenus, setOpenMenus] = useState(['warga'])
+  const authUser = getAuthData()
+
+  const displayName = authUser?.nama_users || user?.name || 'Administrator'
+  const displayRole = authUser?.role?.nama_role || user?.role || 'Admin'
+  const displayInitial = (displayName || 'A').charAt(0).toUpperCase()
 
   function toggleMenu(item) {
     if (!item.children) {
@@ -14,6 +20,11 @@ export function Sidebar({ items, user }) {
         ? currentMenus.filter((menuId) => menuId !== item.id)
         : [...currentMenus, item.id],
     )
+  }
+
+  function handleLogout() {
+    clearAuthData()
+    window.location.assign('/login')
   }
 
   return (
@@ -81,13 +92,18 @@ export function Sidebar({ items, user }) {
 
       <div className="grid min-h-[60px] shrink-0 grid-cols-[36px_minmax(0,1fr)_28px] items-center gap-3 rounded-lg bg-neutral-100 p-3 md:m-3 md:mb-3">
         <span className="grid h-9 w-9 place-items-center rounded-full bg-sky-600 font-bold text-white">
-          {user.initial}
+          {displayInitial}
         </span>
         <div className="min-w-0">
-          <strong className="block truncate text-sm leading-tight text-black">{user.name}</strong>
-          <small className="mt-0.5 block text-xs text-neutral-500">{user.role}</small>
+          <strong className="block truncate text-sm leading-tight text-black">{displayName}</strong>
+          <small className="mt-0.5 block text-xs text-neutral-500">{displayRole}</small>
         </div>
-        <button className="grid h-7 w-7 place-items-center text-neutral-500" type="button" aria-label="Keluar">
+        <button
+          className="grid h-7 w-7 place-items-center text-neutral-500 transition hover:text-red-600"
+          onClick={handleLogout}
+          type="button"
+          aria-label="Keluar"
+        >
           <Icon name="logout" className="h-4 w-4" />
         </button>
       </div>

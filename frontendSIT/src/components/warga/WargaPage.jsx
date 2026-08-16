@@ -1,5 +1,4 @@
 import { Icon } from '../ui/Icon'
-import { useState } from 'react'
 import ComplaintPage from './pages/ComplaintPage'
 import FinancePage from './pages/FinancePage'
 import SiskamlingPage from './pages/SiskamlingPage'
@@ -35,75 +34,13 @@ const announcements = [
   { type: 'Dokumen', date: '15 Okt 2024', title: 'Laporan Keuangan Kuartal 3 2024' },
 ]
 
-const pengaduanTabs = [
-  { id: 'all', label: 'Semua', count: 21 },
-  { id: 'draft', label: 'Draft', count: 3 },
-  { id: 'pending', label: 'Pending', count: 7 },
-  { id: 'diproses', label: 'Diproses', count: 7 },
-  { id: 'selesai', label: 'Selesai', count: 6 },
-]
-
-const complaintReports = [
-  {
-    ticket: '#ADU-2025-001',
-    category: 'Infrastruktur',
-    status: 'selesai',
-    statusLabel: 'Selesai',
-    title: 'Jalan Berlubang di Depan Masjid',
-    description: 'Terdapat lubang besar di jalan depan masjid yang membahayakan pengendara motor.',
-    location: 'Jl. Melati No. 15',
-    reporter: 'Ahmad Fauzi',
-    date: '15 Jan 2024',
-    comments: 1,
-    steps: ['Draft', 'Pending', 'Diproses', 'Selesai'],
-  },
-  {
-    ticket: '#ADU-2025-002',
-    category: 'Penerangan',
-    status: 'diproses',
-    statusLabel: 'Diproses',
-    title: 'Lampu Jalan Mati',
-    description: 'Lampu jalan di gang 3 sudah mati selama seminggu.',
-    location: 'Gang 3, Jl. Mawar',
-    reporter: 'Rizki Ramadan',
-    date: '1 Feb 2024',
-    comments: 0,
-    steps: ['Draft', 'Pending', 'Diproses'],
-  },
-  {
-    ticket: '#ADU-2025-003',
-    category: 'Kebersihan',
-    status: 'pending',
-    statusLabel: 'Pending',
-    title: 'Sampah Menumpuk',
-    description: 'Tempat sampah di pojok jalan sudah penuh dan berbau tidak sedap.',
-    location: 'Jl. Melati',
-    reporter: 'Siti Nurhaliza',
-    date: '7 Feb 2024',
-    comments: 2,
-    steps: ['Draft', 'Pending'],
-  },
-  {
-    ticket: '#ADU-2025-004',
-    category: 'Drainase',
-    status: 'draft',
-    statusLabel: 'Draft',
-    title: 'Saluran Air Tersumbat',
-    description: 'Saluran air di depan rumah tersumbat menyebabkan genangan saat hujan.',
-    location: 'Jl. Cempaka',
-    reporter: 'Rina Sari',
-    date: '10 Feb 2024',
-    comments: 0,
-    steps: ['Draft'],
-  },
-]
-
 function getCurrentMenu() {
   const pathname = window.location.pathname
   return wargaMenus.find((item) => item.path === pathname) || wargaMenus[0]
 }
 
 function handleLogout() {
+  localStorage.removeItem('authUser')
   localStorage.removeItem('authRole')
   localStorage.removeItem('authNik')
   window.location.assign('/login')

@@ -1,4 +1,3 @@
-import { Icon } from '../../ui/Icon'
 
 function PageShell({ children, eyebrow, title, description }) {
   return (

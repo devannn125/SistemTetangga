@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../../components/ui/Icon'
 
 function PageShell({ children, eyebrow, title, description }) {
   return (

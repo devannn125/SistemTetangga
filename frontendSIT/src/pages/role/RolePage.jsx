@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../../components/ui/Icon'
 import { clearAuthData, getAuthData, getAuthRole } from '../../services/authService'
 
 export function RolePage({ roleParam }) {

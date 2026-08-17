@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Icon } from '../ui/Icon'
+import { Icon } from '../../components/ui/Icon'
 import { login, setAuthData } from '../../services/authService'
 
 function PortalInput({

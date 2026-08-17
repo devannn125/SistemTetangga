@@ -6,13 +6,16 @@ namespace App\Models;
 use App\Models\Concerns\HasUuidPrimaryKey;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasUuidPrimaryKey, Notifiable;
+    use HasApiTokens, HasFactory, HasUuidPrimaryKey, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -58,5 +61,21 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'password_hash' => 'hashed',
         ];
+    }
+
+    /**
+     * Data kependudukan user ini (untuk NIK, nama lengkap, dll).
+     */
+    public function citizen(): BelongsTo
+    {
+        return $this->belongsTo(Citizen::class, 'id_citizen', 'id_citizen');
+    }
+
+    /**
+     * Semua penugasan role user ini (bisa lebih dari satu: RT sekaligus Admin, dst).
+     */
+    public function userRoles(): HasMany
+    {
+        return $this->hasMany(UserRole::class, 'id_users', 'id_users');
     }
 }

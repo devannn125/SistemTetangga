@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../../components/ui/Icon'
 import ComplaintPage from './pages/ComplaintPage'
 import FinancePage from './pages/FinancePage'
 import SiskamlingPage from './pages/SiskamlingPage'

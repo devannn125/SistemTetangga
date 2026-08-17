@@ -1,12 +1,12 @@
-import { Sidebar } from '../layout/Sidebar'
-import { Topbar } from '../layout/Topbar'
-import { ActivityPanel } from './ActivityPanel'
-import { CashflowChart } from './CashflowChart'
-import { ComplaintPanel } from './ComplaintPanel'
-import { FinanceCard } from './FinanceCard'
-import { QuickActions } from './QuickActions'
-import { ResidentRequestsPanel } from './ResidentRequestsPanel'
-import { StatCard } from './StatCard'
+import { Sidebar } from '../../components/layout/Sidebar'
+import { Topbar } from '../../components/layout/Topbar'
+import { ActivityPanel } from '../../components/dashboard/ActivityPanel'
+import { CashflowChart } from '../../components/dashboard/CashflowChart'
+import { ComplaintPanel } from '../../components/dashboard/ComplaintPanel'
+import { FinanceCard } from '../../components/dashboard/FinanceCard'
+import { QuickActions } from '../../components/dashboard/QuickActions'
+import { ResidentRequestsPanel } from '../../components/dashboard/ResidentRequestsPanel'
+import { StatCard } from '../../components/dashboard/StatCard'
 
 function getResidentRequests() {
   try {

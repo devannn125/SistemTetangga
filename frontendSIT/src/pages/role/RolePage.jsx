@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { clearAuthData, getAuthData, getAuthRole } from '../../services/authService'
 
 export function RolePage({ roleParam }) {
   const authUser = getAuthData()
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const currentRole = (
     roleParam ||
     window.location.pathname.replace(/^\/role\/?/, '') ||
@@ -21,6 +24,7 @@ export function RolePage({ roleParam }) {
   const roleDisplayName = authUser?.role?.nama_role || roleNameMap[currentRole] || currentRole
 
   function handleLogout() {
+    setConfirmLogout(false)
     clearAuthData()
     window.location.assign('/login')
   }
@@ -45,7 +49,7 @@ export function RolePage({ roleParam }) {
             </a>
             <button
               className="inline-flex h-10 items-center gap-2 border border-black bg-black px-4 text-xs font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
-              onClick={handleLogout}
+              onClick={() => setConfirmLogout(true)}
               type="button"
             >
               <Icon name="logout" className="h-4 w-4" />
@@ -54,6 +58,15 @@ export function RolePage({ roleParam }) {
           </div>
         </div>
       </header>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Konfirmasi Keluar"
+        message="Apakah Anda yakin ingin keluar dari akun ini?"
+        confirmLabel="Keluar"
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
 
       {/* Main Content */}
       <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-6 py-12">

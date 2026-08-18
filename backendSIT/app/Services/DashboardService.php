@@ -82,7 +82,7 @@ class DashboardService
                 'title' => $isDukuh ? 'Pengaduan & Eskalasi' : 'Pengaduan Aktif',
                 'value' => (string) $activeComplaints,
                 'accent' => 'amber',
-                'icon' => 'alert',
+                'icon' => 'alert', 
                 'note' => $isDukuh ? "{$escalatedComplaints} eskalasi wilayah" : "{$resolvedComplaints} selesai",
                 'detail' => $isDukuh ? "{$resolvedComplaints} aduan terselesaikan" : 'Formal SIPANDU',
                 'positive' => true,
@@ -209,9 +209,14 @@ class DashboardService
         if ($isDukuh) {
             return [
                 ['id' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'grid'],
-                ['id' => 'warga', 'label' => 'Kependudukan', 'icon' => 'users', 'children' => ['Data Warga', 'Kartu Keluarga', 'Data Rumah & Kos']],
-                ['id' => 'statistik', 'label' => 'Statistik Wilayah', 'icon' => 'trendingUp', 'children' => ['DPT Pemilu', 'Kategori Usia', 'Penerima Bansos', 'Distribusi Profesi']],
+                ['id' => 'warga', 'label' => 'Data Warga', 'icon' => 'users', 'children' => [
+                    ['label' => 'Semua Warga', 'path' => '/dashboard/warga'],
+                    ['label' => 'Non Warga', 'path' => '/dashboard/warga/non-warga'],
+                    ['label' => 'Tamu', 'path' => '/dashboard/warga/tamu'],
+                    ['label' => 'Data Rumah', 'path' => '/dashboard/warga/rumah'],
+                ]],
                 ['id' => 'pengaduan', 'label' => 'Pengaduan & Eskalasi', 'icon' => 'alert'],
+                ['id' => 'statistik', 'label' => 'Statistik Wilayah', 'icon' => 'trendingUp', 'children' => ['DPT Pemilu', 'Kategori Usia', 'Penerima Bansos', 'Distribusi Profesi']],
                 ['id' => 'keuangan', 'label' => 'Keuangan Wilayah', 'icon' => 'wallet', 'children' => ['Arus Kas', 'Rekap Iuran', 'Laporan Bulanan']],
                 ['id' => 'surat', 'label' => 'Surat Menyurat', 'icon' => 'file', 'children' => ['Monitoring Surat', 'Arsip Surat']],
                 ['id' => 'informasi', 'label' => 'Pengumuman & Kebijakan', 'icon' => 'megaphone'],

@@ -11,7 +11,12 @@ export const dashboardData = {
       id: 'warga',
       label: 'Data Warga',
       icon: 'users',
-      children: ['Semua Warga', 'Non Warga', 'Tamu', 'Data Rumah'],
+      children: [
+        { label: 'Semua Warga', path: '/dashboard/warga' },
+        { label: 'Non Warga', path: '/dashboard/warga/non-warga' },
+        { label: 'Tamu', path: '/dashboard/warga/tamu' },
+        { label: 'Data Rumah', path: '/dashboard/warga/rumah' },
+      ],
     },
     { id: 'pengaduan', label: 'Pengaduan', icon: 'alert' },
     {

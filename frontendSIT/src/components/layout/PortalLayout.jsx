@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Icon } from '../ui/Icon'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { clearAuthData } from '../../services/authService'
 
 function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubtitle }) {
@@ -39,7 +41,10 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
 }
 
 function PortalTopbar() {
+  const [confirmLogout, setConfirmLogout] = useState(false)
+
   function handleLogout() {
+    setConfirmLogout(false)
     clearAuthData()
     window.location.assign('/login')
   }
@@ -48,12 +53,20 @@ function PortalTopbar() {
     <header className="flex h-15 items-center justify-end border-b border-neutral-900 bg-white px-6">
       <button
         className="flex h-9 items-center gap-2 border border-black bg-black px-4 text-xs font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
-        onClick={handleLogout}
+        onClick={() => setConfirmLogout(true)}
         type="button"
       >
         <Icon name="logout" className="h-4 w-4" />
         Keluar
       </button>
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Konfirmasi Keluar"
+        message="Apakah Anda yakin ingin keluar dari akun ini?"
+        confirmLabel="Keluar"
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </header>
   )
 }

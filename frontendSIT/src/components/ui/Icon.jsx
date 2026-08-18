@@ -29,6 +29,11 @@ const paths = {
   lock: <path d="M6 10h12v11H6zM8 10V7a4 4 0 0 1 8 0v3m-4 5v2" />,
   logout: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9" />,
   userPlus: <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m18-11v6m3-3h-6M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" />,
+  download: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3" />,
+  upload: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m5-7 5-5 5 5m-5 5V3" />,
+  filter: <path d="M22 3H2l8 9.46V19l4 2v-8.54z" />,
+  check: <path d="M20 6 9 17l-5-5" />,
+  clock: <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M12 6v6l4 2" />,
 }
 
 export function Icon({ name, className = 'h-4 w-4' }) {

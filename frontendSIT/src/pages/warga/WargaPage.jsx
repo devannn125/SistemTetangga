@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import ComplaintPage from './pages/ComplaintPage'
 import FinancePage from './pages/FinancePage'
 import SiskamlingPage from './pages/SiskamlingPage'
@@ -44,9 +46,7 @@ function handleLogout() {
   localStorage.removeItem('authRole')
   localStorage.removeItem('authNik')
   window.location.assign('/login')
-}
-
-function WargaSidebar({ activePath }) {
+}function WargaSidebar({ activePath }) {
   return (
     <aside className="sticky top-0 flex h-screen w-[250px] shrink-0 flex-col border-r border-neutral-900 bg-white max-md:static max-md:h-auto max-md:w-full max-md:border-r-0 max-md:border-b">
       <div className="flex h-15 border-b border-neutral-900 px-4 py-5">
@@ -84,16 +84,31 @@ function WargaSidebar({ activePath }) {
 }
 
 function WargaTopbar() {
+  const [confirmLogout, setConfirmLogout] = useState(false)
+
+  function confirmAndLogout() {
+    setConfirmLogout(false)
+    handleLogout()
+  }
+
   return (
     <header className="flex h-15 items-center justify-end border-b border-neutral-900 bg-white px-6 ">
       <button
         className="flex h-9 items-center gap-2 border border-black bg-black px-4 text-xs font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
-        onClick={handleLogout}
+        onClick={() => setConfirmLogout(true)}
         type="button"
       >
         <Icon name="logout" className="h-4 w-4" />
         Keluar
       </button>
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Konfirmasi Keluar"
+        message="Apakah Anda yakin ingin keluar dari akun ini?"
+        confirmLabel="Keluar"
+        onConfirm={confirmAndLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </header>
   )
 }

@@ -7,6 +7,7 @@ import { FinanceCard } from '../../components/dashboard/FinanceCard'
 import { QuickActions } from '../../components/dashboard/QuickActions'
 import { ResidentRequestsPanel } from '../../components/dashboard/ResidentRequestsPanel'
 import { StatCard } from '../../components/dashboard/StatCard'
+import { WargaDataPage } from './WargaDataPage'
 
 function getResidentRequests() {
   try {
@@ -14,6 +15,13 @@ function getResidentRequests() {
   } catch {
     return []
   }
+}
+
+function getWargaTab(pathname) {
+  if (pathname.startsWith('/dashboard/warga/non-warga')) return 'nonWarga'
+  if (pathname.startsWith('/dashboard/warga/tamu')) return 'tamu'
+  if (pathname.startsWith('/dashboard/warga/rumah')) return 'rumah'
+  return 'semua'
 }
 
 export function DashboardPage({ data, error, isLoading }) {
@@ -35,6 +43,8 @@ export function DashboardPage({ data, error, isLoading }) {
     )
   }
 
+  const pathname = window.location.pathname
+  const isWargaPath = pathname.startsWith('/dashboard/warga')
   const residentRequests = getResidentRequests()
 
   return (
@@ -44,6 +54,9 @@ export function DashboardPage({ data, error, isLoading }) {
       <section className="min-w-0">
         <Topbar />
 
+        {isWargaPath ? (
+          <WargaDataPage key={pathname} activeTab={getWargaTab(pathname)} />
+        ) : (
         <div className="min-w-0 px-6 py-6 max-md:px-4 max-md:py-5">
           <section className="mb-6">
             <h2 className="mb-1 text-2xl font-extrabold leading-tight text-black">Selamat datang kembali</h2>
@@ -74,6 +87,7 @@ export function DashboardPage({ data, error, isLoading }) {
             <QuickActions items={data.quickActions} />
           </section>
         </div>
+        )}
       </section>
     </main>
   )

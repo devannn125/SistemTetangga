@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { Icon } from '../ui/Icon'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { clearAuthData, getAuthData } from '../../services/authService'
+import { navigate } from '../../services/router'
 
 export function Sidebar({ items, user }) {
   const [openMenus, setOpenMenus] = useState(['warga'])
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const authUser = getAuthData()
 
   const displayName = authUser?.nama_users || user?.name || 'Administrator'
@@ -23,6 +26,7 @@ export function Sidebar({ items, user }) {
   }
 
   function handleLogout() {
+    setConfirmLogout(false)
     clearAuthData()
     window.location.assign('/login')
   }
@@ -72,15 +76,29 @@ export function Sidebar({ items, user }) {
               >
                 <div className="overflow-hidden">
                   <div className="mb-2 mt-1 flex flex-col gap-1 pl-[52px]">
-                    {item.children.map((child) => (
-                      <button
-                        className="min-h-8 rounded-md text-left text-sm text-neutral-500 transition hover:text-neutral-950"
-                        key={child}
-                        type="button"
-                      >
-                        {child}
-                      </button>
-                    ))}
+                    {item.children.map((child) =>
+                      typeof child === 'string' ? (
+                        <button
+                          className="min-h-8 rounded-md text-left text-sm text-neutral-500 transition hover:text-neutral-950"
+                          key={child}
+                          type="button"
+                        >
+                          {child}
+                        </button>
+                      ) : (
+                        <a
+                          className="min-h-8 rounded-md text-left text-sm text-neutral-500 no-underline transition hover:text-neutral-950"
+                          href={child.path}
+                          key={child.path}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            navigate(child.path)
+                          }}
+                        >
+                          {child.label}
+                        </a>
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
@@ -100,13 +118,22 @@ export function Sidebar({ items, user }) {
         </div>
         <button
           className="grid h-7 w-7 place-items-center text-neutral-500 transition hover:text-red-600"
-          onClick={handleLogout}
+          onClick={() => setConfirmLogout(true)}
           type="button"
           aria-label="Keluar"
         >
           <Icon name="logout" className="h-4 w-4" />
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Konfirmasi Keluar"
+        message="Apakah Anda yakin ingin keluar dari akun ini?"
+        confirmLabel="Keluar"
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </aside>
   )
 }

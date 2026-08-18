@@ -5,12 +5,13 @@ import { RolePage } from './pages/role/RolePage'
 import { WargaPage } from './pages/warga/WargaPage'
 import { RtPage } from './pages/rt/RtPage'
 import { useDashboardData } from './hooks/useDashboardData'
+import { usePathname } from './services/router'
 
 function App() {
   const { data, isLoading, error } = useDashboardData()
-  const pathname = window.location.pathname
+  const pathname = usePathname()
 
-  if (pathname === '/dashboard') {
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
     return <DashboardPage data={data} error={error} isLoading={isLoading} />
   }
 

@@ -16,6 +16,11 @@ class FamilyResource extends JsonResource
             'id_wilayah' => $this->id_wilayah,
             'status' => $this->status,
             'members_count' => $this->whenCounted('members'),
+            'kepala_keluarga' => $this->whenLoaded('kepalaKeluarga', fn () => new CitizenResource($this->kepalaKeluarga)),
+            'wilayah' => $this->whenLoaded('wilayah', fn () => new WilayahResource($this->wilayah)),
+            'members' => $this->whenLoaded('members', fn () => CitizenResource::collection($this->members)),
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

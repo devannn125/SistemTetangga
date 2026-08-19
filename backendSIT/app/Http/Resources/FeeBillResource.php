@@ -15,9 +15,10 @@ class FeeBillResource extends JsonResource
             'periode' => $this->periode,
             'jumlah_tagihan' => (float) $this->jumlah_tagihan,
             'status' => $this->status,
-            'jatuh_tempo' => $this->jatuh_tempo,
+            'jatuh_tempo' => $this->jatuh_tempo?->toDateString(),
             'dikonfirmasi_oleh' => $this->dikonfirmasi_oleh,
-            'dikonfirmasi_at' => $this->dikonfirmasi_at,
+            'dikonfirmasi_at' => $this->dikonfirmasi_at?->toIso8601String(),
+            'family' => $this->whenLoaded('family', fn () => new FamilyResource($this->family)),
         ];
     }
 }

@@ -3,12 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Wilayah extends Model
 {
     protected $table = 'wilayah';
+
     protected $primaryKey = 'id_wilayah';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
-    protected $fillable = ['nama_wilayah', 'rt', 'rw'];
+
+    protected $fillable = ['nama_wilayah', 'tipe', 'kode_wilayah', 'parent_id'];
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Wilayah::class, 'parent_id', 'id_wilayah');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Wilayah::class, 'parent_id', 'id_wilayah');
+    }
 }

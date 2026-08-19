@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSequentialId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Citizen extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSequentialId;
+
+    public const ID_PREFIX = 'CIT';
 
     protected $table = 'citizen';
+
     protected $primaryKey = 'id_citizen';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -66,12 +71,6 @@ class Citizen extends Model
     protected static function boot()
     {
         parent::boot();
-
-        static::creating(function (Citizen $citizen) {
-            if (empty($citizen->{$citizen->getKeyName()})) {
-                $citizen->{$citizen->getKeyName()} = (string) Str::uuid();
-            }
-        });
     }
 
     // id_agama, id_pendidikan, id_profesi semuanya menunjuk ke tabel `master_data`

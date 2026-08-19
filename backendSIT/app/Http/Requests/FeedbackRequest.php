@@ -15,7 +15,7 @@ class FeedbackRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_pengirim_user' => ['required', 'exists:users,id_users'],
+            'id_pengirim_user' => ['sometimes', 'exists:users,id_users'],
             'isi_pesan' => ['required', 'string'],
             'kategori' => ['required', Rule::in(['MASUKAN', 'KELUHAN', 'APRESIASI', 'LAINNYA'])],
             'is_anonim' => ['boolean'],

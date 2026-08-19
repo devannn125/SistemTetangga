@@ -2,38 +2,76 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\FinanceTransactionRequest;
 use App\Http\Resources\FinanceTransactionResource;
 use App\Models\FinanceTransaction;
+use Illuminate\Http\Request;
 
-class FinanceTransactionController extends Controller
+class FinanceTransactionController extends BaseApiController
 {
-    public function index()
+    public function index(Request $request)
     {
-        return FinanceTransactionResource::collection(FinanceTransaction::latest('tanggal')->paginate(15));
+        $this->authorizeModule('KEUANGAN', 'VIEW');
+
+        $query = FinanceTransaction::query()->with('wilayah')->latest('tanggal');
+
+        $this->scopeQuery($query, 'KEUANGAN', 'VIEW');
+
+        if ($request->has('tipe')) {
+            $query->where('tipe', $request->query('tipe'));
+        }
+        if ($request->has('from')) {
+            $query->whereDate('tanggal', '>=', $request->query('from'));
+        }
+        if ($request->has('to')) {
+            $query->whereDate('tanggal', '<=', $request->query('to'));
+        }
+
+        return FinanceTransactionResource::collection($query->paginate($request->query('per_page', 25)));
     }
 
     public function store(FinanceTransactionRequest $request)
     {
-        return new FinanceTransactionResource(FinanceTransaction::create($request->validated()));
+        $this->authorizeModule('KEUANGAN', 'CREATE');
+
+        $data = $request->validated();
+        $data['dicatat_oleh'] = $this->requestUser()->id_users;
+
+        $transaction = FinanceTransaction::create($data);
+
+        $this->audit('KEUANGAN', 'CREATE', 'keuangan_transaksi', $transaction->id_keuangan_transaksi);
+
+        return (new FinanceTransactionResource($transaction->load('wilayah')))->response()->setStatusCode(201);
     }
 
-    public function show(FinanceTransaction $financeTransaction)
+    public function show(string $id)
     {
-        return new FinanceTransactionResource($financeTransaction);
+        $this->authorizeModule('KEUANGAN', 'VIEW');
+
+        return new FinanceTransactionResource(FinanceTransaction::with('wilayah')->findOrFail($id));
     }
 
-    public function update(FinanceTransactionRequest $request, FinanceTransaction $financeTransaction)
+    public function update(FinanceTransactionRequest $request, string $id)
     {
-        $financeTransaction->update($request->validated());
+        $this->authorizeModule('KEUANGAN', 'UPDATE');
 
-        return new FinanceTransactionResource($financeTransaction);
+        $transaction = FinanceTransaction::findOrFail($id);
+        $old = $transaction->toArray();
+        $transaction->update($request->validated());
+
+        $this->audit('KEUANGAN', 'UPDATE', 'keuangan_transaksi', $transaction->id_keuangan_transaksi, $old, $transaction->toArray());
+
+        return new FinanceTransactionResource($transaction);
     }
 
-    public function destroy(FinanceTransaction $financeTransaction)
+    public function destroy(string $id)
     {
-        $financeTransaction->delete();
+        $this->authorizeModule('KEUANGAN', 'DELETE');
+
+        $transaction = FinanceTransaction::findOrFail($id);
+        $transaction->delete();
+
+        $this->audit('KEUANGAN', 'DELETE', 'keuangan_transaksi', $transaction->id_keuangan_transaksi);
 
         return response()->noContent();
     }

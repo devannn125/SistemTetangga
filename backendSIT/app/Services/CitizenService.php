@@ -27,6 +27,10 @@ class CitizenService
             $query->where('id_wilayah', $filters['id_wilayah']);
         }
 
+        if (! empty($filters['id_citizen'])) {
+            $query->where('id_citizen', $filters['id_citizen']);
+        }
+
         if (! empty($filters['status_warga'])) {
             $query->where('status_warga', $filters['status_warga']);
         }
@@ -86,7 +90,10 @@ class CitizenService
      */
     private function stripSensitiveInputIfUnauthorized(array $data, User $actor): array
     {
-        if (! in_array($actor->role, ['ketua_rt', 'sekretaris', 'bendahara'], true)) {
+        // Hanya role Ketua RT (dan kelak Sekretaris/Bendahara) yang boleh menulis
+        // field sensitif. Dilemahkan dari cek property `role` yang tidak ada, menjadi
+        // cek user_role (RbacService::canViewSensitive).
+        if (! app(RbacService::class)->canViewSensitive($actor)) {
             foreach (Citizen::SENSITIVE_FIELDS as $field) {
                 unset($data[$field]);
             }

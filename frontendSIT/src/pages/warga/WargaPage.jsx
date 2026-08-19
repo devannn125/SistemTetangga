@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { clearAuthData } from '../../services/authService'
 import ComplaintPage from './pages/ComplaintPage'
 import FinancePage from './pages/FinancePage'
 import SiskamlingPage from './pages/SiskamlingPage'
@@ -42,9 +43,7 @@ function getCurrentMenu() {
 }
 
 function handleLogout() {
-  localStorage.removeItem('authUser')
-  localStorage.removeItem('authRole')
-  localStorage.removeItem('authNik')
+  clearAuthData()
   window.location.assign('/login')
 }function WargaSidebar({ activePath }) {
   return (

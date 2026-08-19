@@ -22,6 +22,10 @@ class HouseResource extends JsonResource
             'jumlah_penghuni' => $this->jumlah_penghuni,
             'status_pajak' => $this->status_pajak,
             'status_aktif' => (bool) $this->status_aktif,
+            'pemilik' => $this->whenLoaded('pemilik', fn () => new CitizenResource($this->pemilik)),
+            'wilayah' => $this->whenLoaded('wilayah', fn () => new WilayahResource($this->wilayah)),
+            'photos' => $this->whenLoaded('photos', fn () => HousePhotoResource::collection($this->photos)),
+            'rooms' => $this->whenLoaded('rooms', fn () => KosRoomResource::collection($this->rooms)),
         ];
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Concerns\HasUuidPrimaryKey;
+use App\Models\Concerns\HasSequentialId;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +15,9 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasUuidPrimaryKey, Notifiable;
+    use HasApiTokens, HasFactory, HasSequentialId, Notifiable;
+
+    public const ID_PREFIX = 'USR';
 
     /**
      * The attributes that are mass assignable.

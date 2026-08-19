@@ -16,7 +16,8 @@ class FeedbackResource extends JsonResource
             'kategori' => $this->kategori,
             'is_anonim' => (bool) $this->is_anonim,
             'status' => $this->status,
-            'created_at' => $this->created_at?->toISOString(),
+            'created_at' => $this->created_at?->toIso8601String(),
+            'pengirim' => $this->when(! $this->is_anonim && $this->relationLoaded('pengirim'), fn () => new UserResource($this->pengirim)),
         ];
     }
 }

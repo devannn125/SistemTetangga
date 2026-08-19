@@ -22,8 +22,9 @@ class LoginRequest extends FormRequest
         return [
             // Login bisa pakai NIK, email, ATAU no_hp — salah satu wajib diisi
             'identifier' => ['required', 'string'],
-            'password'   => ['required', 'string'],
-            'role'       => ['required', 'string', Rule::in(self::VALID_ROLES)],
+            'password' => ['required', 'string'],
+            // Opsional: jika tidak dikirim, backend auto-pilih role aktif akun.
+            'role' => ['sometimes', 'string', Rule::in(self::VALID_ROLES)],
         ];
     }
 
@@ -31,9 +32,9 @@ class LoginRequest extends FormRequest
     {
         return [
             'identifier.required' => 'NIK, email, atau nomor HP wajib diisi.',
-            'password.required'   => 'Password wajib diisi.',
-            'role.required'       => 'Pilih masuk sebagai apa.',
-            'role.in'             => 'Role yang dipilih tidak valid.',
+            'password.required' => 'Password wajib diisi.',
+            'role.required' => 'Pilih masuk sebagai apa.',
+            'role.in' => 'Role yang dipilih tidak valid.',
         ];
     }
 

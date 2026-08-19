@@ -12,6 +12,7 @@ class ComplaintResource extends JsonResource
         return [
             'id_complaint' => $this->id_complaint,
             'nomor_tiket' => $this->nomor_tiket,
+            'id_pengirim_user' => $this->id_pengirim_user,
             'judul' => $this->judul,
             'kategori' => $this->kategori,
             'deskripsi' => $this->deskripsi,
@@ -19,7 +20,9 @@ class ComplaintResource extends JsonResource
             'urgensi' => $this->urgensi,
             'status' => $this->status,
             'rating' => $this->rating,
-            'created_at' => $this->created_at?->toISOString(),
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
+            'pengirim' => $this->whenLoaded('pengirim', fn () => new UserResource($this->pengirim)),
         ];
     }
 }

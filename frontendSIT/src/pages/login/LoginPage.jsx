@@ -47,7 +47,6 @@ export function LoginPage() {
   const [form, setForm] = useState({
     nik: '',
     password: '',
-    role: 'warga',
   })
   const [requestForm, setRequestForm] = useState({
     name: '',
@@ -71,11 +70,10 @@ export function LoginPage() {
     setRequestMessage('')
   }
 
-  function fillDemoAccount(identifier, password, role) {
+  function fillDemoAccount(identifier, password) {
     setForm({
       nik: identifier,
       password,
-      role,
     })
     setError('')
   }
@@ -95,14 +93,14 @@ export function LoginPage() {
       const response = await login({
         identifier: form.nik,
         password: form.password,
-        role: form.role,
       })
 
-      // Save user session to localStorage
-      setAuthData(response.data)
+      // Save user session (incl. access_token) to localStorage
+      setAuthData(response)
 
-      // Determine redirect destination
-      const roleLower = form.role.toLowerCase()
+      // Role otomatis ditentukan backend; redirect mengikuti kode role akun.
+      const roleKode = (response.data?.role?.kode || '').toLowerCase()
+      const roleLower = roleKode === 'warga' ? 'warga' : roleKode
       const fallbackDest =
         roleLower === 'warga'
           ? '/warga'
@@ -188,31 +186,6 @@ export function LoginPage() {
               />
 
               <div>
-                <label className="mb-2 flex items-center gap-2 text-sm font-extrabold text-black" htmlFor="role">
-                  <span className="h-1.5 w-1.5 bg-black" />
-                  Masuk Sebagai
-                </label>
-
-                <div className="flex h-[52px] items-center gap-3 border border-neutral-900 bg-neutral-50 px-3 text-neutral-500 transition focus-within:border-sky-600 focus-within:bg-white focus-within:text-sky-700">
-                  <Icon name="users" className="h-5 w-5" />
-                  <select
-                    className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-neutral-800 outline-0 disabled:opacity-50"
-                    disabled={isLoading}
-                    id="role"
-                    name="role"
-                    onChange={handleChange}
-                    value={form.role}
-                  >
-                    <option value="warga">Warga</option>
-                    <option value="admin">Administrator</option>
-                    <option value="rt">Ketua RT</option>
-                    <option value="rw">Ketua RW</option>
-                    <option value="dukuh">Kepala Dukuh</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
                 <div className="mb-2 flex items-center justify-between gap-4">
                   <label className="flex items-center gap-2 text-sm font-extrabold text-black" htmlFor="password">
                     <span className="h-1.5 w-1.5 bg-black" />
@@ -277,35 +250,35 @@ export function LoginPage() {
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 <button
                   className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
-                  onClick={() => fillDemoAccount('3471000000000001', 'password', 'warga')}
+                  onClick={() => fillDemoAccount('3471000000000002', 'password')}
                   type="button"
                 >
                   Warga
                 </button>
                 <button
                   className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
-                  onClick={() => fillDemoAccount('admin@sukamaju.test', 'password', 'admin')}
+                  onClick={() => fillDemoAccount('admin@sukamaju.test', 'password')}
                   type="button"
                 >
                   Admin
                 </button>
                 <button
                   className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
-                  onClick={() => fillDemoAccount('budi@example.com', 'password', 'rt')}
+                  onClick={() => fillDemoAccount('budi@example.com', 'password')}
                   type="button"
                 >
                   Ketua RT
                 </button>
                 <button
                   className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
-                  onClick={() => fillDemoAccount('dukuh@sukamaju.test', 'password', 'dukuh')}
+                  onClick={() => fillDemoAccount('dukuh@sukamaju.test', 'password')}
                   type="button"
                 >
                   Kepala Dukuh
                 </button>
                 <button
                   className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
-                  onClick={() => fillDemoAccount('rudi@example.com', 'password', 'rw')}
+                  onClick={() => fillDemoAccount('rudi@example.com', 'password')}
                   type="button"
                 >
                   Ketua RW

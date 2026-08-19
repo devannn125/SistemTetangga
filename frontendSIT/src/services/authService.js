@@ -1,10 +1,9 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
 
-export async function login({ identifier, password, role }) {
+export async function login({ identifier, password }) {
   const payload = {
     identifier: identifier.trim(),
     password,
-    role: role.toUpperCase().trim(),
   }
 
   try {
@@ -42,13 +41,20 @@ export async function login({ identifier, password, role }) {
   }
 }
 
-export function setAuthData(authResponseData) {
-  if (!authResponseData) return
+export function setAuthData(authResponse) {
+  if (!authResponse) return
 
-  const user = authResponseData.data || authResponseData
+  const user = authResponse.data || authResponse
   localStorage.setItem('authUser', JSON.stringify(user))
   localStorage.setItem('authRole', user.role?.kode || user.role || '')
   localStorage.setItem('authNik', user.id_citizen || user.nik || user.id_users || '')
+  if (authResponse.access_token) {
+    localStorage.setItem('authToken', authResponse.access_token)
+  }
+}
+
+export function getAccessToken() {
+  return localStorage.getItem('authToken') || ''
 }
 
 export function getAuthData() {
@@ -69,6 +75,7 @@ export function clearAuthData() {
   localStorage.removeItem('authUser')
   localStorage.removeItem('authRole')
   localStorage.removeItem('authNik')
+  localStorage.removeItem('authToken')
 }
 
 export function isAuthenticated() {

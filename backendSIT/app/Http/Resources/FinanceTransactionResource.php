@@ -17,8 +17,9 @@ class FinanceTransactionResource extends JsonResource
             'jumlah' => (float) $this->jumlah,
             'deskripsi' => $this->deskripsi,
             'bukti_url' => $this->bukti_url,
-            'tanggal' => $this->tanggal,
+            'tanggal' => $this->tanggal?->toDateString(),
             'dicatat_oleh' => $this->dicatat_oleh,
+            'wilayah' => $this->whenLoaded('wilayah', fn () => new WilayahResource($this->wilayah)),
         ];
     }
 }

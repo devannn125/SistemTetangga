@@ -15,7 +15,7 @@ class ComplaintRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_pengirim_user' => ['required', 'exists:users,id_users'],
+            'id_pengirim_user' => ['sometimes', 'exists:users,id_users'],
             'judul' => ['required', 'string', 'min:10', 'max:100'],
             'kategori' => ['required', Rule::in(['INFRASTRUKTUR', 'KEAMANAN', 'KEBERSIHAN', 'SOSIAL', 'LAINNYA'])],
             'deskripsi' => ['required', 'string', 'min:30', 'max:1000'],

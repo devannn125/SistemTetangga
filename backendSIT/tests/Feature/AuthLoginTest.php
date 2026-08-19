@@ -30,38 +30,11 @@ class AuthLoginTest extends TestCase
         ]);
 
         DB::table('role')->insert([
-            [
-                'id_role' => 'ROLE-ADMIN',
-                'kode' => 'ADMIN',
-                'nama_role' => 'Administrator',
-                'level' => 1,
-                'is_strategic' => 1,
-                'deskripsi' => 'Administrator sistem',
-            ],
-            [
-                'id_role' => 'ROLE-RT',
-                'kode' => 'RT',
-                'nama_role' => 'Ketua RT',
-                'level' => 4,
-                'is_strategic' => 0,
-                'deskripsi' => 'Ketua RT',
-            ],
-            [
-                'id_role' => 'ROLE-RW',
-                'kode' => 'RW',
-                'nama_role' => 'Ketua RW',
-                'level' => 3,
-                'is_strategic' => 0,
-                'deskripsi' => 'Ketua RW',
-            ],
-            [
-                'id_role' => 'ROLE-WARGA',
-                'kode' => 'WARGA',
-                'nama_role' => 'Warga',
-                'level' => 5,
-                'is_strategic' => 0,
-                'deskripsi' => 'Warga',
-            ],
+            ['id_role' => 'ROLE-ADMIN', 'kode' => 'ADMIN', 'nama_role' => 'Administrator', 'level' => 1, 'is_strategic' => 1, 'deskripsi' => 'Administrator sistem'],
+            ['id_role' => 'ROLE-RT', 'kode' => 'RT', 'nama_role' => 'Ketua RT', 'level' => 4, 'is_strategic' => 0, 'deskripsi' => 'Ketua RT'],
+            ['id_role' => 'ROLE-RW', 'kode' => 'RW', 'nama_role' => 'Ketua RW', 'level' => 3, 'is_strategic' => 0, 'deskripsi' => 'Ketua RW'],
+            ['id_role' => 'ROLE-WARGA', 'kode' => 'WARGA', 'nama_role' => 'Warga', 'level' => 5, 'is_strategic' => 0, 'deskripsi' => 'Warga'],
+            ['id_role' => 'ROLE-DUKUH', 'kode' => 'DUKUH', 'nama_role' => 'Kepala Dukuh', 'level' => 2, 'is_strategic' => 1, 'deskripsi' => 'Kepala Dukuh'],
         ]);
     }
 
@@ -78,8 +51,6 @@ class AuthLoginTest extends TestCase
             'id_wilayah' => $this->wilayahId,
             'status_hidup' => 'HIDUP',
             'status_aktif' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         $userId = (string) Str::uuid();
@@ -93,16 +64,24 @@ class AuthLoginTest extends TestCase
             'id_citizen' => $citizenId,
         ]);
 
-        $response = $this->postJson('/api/auth/login', [
+        DB::table('user_role')->insert([
+            'id_user_role' => (string) Str::uuid(),
+            'id_users' => $userId,
+            'id_role' => 'ROLE-WARGA',
+            'id_wilayah' => $this->wilayahId,
+            'status' => 'ACTIVE',
+            'assigned_at' => now(),
+        ]);
+
+        // Role tidak dikirim -> auto-pilih WARGA.
+        $response = $this->postJson('/api/login', [
             'identifier' => '3471000000000001',
             'password' => 'password123',
-            'role' => 'warga',
         ]);
 
         $response->assertOk()
             ->assertJsonPath('data.id_users', $userId)
-            ->assertJsonPath('data.role.kode', 'WARGA')
-            ->assertJsonPath('data.redirect_to', '/warga');
+            ->assertJsonPath('data.role.kode', 'WARGA');
     }
 
     public function test_user_can_login_as_admin(): void
@@ -126,34 +105,23 @@ class AuthLoginTest extends TestCase
             'assigned_at' => now(),
         ]);
 
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/login', [
             'identifier' => 'admin@rt.test',
             'password' => 'secretpass',
-            'role' => 'ADMIN',
         ]);
 
         $response->assertOk()
             ->assertJsonPath('data.id_users', $userId)
-            ->assertJsonPath('data.role.kode', 'ADMIN')
-            ->assertJsonPath('data.redirect_to', '/dashboard');
+            ->assertJsonPath('data.role.kode', 'ADMIN');
     }
 
-    public function test_user_can_login_as_dukuh(): void
+    public function test_admin_cannot_login_as_other_role(): void
     {
-        DB::table('role')->insert([
-            'id_role' => 'ROLE-DUKUH',
-            'kode' => 'DUKUH',
-            'nama_role' => 'Kepala Dukuh',
-            'level' => 2,
-            'is_strategic' => 1,
-            'deskripsi' => 'Kepala Dukuh',
-        ]);
-
         $userId = (string) Str::uuid();
         User::create([
             'id_users' => $userId,
-            'nama_users' => 'Dukuh Sukamaju',
-            'email' => 'dukuh@rt.test',
+            'nama_users' => 'Admin Sistem',
+            'email' => 'admin2@rt.test',
             'no_hp' => '081200000002',
             'password_hash' => Hash::make('secretpass'),
             'status' => 'ACTIVE',
@@ -162,55 +130,31 @@ class AuthLoginTest extends TestCase
         DB::table('user_role')->insert([
             'id_user_role' => (string) Str::uuid(),
             'id_users' => $userId,
-            'id_role' => 'ROLE-DUKUH',
+            'id_role' => 'ROLE-ADMIN',
             'id_wilayah' => $this->wilayahId,
             'status' => 'ACTIVE',
             'assigned_at' => now(),
         ]);
 
-        $response = $this->postJson('/api/auth/login', [
-            'identifier' => 'dukuh@rt.test',
+        // Request dengan role WARGA yang tidak dimiliki -> tetap 422 (bukan login sebagai warga).
+        $response = $this->postJson('/api/login', [
+            'identifier' => 'admin2@rt.test',
             'password' => 'secretpass',
-            'role' => 'DUKUH',
-        ]);
-
-        $response->assertOk()
-            ->assertJsonPath('data.id_users', $userId)
-            ->assertJsonPath('data.role.kode', 'DUKUH')
-            ->assertJsonPath('data.redirect_to', '/dashboard');
-    }
-
-    public function test_login_fails_with_invalid_credentials(): void
-    {
-        $response = $this->postJson('/api/auth/login', [
-            'identifier' => 'nonexistent@example.com',
-            'password' => 'wrongpass',
             'role' => 'WARGA',
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['identifier']);
+            ->assertJsonValidationErrors(['role']);
     }
 
-    public function test_login_fails_with_unassigned_role(): void
+    public function test_login_fails_with_invalid_credentials(): void
     {
-        $userId = (string) Str::uuid();
-        User::create([
-            'id_users' => $userId,
-            'nama_users' => 'Warga Biasa',
-            'email' => 'warga@example.com',
-            'no_hp' => '081299998888',
-            'password_hash' => Hash::make('password123'),
-            'status' => 'ACTIVE',
-        ]);
-
-        $response = $this->postJson('/api/auth/login', [
-            'identifier' => 'warga@example.com',
-            'password' => 'password123',
-            'role' => 'ADMIN',
+        $response = $this->postJson('/api/login', [
+            'identifier' => 'nonexistent@example.com',
+            'password' => 'wrongpass',
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['role']);
+            ->assertJsonValidationErrors(['identifier']);
     }
 }

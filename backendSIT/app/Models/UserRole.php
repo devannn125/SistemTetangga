@@ -44,4 +44,9 @@ class UserRole extends Model
     {
         return $this->belongsTo(User::class, 'id_users', 'id_users');
     }
+
+    public function wilayah(): BelongsTo
+    {
+        return $this->belongsTo(Wilayah::class, 'id_wilayah', 'id_wilayah');
+    }
 }

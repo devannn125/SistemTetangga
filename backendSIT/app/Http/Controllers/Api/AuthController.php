@@ -17,7 +17,8 @@ class AuthController extends Controller
 {
     /**
      * POST /api/auth/login
-     * Body: { "identifier": "NIK/email/no_hp", "password": "...", "role": "WARGA|ADMIN|RT|RW|DUKUH" }
+     * Body: { "identifier": "NIK/email/no_hp", "password": "..." }
+     * `role` opsional. Jika tidak dikirim, role dipilih otomatis dari role aktif akun.
      */
     public function login(LoginRequest $request): JsonResponse|UserResource
     {
@@ -60,7 +61,9 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Kumpulkan kode role yang sedang aktif untuk user ini (bisa lebih dari satu)
+        // Role akun murni dari tabel user_role yang sedang aktif (ACTIVE + periode berjalan).
+        // Tidak ada fallback implisit WARGA — setiap akun hanya bisa memakai role yang
+        // benar-benar diberikan, mis. akun ADMIN hanya masuk sebagai ADMIN.
         $today = now()->toDateString();
 
         $activeRoleCodes = $user->userRoles
@@ -73,19 +76,34 @@ class AuthController extends Controller
             ->filter()
             ->values();
 
-        // User yang punya data citizen otomatis dianggap WARGA,
-        // di luar role tambahan (RT/RW/DUKUH/ADMIN) dari tabel user_role.
-        if ($user->id_citizen && ! $activeRoleCodes->contains('WARGA')) {
-            $activeRoleCodes->push('WARGA');
-        }
-
-        if (! $activeRoleCodes->contains($requestedRole)) {
+        if ($activeRoleCodes->isEmpty()) {
             throw ValidationException::withMessages([
-                'role' => ["Akun ini tidak memiliki akses sebagai {$requestedRole}."],
+                'identifier' => ['Akun ini tidak memiliki role aktif.'],
             ]);
         }
 
-        $selectedRole = Role::where('kode', $requestedRole)->first();
+        if (! $requestedRole) {
+            // Auto-pilih role: jabatan strategis didahulukan, sisanya level terkecil.
+            $selectedRole = $user->userRoles
+                ->filter(fn ($ur) => $activeRoleCodes->contains($ur->role->kode))
+                ->sortBy(fn ($ur) => [$ur->role->is_strategic ? 0 : 1, $ur->role->level])
+                ->first()
+                ?->role;
+
+            $requestedRole = $selectedRole?->kode;
+
+            if (! $requestedRole) {
+                throw ValidationException::withMessages([
+                    'identifier' => ['Tidak dapat menentukan role akun.'],
+                ]);
+            }
+        } elseif (! $activeRoleCodes->contains($requestedRole)) {
+            throw ValidationException::withMessages([
+                'role' => ["Akun ini tidak memiliki akses sebagai {$requestedRole}."],
+            ]);
+        } else {
+            $selectedRole = Role::where('kode', $requestedRole)->first();
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -126,8 +144,29 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
+        $user = $request->user()->load(['userRoles.role', 'citizen']);
+        $today = now()->toDateString();
+
+        $roles = $user->userRoles
+            ->filter(function ($userRole) use ($today) {
+                return $userRole->status === 'ACTIVE'
+                    && (! $userRole->periode_mulai || $userRole->periode_mulai->toDateString() <= $today)
+                    && (! $userRole->periode_selesai || $userRole->periode_selesai->toDateString() >= $today);
+            })
+            ->sortBy(fn ($ur) => [$ur->role?->is_strategic ? 0 : 1, $ur->role?->level])
+            ->values();
+
+        $selectedRole = $roles->first()?->role;
+
+        $user->setAttribute('nik', $user->citizen->nik ?? null);
+        $user->setAttribute('active_role', $selectedRole ? [
+            'kode' => $selectedRole->kode,
+            'nama_role' => $selectedRole->nama_role,
+        ] : null);
+        $user->setAttribute('available_roles', $roles->pluck('role.kode')->filter()->values());
+
         return response()->json([
-            'user' => new UserResource($request->user()),
+            'user' => new UserResource($user),
         ]);
     }
 }

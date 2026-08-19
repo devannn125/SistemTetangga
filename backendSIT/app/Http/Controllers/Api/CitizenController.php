@@ -2,31 +2,38 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCitizenRequest;
 use App\Http\Requests\UpdateCitizenRequest;
 use App\Http\Resources\CitizenResource;
 use App\Models\Citizen;
 use App\Services\CitizenService;
+use App\Services\RbacService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class CitizenController extends Controller
+class CitizenController extends BaseApiController
 {
     public function __construct(private readonly CitizenService $service)
     {
+        parent::__construct();
     }
 
     /**
      * GET /api/citizens
-     * Kelurahan/Ketua RW/Ketua RT/Sekretaris/Bendahara: sesuai matrix (viewAny policy).
-     * Warga & turunannya TIDAK bisa listing warga lain — gunakan endpoint /api/citizens/me.
+     * Sesuai matrix RBAC. Warga & turunannya TIDAK bisa listing warga lain —
+     * gunakan endpoint /api/citizens/me.
      */
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('viewAny', Citizen::class);
+        $this->authorizeModule('WARGA', 'VIEW');
 
         $filters = $request->only(['search', 'id_wilayah', 'status_warga', 'status_aktif']);
+
+        // Scope OWN (warga): hanya data warga milik akun ini.
+        if ($this->rbac->scopeFor($request->user(), 'WARGA', 'VIEW') === RbacService::SCOPE_OWN) {
+            $filters['id_citizen'] = $request->user()->id_citizen;
+        }
+
         $perPage = (int) $request->query('per_page', 15);
 
         $citizens = $this->service->list($filters, $perPage);
@@ -48,9 +55,9 @@ class CitizenController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $citizen = $this->service->find($id);
+        $this->authorizeModule('WARGA', 'VIEW');
 
-        $this->authorize('view', $citizen);
+        $citizen = $this->service->find($id);
 
         return response()->json([
             'data' => new CitizenResource($citizen),
@@ -59,13 +66,15 @@ class CitizenController extends Controller
 
     /**
      * POST /api/citizens
-     * Hanya Ketua RT & Sekretaris (CRUD penuh) sesuai matrix.
+     * Hanya role dengan akses CREATE di modul WARGA (RT/Admin dll).
      */
     public function store(StoreCitizenRequest $request): JsonResponse
     {
-        $this->authorize('create', Citizen::class);
+        $this->authorizeModule('WARGA', 'CREATE');
 
         $citizen = $this->service->create($request->validated(), $request->user());
+
+        $this->audit('WARGA', 'CREATE', 'citizen', $citizen->id_citizen, [], $request->validated());
 
         return response()->json([
             'message' => 'Data warga berhasil ditambahkan.',
@@ -75,15 +84,17 @@ class CitizenController extends Controller
 
     /**
      * PUT/PATCH /api/citizens/{citizen}
-     * Hanya Ketua RT & Sekretaris.
      */
     public function update(UpdateCitizenRequest $request, string $id): JsonResponse
     {
+        $this->authorizeModule('WARGA', 'UPDATE');
+
         $citizen = $this->service->find($id);
 
-        $this->authorize('update', $citizen);
-
+        $old = $citizen->toArray();
         $citizen = $this->service->update($citizen, $request->validated(), $request->user());
+
+        $this->audit('WARGA', 'UPDATE', 'citizen', $citizen->id_citizen, $old, $request->validated());
 
         return response()->json([
             'message' => 'Data warga berhasil diperbarui.',
@@ -93,15 +104,17 @@ class CitizenController extends Controller
 
     /**
      * DELETE /api/citizens/{citizen}
-     * "Delete" = nonaktifkan (status_aktif = 0), wewenang final Ketua RT.
+     * "Delete" = nonaktifkan (status_aktif = 0), sesuai dokumen batasan role.
      */
     public function destroy(string $id): JsonResponse
     {
+        $this->authorizeModule('WARGA', 'DELETE');
+
         $citizen = $this->service->find($id);
 
-        $this->authorize('delete', $citizen);
-
         $this->service->deactivate($citizen);
+
+        $this->audit('WARGA', 'DELETE', 'citizen', $citizen->id_citizen);
 
         return response()->json([
             'message' => 'Data warga berhasil dinonaktifkan.',
@@ -117,13 +130,11 @@ class CitizenController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->citizen_id) {
+        if (! $user->id_citizen) {
             return response()->json(['message' => 'Akun ini tidak terhubung ke data warga.'], 404);
         }
 
-        $citizen = $this->service->find($user->citizen_id);
-
-        $this->authorize('view', $citizen);
+        $citizen = $this->service->find($user->id_citizen);
 
         return response()->json([
             'data' => new CitizenResource($citizen),

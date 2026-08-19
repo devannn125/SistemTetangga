@@ -54,6 +54,10 @@ export function getCitizens(params = {}) {
   return request(`/citizens${query ? `?${query}` : ''}`)
 }
 
+export function getCitizenMe() {
+  return request('/citizens/me')
+}
+
 export function getHouses(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request(`/houses${query ? `?${query}` : ''}`)
@@ -62,4 +66,35 @@ export function getHouses(params = {}) {
 export function getGuests(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request(`/guests${query ? `?${query}` : ''}`)
+}
+
+export function getComplaints(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/complaints${query ? `?${query}` : ''}`)
+}
+
+export function createComplaint(payload) {
+  return request('/complaints', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getFinanceTransactions(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/finance-transactions${query ? `?${query}` : ''}`)
+}
+
+export function createLetterRequest(payload) {
+  return request('/letter-requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function createFeedback(payload) {
+  return request('/feedback', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }

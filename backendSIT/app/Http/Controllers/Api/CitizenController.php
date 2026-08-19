@@ -1,0 +1,151 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Requests\StoreCitizenRequest;
+use App\Http\Requests\UpdateCitizenRequest;
+use App\Http\Resources\CitizenResource;
+use App\Models\Citizen;
+use App\Services\CitizenService;
+use App\Services\RbacService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class CitizenController extends BaseApiController
+{
+    public function __construct(private readonly CitizenService $service)
+    {
+        parent::__construct();
+    }
+
+    /**
+     * GET /api/citizens
+     * Sesuai matrix RBAC. Warga & turunannya TIDAK bisa listing warga lain —
+     * gunakan endpoint /api/citizens/me.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $this->authorizeModule('WARGA', 'VIEW');
+
+        $filters = $request->only(['search', 'id_wilayah', 'status_warga', 'status_aktif']);
+
+        $scope = $this->rbac->scopeFor($request->user(), 'WARGA', 'VIEW');
+
+        if ($scope === RbacService::SCOPE_OWN) {
+            // Scope OWN (warga): hanya data warga milik akun ini.
+            $filters['id_citizen'] = $request->user()->id_citizen;
+        } else {
+            // Scope RT/RW/KELURAHAN: batasi ke lingkup wilayah akun.
+            $scopeIds = $this->rbac->wilayahScopeIds($request->user(), 'WARGA', 'VIEW');
+            if ($scopeIds !== null) {
+                $filters['id_wilayah'] = $scopeIds;
+            }
+        }
+
+        $perPage = (int) $request->query('per_page', 15);
+
+        $citizens = $this->service->list($filters, $perPage);
+
+        return response()->json([
+            'data' => CitizenResource::collection($citizens),
+            'meta' => [
+                'current_page' => $citizens->currentPage(),
+                'last_page' => $citizens->lastPage(),
+                'per_page' => $citizens->perPage(),
+                'total' => $citizens->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/citizens/{citizen}
+     * Warga hanya bisa melihat record miliknya sendiri (dicek di CitizenPolicy@view).
+     */
+    public function show(string $id): JsonResponse
+    {
+        $this->authorizeModule('WARGA', 'VIEW');
+
+        $citizen = $this->service->find($id);
+
+        return response()->json([
+            'data' => new CitizenResource($citizen),
+        ]);
+    }
+
+    /**
+     * POST /api/citizens
+     * Hanya role dengan akses CREATE di modul WARGA (RT/Admin dll).
+     */
+    public function store(StoreCitizenRequest $request): JsonResponse
+    {
+        $this->authorizeModule('WARGA', 'CREATE');
+
+        $citizen = $this->service->create($request->validated(), $request->user());
+
+        $this->audit('WARGA', 'CREATE', 'citizen', $citizen->id_citizen, [], $request->validated());
+
+        return response()->json([
+            'message' => 'Data warga berhasil ditambahkan.',
+            'data' => new CitizenResource($citizen->load(['agama', 'pendidikan', 'profesi', 'wilayah', 'family'])),
+        ], 201);
+    }
+
+    /**
+     * PUT/PATCH /api/citizens/{citizen}
+     */
+    public function update(UpdateCitizenRequest $request, string $id): JsonResponse
+    {
+        $this->authorizeModule('WARGA', 'UPDATE');
+
+        $citizen = $this->service->find($id);
+
+        $old = $citizen->toArray();
+        $citizen = $this->service->update($citizen, $request->validated(), $request->user());
+
+        $this->audit('WARGA', 'UPDATE', 'citizen', $citizen->id_citizen, $old, $request->validated());
+
+        return response()->json([
+            'message' => 'Data warga berhasil diperbarui.',
+            'data' => new CitizenResource($citizen),
+        ]);
+    }
+
+    /**
+     * DELETE /api/citizens/{citizen}
+     * "Delete" = nonaktifkan (status_aktif = 0), sesuai dokumen batasan role.
+     */
+    public function destroy(string $id): JsonResponse
+    {
+        $this->authorizeModule('WARGA', 'DELETE');
+
+        $citizen = $this->service->find($id);
+
+        $this->service->deactivate($citizen);
+
+        $this->audit('WARGA', 'DELETE', 'citizen', $citizen->id_citizen);
+
+        return response()->json([
+            'message' => 'Data warga berhasil dinonaktifkan.',
+        ]);
+    }
+
+    /**
+     * GET /api/citizens/me
+     * Shortcut untuk role Warga/Siskamling/PKK/Karang Taruna melihat data mereka sendiri
+     * tanpa perlu tahu id_citizen mereka sendiri (Own Data, sesuai matrix akses).
+     */
+    public function me(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->id_citizen) {
+            return response()->json(['message' => 'Akun ini tidak terhubung ke data warga.'], 404);
+        }
+
+        $citizen = $this->service->find($user->id_citizen);
+
+        return response()->json([
+            'data' => new CitizenResource($citizen),
+        ]);
+    }
+}

@@ -187,8 +187,10 @@ class RbacService
     }
 
     /**
-     * Perluas anchor wilayah sesuai scope dengan menelusuri hierarki parent/children.
-     * OWN → hanya anchor sendiri.
+     * Perluas anchor wilayah sesuai scope dengan menelusuri seluruh hierarki
+     * descendant (termasuk anchor itu sendiri). OWN → hanya anchor.
+     * Contoh: anchor KEL01 scope KELURAHAN → KEL01 + RW01/RW02 + RT01..RT04;
+     * anchor RW01 scope RW → RW01 + RT01 + RT02.
      */
     protected function expandWilayah(string $anchorId, string $scope): array
     {
@@ -201,20 +203,7 @@ class RbacService
             return [$anchorId];
         }
 
-        $targetType = match ($scope) {
-            self::SCOPE_RT => 'RT',
-            self::SCOPE_RW => 'RW',
-            self::SCOPE_KELURAHAN => 'KELURAHAN',
-            default => $anchor->tipe,
-        };
-
         $all = Wilayah::all(['id_wilayah', 'tipe', 'parent_id']);
-
-        if ($anchor->tipe === $targetType) {
-            // Anchor persis pada level target → lingkupnya anchor itu sendiri
-            // beserta turunan bila ada (RT punya turunan kamar/anggota tidak di wilayah).
-            return [$anchorId];
-        }
 
         $children = [];
         foreach ($all as $w) {
@@ -226,20 +215,7 @@ class RbacService
 
         while (! empty($queue)) {
             $id = array_shift($queue);
-            $node = $all->firstWhere('id_wilayah', $id);
-
-            if (! $node) {
-                continue;
-            }
-
-            if ($node->tipe === $targetType || $node->tipe === $anchor->tipe) {
-                // Masukkan node pada/atas level target; di level tengah jangan dimasukkan
-                // kecuali anchor. Untuk kesederhanaan, masukkan anchor + node sedalam target.
-            }
-
-            if ($node->tipe === $targetType || $node->id_wilayah === $anchorId) {
-                $result[] = $id;
-            }
+            $result[] = $id;
 
             foreach ($children[$id] ?? [] as $childId) {
                 $queue[] = $childId;

@@ -29,9 +29,17 @@ class CitizenController extends BaseApiController
 
         $filters = $request->only(['search', 'id_wilayah', 'status_warga', 'status_aktif']);
 
-        // Scope OWN (warga): hanya data warga milik akun ini.
-        if ($this->rbac->scopeFor($request->user(), 'WARGA', 'VIEW') === RbacService::SCOPE_OWN) {
+        $scope = $this->rbac->scopeFor($request->user(), 'WARGA', 'VIEW');
+
+        if ($scope === RbacService::SCOPE_OWN) {
+            // Scope OWN (warga): hanya data warga milik akun ini.
             $filters['id_citizen'] = $request->user()->id_citizen;
+        } else {
+            // Scope RT/RW/KELURAHAN: batasi ke lingkup wilayah akun.
+            $scopeIds = $this->rbac->wilayahScopeIds($request->user(), 'WARGA', 'VIEW');
+            if ($scopeIds !== null) {
+                $filters['id_wilayah'] = $scopeIds;
+            }
         }
 
         $perPage = (int) $request->query('per_page', 15);

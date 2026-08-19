@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { StatCard } from '../../components/dashboard/StatCard'
-import { citizens, houses, guestCount } from '../../data/wargaData'
+import { getCitizens, getGuests, getHouses } from '../../services/api'
 import { navigate } from '../../services/router'
 
 const ALL_COLUMNS = [
@@ -26,6 +26,15 @@ const HOUSE_COLUMNS = [
   { key: 'status_pajak', label: 'Pajak' },
 ]
 
+const GUEST_COLUMNS = [
+  { key: 'nama', label: 'Nama' },
+  { key: 'nik', label: 'NIK' },
+  { key: 'asal', label: 'Asal' },
+  { key: 'id_house', label: 'Rumah Tujuan' },
+  { key: 'jam_masuk', label: 'Jam Masuk' },
+  { key: 'status', label: 'Status' },
+]
+
 const TABS = [
   { id: 'semua', label: 'Semua Warga', path: '/dashboard/warga' },
   { id: 'nonWarga', label: 'Non Warga', path: '/dashboard/warga/non-warga' },
@@ -35,11 +44,11 @@ const TABS = [
 
 const PER_PAGE = 10
 
-function getTabRows(tab) {
-  if (tab === 'nonWarga') return citizens.filter((c) => c.status_warga === 'TIDAK_TETAP')
-  if (tab === 'tamu') return []
-  if (tab === 'rumah') return houses
-  return citizens
+const EMPTY_MESSAGES = {
+  semua: 'Belum ada data warga di database.',
+  nonWarga: 'Belum ada warga tidak tetap di database.',
+  tamu: 'Belum ada data tamu di database.',
+  rumah: 'Belum ada data rumah di database.',
 }
 
 function StatusBadge({ active }) {
@@ -50,6 +59,27 @@ function StatusBadge({ active }) {
   )
 }
 
+function GuestStatusBadge({ status }) {
+  const styles = {
+    MENUNGGU: 'bg-amber-100 text-amber-900',
+    DISETUJUI: 'bg-green-100 text-green-900',
+    DITOLAK: 'bg-red-100 text-red-900',
+    CHECK_OUT: 'bg-neutral-200 text-neutral-700',
+  }
+  return (
+    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${styles[status] || 'bg-neutral-200 text-neutral-700'}`}>
+      {status}
+    </span>
+  )
+}
+
+function formatDate(value) {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return value
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 export function WargaDataPage({ activeTab = 'semua' }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -57,47 +87,98 @@ export function WargaDataPage({ activeTab = 'semua' }) {
   const [visibleColumns, setVisibleColumns] = useState(ALL_COLUMNS.map((c) => c.key))
   const [page, setPage] = useState(1)
 
-  const isHouseTab = activeTab === 'rumah'
-  const columns = isHouseTab ? HOUSE_COLUMNS : ALL_COLUMNS
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [guestCount, setGuestCount] = useState(null)
 
-  const stats = [
+  const isHouseTab = activeTab === 'rumah'
+  const isGuestTab = activeTab === 'tamu'
+  const columns = isHouseTab ? HOUSE_COLUMNS : isGuestTab ? GUEST_COLUMNS : ALL_COLUMNS
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function load() {
+      setLoading(true)
+      setError(null)
+      setRows([])
+
+      try {
+        // Ambil jumlah tamu untuk label (disediakan bila role punya akses).
+        if (!isGuestTab) {
+          try {
+            const guests = await getGuests({ per_page: 1 })
+            if (isMounted) setGuestCount(guests.meta?.total ?? 0)
+          } catch {
+            if (isMounted) setGuestCount(null)
+          }
+        }
+
+        let result
+        if (isGuestTab) {
+          result = await getGuests({ per_page: 100 })
+        } else if (isHouseTab) {
+          result = await getHouses({ per_page: 100 })
+        } else if (activeTab === 'nonWarga') {
+          result = await getCitizens({ per_page: 100, status_warga: 'TIDAK_TETAP' })
+        } else {
+          result = await getCitizens({ per_page: 100 })
+        }
+
+        if (isMounted) setRows(result.data || [])
+      } catch (loadError) {
+        if (isMounted) setError(loadError)
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    load()
+
+    return () => {
+      isMounted = false
+    }
+  }, [activeTab, isGuestTab, isHouseTab])
+
+  const citizenRows = rows
+  const stats = isHouseTab || isGuestTab ? [] : [
     {
       title: 'Total Warga',
-      value: citizens.length,
+      value: citizenRows.length,
       accent: 'blue',
       icon: 'users',
-      note: `${citizens.filter((c) => c.jenis_kelamin === 'L').length} laki-laki, ${citizens.filter((c) => c.jenis_kelamin === 'P').length} perempuan`,
+      note: `${citizenRows.filter((c) => c.jenis_kelamin === 'L').length} laki-laki, ${citizenRows.filter((c) => c.jenis_kelamin === 'P').length} perempuan`,
     },
     {
       title: 'Terverifikasi',
-      value: citizens.filter((c) => c.status_aktif).length,
+      value: citizenRows.filter((c) => c.status_aktif).length,
       accent: 'green',
       icon: 'check',
       note: 'Warga status aktif',
     },
     {
-      title: 'Pending',
-      value: 0,
+      title: 'Nonaktif',
+      value: citizenRows.filter((c) => !c.status_aktif).length,
       accent: 'amber',
       icon: 'clock',
-      note: 'Menunggu verifikasi',
+      note: 'Warga status nonaktif',
     },
     {
       title: 'Perbandingan L : P',
-      value: `${citizens.filter((c) => c.jenis_kelamin === 'L').length} : ${citizens.filter((c) => c.jenis_kelamin === 'P').length}`,
+      value: `${citizenRows.filter((c) => c.jenis_kelamin === 'L').length} : ${citizenRows.filter((c) => c.jenis_kelamin === 'P').length}`,
       accent: 'blue',
       icon: 'users',
       note: 'Laki-laki : Perempuan',
     },
   ]
 
-  const tabRows = getTabRows(activeTab)
-  const filteredRows = tabRows.filter((row) => {
-    const matchesSearch = String(row.nama_lengkap || row.alamat || '')
+  const filteredRows = rows.filter((row) => {
+    const haystack = String(row.nama_lengkap || row.nama || row.alamat || row.asal || '')
       .toLowerCase()
       .includes(search.toLowerCase())
     const matchesStatus = !statusFilter || row.status_warga === statusFilter
-    return matchesSearch && matchesStatus
+    return haystack && matchesStatus
   })
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / PER_PAGE))
@@ -118,13 +199,26 @@ export function WargaDataPage({ activeTab = 'semua' }) {
     navigate(tab.path)
   }
 
+  function getCellValue(column, row) {
+    if (column.key === 'agama') return row.agama?.nama_master ?? '—'
+    if (column.key === 'alamat') return row.alamat ?? row.wilayah?.nama_wilayah ?? '—'
+    if (column.key === 'jam_masuk') return formatDate(row.jam_masuk)
+    return row[column.key] ?? '—'
+  }
+
+  function renderCell(column, row) {
+    if (column.key === 'status_aktif') return <StatusBadge active={row.status_aktif} />
+    if (column.key === 'status' && isGuestTab) return <GuestStatusBadge status={row.status} />
+    return <span className="text-sm text-neutral-700">{getCellValue(column, row)}</span>
+  }
+
   function exportCsv() {
     const header = columns.filter((c) => visibleColumns.includes(c.key)).map((c) => c.label)
     const lines = filteredRows.map((row) =>
       header
         .map((label) => {
           const col = columns.find((c) => c.label === label)
-          return row[col.key] ?? ''
+          return getCellValue(col, row)
         })
         .join(','),
     )
@@ -138,16 +232,17 @@ export function WargaDataPage({ activeTab = 'semua' }) {
     URL.revokeObjectURL(url)
   }
 
-  function renderCell(column, row) {
-    const value = row[column.key]
-    if (column.key === 'status_aktif') return <StatusBadge active={value} />
-    return <span className="text-sm text-neutral-700">{value ?? '—'}</span>
-  }
-
   const toolButtonClass =
     'flex h-9 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3.5 text-sm font-semibold text-neutral-700 transition hover:border-sky-500 hover:text-sky-700'
   const toolButtonDisabledClass =
     'flex h-9 cursor-not-allowed items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-100 px-3.5 text-sm font-semibold text-neutral-400'
+
+  let emptyStateMessage = null
+  if (!loading && !error && pageRows.length === 0) {
+    emptyStateMessage = isGuestTab && error
+      ? null
+      : EMPTY_MESSAGES[activeTab] || 'Belum ada data.'
+  }
 
   return (
     <div className="min-w-0 px-6 py-6 max-md:px-4 max-md:py-5">
@@ -192,7 +287,7 @@ export function WargaDataPage({ activeTab = 'semua' }) {
       </div>
 
       {/* Stats */}
-      {isHouseTab ? null : (
+      {isHouseTab || isGuestTab || stats.length === 0 ? null : (
         <section className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1" aria-label="Ringkasan kependudukan">
           {stats.map((item) => (
             <StatCard item={item} key={item.title} />
@@ -225,7 +320,7 @@ export function WargaDataPage({ activeTab = 'semua' }) {
               <Icon name="filter" className="h-4 w-4" />
               Filter
             </button>
-            {openDropdown === 'filter' && !isHouseTab ? (
+            {openDropdown === 'filter' && !isHouseTab && !isGuestTab ? (
               <div className="absolute left-0 top-11 z-10 w-48 rounded-lg border border-neutral-200 bg-white p-3 shadow-lg">
                 <p className="text-xs font-semibold uppercase text-neutral-500">Status Warga</p>
                 {['TETAP', 'TIDAK_TETAP', 'TAMU'].map((option) => (
@@ -290,36 +385,48 @@ export function WargaDataPage({ activeTab = 'semua' }) {
         </div>
 
         <span className="text-xs font-medium text-neutral-500">
-          {filteredRows.length} data
-          {!isHouseTab ? ` · Tamu ${guestCount}` : ''}
+          {loading ? 'Memuat...' : `${filteredRows.length} data`}
+          {!isHouseTab && !isGuestTab ? ` · Tamu ${guestCount ?? '-'}` : ''}
         </span>
       </section>
 
-      {/* Table */}
-      <div className="mt-4 overflow-x-auto rounded-xl border border-neutral-300 bg-white">
-        <table className="w-full min-w-[760px] border-collapse">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              <th className="px-4 py-3">No</th>
-              {columns
-                .filter((c) => visibleColumns.includes(c.key))
-                .map((column) => (
-                  <th className="px-4 py-3" key={column.key}>
-                    {column.label}
-                  </th>
-                ))}
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.length === 0 ? (
-              <tr>
-                <td className="px-4 py-10 text-center text-sm text-neutral-500" colSpan={columns.length + 1}>
-                  Belum ada data.
-                </td>
+      {/* Body: loading / error / empty / table */}
+      {loading ? (
+        <div className="mt-4 rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
+          Memuat data...
+        </div>
+      ) : error ? (
+        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-8 text-center">
+          <p className="text-sm font-bold text-amber-900">Data tidak dapat ditampilkan</p>
+          <p className="mt-1 text-sm text-amber-800">
+            {error.status === 403
+              ? 'Role Anda tidak memiliki akses ke data ini.'
+              : error.message || 'Gagal memuat data dari server. Silakan coba lagi.'}
+          </p>
+        </div>
+      ) : emptyStateMessage ? (
+        <div className="mt-4 rounded-xl border border-neutral-300 bg-white p-8 text-center">
+          <p className="text-xs font-extrabold uppercase tracking-widest text-neutral-400">Belum ada data</p>
+          <p className="mt-2 text-sm font-semibold text-neutral-600">{emptyStateMessage}</p>
+        </div>
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-xl border border-neutral-300 bg-white">
+          <table className="w-full min-w-[760px] border-collapse">
+            <thead>
+              <tr className="border-b border-neutral-200 bg-neutral-50 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                <th className="px-4 py-3">No</th>
+                {columns
+                  .filter((c) => visibleColumns.includes(c.key))
+                  .map((column) => (
+                    <th className="px-4 py-3" key={column.key}>
+                      {column.label}
+                    </th>
+                  ))}
               </tr>
-            ) : (
-              pageRows.map((row, index) => (
-                <tr className="border-b border-neutral-100 last:border-b-0 hover:bg-sky-50/50" key={row.id}>
+            </thead>
+            <tbody>
+              {pageRows.map((row, index) => (
+                <tr className="border-b border-neutral-100 last:border-b-0 hover:bg-sky-50/50" key={row.id_citizen || row.id_house || row.id_guest || index}>
                   <td className="px-4 py-3 text-sm text-neutral-500">{(safePage - 1) * PER_PAGE + index + 1}</td>
                   {columns
                     .filter((c) => visibleColumns.includes(c.key))
@@ -329,14 +436,14 @@ export function WargaDataPage({ activeTab = 'semua' }) {
                       </td>
                     ))}
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Pagination */}
-      {!isHouseTab && (
+      {!loading && !error && !emptyStateMessage && (
         <div className="mt-4 flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-neutral-500">
             Hal {safePage} dari {totalPages}

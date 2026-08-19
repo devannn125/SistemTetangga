@@ -24,7 +24,11 @@ class CitizenService
         }
 
         if (! empty($filters['id_wilayah'])) {
-            $query->where('id_wilayah', $filters['id_wilayah']);
+            if (is_array($filters['id_wilayah'])) {
+                $query->whereIn('id_wilayah', $filters['id_wilayah']);
+            } else {
+                $query->where('id_wilayah', $filters['id_wilayah']);
+            }
         }
 
         if (! empty($filters['id_citizen'])) {

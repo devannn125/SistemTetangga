@@ -18,38 +18,24 @@ export function ConfirmDialog({ open, title, message, confirmLabel = 'Ya, Lanjut
         <div className="p-6 overflow-y-auto flex-1">
           {message ? <p className="text-sm leading-6 text-neutral-700">{message}</p> : null}
           {children}
-          {message && children ? <div className="mt-6 flex justify-end gap-3">
-            <button
-              className="h-10 border border-neutral-900 px-5 text-xs font-extrabold text-black transition hover:bg-neutral-100"
-              onClick={onCancel}
-              type="button"
-            >
-              {cancelLabel}
-            </button>
-            <button
-              className="h-10 border border-black bg-black px-5 text-xs font-extrabold text-white transition hover:border-red-600 hover:bg-red-600"
-              onClick={onConfirm}
-              type="button"
-            >
-              {confirmLabel}
-            </button>
-          </div> : null}
-          {!message && children ? <div className="mt-6 flex justify-end gap-3">
-            <button
-              className="h-10 border border-neutral-900 px-5 text-xs font-extrabold text-black transition hover:bg-neutral-100"
-              onClick={onCancel}
-              type="button"
-            >
-              {cancelLabel}
-            </button>
-            <button
-              className="h-10 border border-black bg-black px-5 text-xs font-extrabold text-white transition hover:border-red-600 hover:bg-red-600"
-              onClick={onConfirm}
-              type="button"
-            >
-              {confirmLabel}
-            </button>
-          </div> : null}
+          {(message || children) && (
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="h-10 border border-neutral-900 px-5 text-xs font-extrabold text-black transition hover:bg-neutral-100"
+                onClick={onCancel}
+                type="button"
+              >
+                {cancelLabel}
+              </button>
+              <button
+                className="h-10 border border-black bg-black px-5 text-xs font-extrabold text-white transition hover:border-red-600 hover:bg-red-600"
+                onClick={onConfirm}
+                type="button"
+              >
+                {confirmLabel}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

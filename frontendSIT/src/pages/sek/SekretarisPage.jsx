@@ -1,0 +1,225 @@
+import { useEffect, useState } from 'react'
+import { PortalLayout } from '../../components/layout/PortalLayout'
+import { PageShell } from '../../components/layout/PageShell'
+import { getAuthData } from '../../services/authService'
+import { getLetterRequests, updateLetterRequest } from '../../services/api'
+
+const sekMenus = [
+  { label: 'Beranda', path: '/sek', icon: 'home' },
+  { label: 'Surat Keterangan', path: '/sek/surat', icon: 'file' },
+]
+
+function getCurrentMenu() {
+  const pathname = window.location.pathname
+  return sekMenus.find((item) => item.path === pathname) || sekMenus[0]
+}
+
+function HomePage() {
+  const authUser = getAuthData()
+
+  return (
+    <PageShell
+      eyebrow="Portal Sekretaris RT"
+      title={`Selamat datang, ${authUser?.nama_users || 'Sekretaris'}`}
+      description="Verifikasi permohonan surat, kelola data warga, dan administrasi lingkungan."
+    >
+      <section className="mt-8 grid gap-5 md:grid-cols-3">
+        <article className="border border-neutral-900 bg-white p-6">
+          <h2 className="text-lg font-extrabold text-black">Surat Perlu Verifikasi</h2>
+          <p className="mt-3 text-sm leading-6 text-neutral-600">Permohonan warga masuk di sini untuk diverifikasi sebelum disetujui Ketua RT.</p>
+          <a className="mt-4 inline-flex text-xs font-extrabold uppercase text-black no-underline hover:text-sky-700" href="/sek/surat">
+            Buka daftar surat
+          </a>
+        </article>
+        <article className="border border-neutral-900 bg-white p-6">
+          <h2 className="text-lg font-extrabold text-black">Data Warga</h2>
+          <p className="mt-3 text-sm leading-6 text-neutral-600">Pengelolaan data kependudukan tingkat RT.</p>
+        </article>
+        <article className="border border-neutral-900 bg-white p-6">
+          <h2 className="text-lg font-extrabold text-black">Pesan & Kesan</h2>
+          <p className="mt-3 text-sm leading-6 text-neutral-600">Tinjau pesan warga yang masuk.</p>
+        </article>
+      </section>
+    </PageShell>
+  )
+}
+
+const statusTabs = [
+  { id: 'DIAJUKAN', label: 'Perlu Verifikasi' },
+  { id: 'all', label: 'Semua' },
+  { id: 'DIVERIFIKASI', label: 'Diverifikasi' },
+  { id: 'DISETUJUI', label: 'Disetujui' },
+  { id: 'DITOLAK', label: 'Ditolak' },
+]
+
+function formatDate(value) {
+  if (!value) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+}
+
+function getStatusClass(status) {
+  return {
+    DIAJUKAN: 'bg-amber-100 text-amber-900',
+    DIVERIFIKASI: 'bg-sky-100 text-sky-900',
+    DISETUJUI: 'bg-emerald-100 text-emerald-900',
+    DITOLAK: 'bg-red-100 text-red-900',
+  }[status] || 'bg-neutral-100 text-neutral-900'
+}
+
+function LetterApprovalPage() {
+  const [activeStatus, setActiveStatus] = useState('DIAJUKAN')
+  const [letters, setLetters] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [processingId, setProcessingId] = useState('')
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    let alive = true
+
+    async function loadLetters() {
+      setIsLoading(true)
+      try {
+        const response = await getLetterRequests({ per_page: 100 })
+        const rows = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
+        if (alive) setLetters(rows)
+      } catch (error) {
+        if (alive) setNotice(error.message || 'Backend belum dapat dihubungi.')
+      } finally {
+        if (alive) setIsLoading(false)
+      }
+    }
+
+    loadLetters()
+
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const filteredLetters = letters.filter((letter) => activeStatus === 'all' || letter.status === activeStatus)
+
+  async function handleDecision(id, status) {
+    setNotice('')
+    setProcessingId(id)
+    try {
+      await updateLetterRequest(id, { status })
+      setLetters((current) => current.map((letter) => (letter.id_letter_request === id ? { ...letter, status } : letter)))
+      setNotice(`Permohonan surat berhasil ${status === 'DIVERIFIKASI' ? 'diverifikasi' : 'ditolak'}.`)
+    } catch (error) {
+      setNotice(error.message || 'Gagal memperbarui status surat.')
+    } finally {
+      setProcessingId('')
+    }
+  }
+
+  return (
+    <PageShell
+      description="Verifikasi kelengkapan permohonan surat warga sebelum diteruskan ke Ketua RT untuk persetujuan final."
+      eyebrow="Surat Keterangan"
+      title="Verifikasi Permohonan Surat"
+    >
+      <section className="mt-8 space-y-6">
+        {notice ? (
+          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
+            {notice}
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap gap-3">
+          {statusTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`rounded-full border px-4 py-2 text-xs font-extrabold transition ${
+                activeStatus === tab.id
+                  ? 'border-black bg-black text-white'
+                  : 'border-neutral-300 bg-white text-neutral-700 hover:border-black hover:bg-neutral-100'
+              }`}
+              onClick={() => setActiveStatus(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {isLoading ? (
+          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
+            Memuat data surat...
+          </div>
+        ) : filteredLetters.length === 0 ? (
+          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
+            Tidak ada permohonan surat pada status ini.
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filteredLetters.map((letter) => (
+              <article key={letter.id_letter_request} className="border border-neutral-300 bg-white p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-black">
+                      {letter.jenis_surat === 'DOMISILI' ? 'Surat Keterangan Domisili' : 'Surat Keterangan Usaha'}
+                    </h2>
+                    <p className="mt-1 text-sm text-neutral-600">
+                      Pemohon: {letter.pemohon?.nama_lengkap || '-'} · {letter.jenis_surat === 'DOMISILI' ? letter.keperluan : letter.nama_usaha || '-'}
+                    </p>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(letter.status)}`}>{letter.status}</span>
+                </div>
+
+                <div className="mt-4 grid gap-2 text-sm text-neutral-500 sm:grid-cols-2 lg:grid-cols-3">
+                  <p><span className="font-bold text-neutral-900">Diajukan:</span> {formatDate(letter.created_at)}</p>
+                  {letter.verified_at ? <p><span className="font-bold text-neutral-900">Diverifikasi:</span> {formatDate(letter.verified_at)}</p> : null}
+                  {letter.approved_at ? <p><span className="font-bold text-neutral-900">Disetujui:</span> {formatDate(letter.approved_at)}</p> : null}
+                  {letter.jenis_surat === 'USAHA' ? <p><span className="font-bold text-neutral-900">Usaha:</span> {letter.nama_usaha} ({letter.jenis_usaha})</p> : null}
+                </div>
+
+                {letter.status === 'DIAJUKAN' ? (
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => handleDecision(letter.id_letter_request, 'DIVERIFIKASI')}
+                      disabled={processingId === letter.id_letter_request}
+                      type="button"
+                    >
+                      Verifikasi
+                    </button>
+                    <button
+                      className="rounded-full border border-black px-5 py-2 text-xs font-extrabold uppercase text-black transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => handleDecision(letter.id_letter_request, 'DITOLAK')}
+                      disabled={processingId === letter.id_letter_request}
+                      type="button"
+                    >
+                      Tolak
+                    </button>
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </PageShell>
+  )
+}
+
+function renderPage(activePath) {
+  if (activePath === '/sek/surat') return <LetterApprovalPage />
+  return <HomePage />
+}
+
+export function SekretarisPage() {
+  const activeMenu = getCurrentMenu()
+
+  return (
+    <PortalLayout
+      menuItems={sekMenus}
+      activePath={activeMenu.path}
+      homePath="/sek"
+      brandTitle="Portal Sekretaris"
+      brandSubtitle="Panel Administrasi RT"
+      footerLabel="Panel Sekretaris"
+    >
+      {renderPage(activeMenu.path)}
+    </PortalLayout>
+  )
+}

@@ -1,8 +1,8 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
 
-export async function login({ identifier, password }) {
+export async function login({ email, password }) {
   const payload = {
-    identifier: identifier.trim(),
+    email: email.trim().toLowerCase(),
     password,
   }
 
@@ -21,7 +21,7 @@ export async function login({ identifier, password }) {
     if (!response.ok) {
       // Extract validation or business error message
       const errorMessage =
-        data.errors?.identifier?.[0] ||
+        data.errors?.email?.[0] ||
         data.errors?.role?.[0] ||
         data.errors?.password?.[0] ||
         data.message ||

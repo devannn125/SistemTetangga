@@ -43,7 +43,7 @@ class ApiSmokeTest extends TestCase
         ]);
 
         $login = $this->postJson('/api/login', [
-            'identifier' => 'admin@rt.test',
+            'email' => 'admin@rt.test',
             'password' => 'secretpass',
         ])->assertOk();
 
@@ -77,7 +77,7 @@ class ApiSmokeTest extends TestCase
         $this->seedWargaAccount($wilayahId);
 
         $login = $this->postJson('/api/login', [
-            'identifier' => 'warga@rt.test',
+            'email' => 'warga@rt.test',
             'password' => 'secretpass',
         ])->assertOk();
 

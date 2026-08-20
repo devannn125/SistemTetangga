@@ -14,15 +14,17 @@ class GuestRequest extends FormRequest
 
     public function rules(): array
     {
+        $required = $this->isMethod('PATCH') ? 'sometimes' : 'required';
+
         return [
-            'nama' => ['required', 'string', 'max:150'],
+            'nama' => [$required, 'string', 'max:150'],
             'nik' => ['nullable', 'string', 'max:32'],
             'asal' => ['nullable', 'string', 'max:150'],
-            'id_house' => ['required', 'exists:house,id_house'],
+            'id_house' => [$required, 'exists:house,id_house'],
             'foto_identitas_url' => ['nullable', 'url', 'max:500'],
-            'jam_masuk' => ['required', 'date'],
+            'jam_masuk' => [$required, 'date'],
             'jam_keluar' => ['nullable', 'date', 'after_or_equal:jam_masuk'],
-            'status' => ['required', Rule::in(['MENUNGGU', 'DISETUJUI', 'DITOLAK', 'CHECK_OUT'])],
+            'status' => ['sometimes', 'required', Rule::in(['MENUNGGU', 'DISETUJUI', 'DITOLAK', 'CHECK_OUT'])],
         ];
     }
 }

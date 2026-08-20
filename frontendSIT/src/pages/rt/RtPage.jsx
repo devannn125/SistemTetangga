@@ -1,6 +1,8 @@
 import { PortalLayout } from '../../components/layout/PortalLayout'
 import { PageShell } from '../../components/layout/PageShell'
 import { getAuthData } from '../../services/authService'
+import ApprovalGuestPage from './pages/ApprovalGuestPage'
+import ApprovalLetterPage from './pages/ApprovalLetterPage'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RT
 // (Dashboard full, Data Warga CRUD, Perumahan, Tamu approve, Keuangan read,
@@ -64,13 +66,13 @@ function renderPage(activePath) {
   if (activePath === '/rt/perumahan')
     return <PageShell eyebrow="Perumahan" title="Data Rumah & Kos" description="CRUD data rumah warga dan kos. Sedang dikembangkan." />
   if (activePath === '/rt/tamu')
-    return <PageShell eyebrow="Tamu" title="Approval Tamu" description="Persetujuan pendaftaran tamu/penghuni tidak tetap. Sedang dikembangkan." />
+    return <ApprovalGuestPage />
   if (activePath === '/rt/keuangan')
     return <PageShell eyebrow="Keuangan" title="Keuangan RT" description="Ringkasan kas RT (read-only, input oleh Bendahara). Sedang dikembangkan." />
   if (activePath === '/rt/iuran')
     return <PageShell eyebrow="Iuran" title="Approval Iuran Warga" description="Persetujuan dan pemantauan status iuran. Sedang dikembangkan." />
   if (activePath === '/rt/surat')
-    return <PageShell eyebrow="Surat Keterangan" title="Approval Surat" description="Persetujuan final permohonan surat setelah verifikasi Sekretaris. Sedang dikembangkan." />
+    return <ApprovalLetterPage />
   if (activePath === '/rt/siskamling')
     return <PageShell eyebrow="Siskamling" title="Jadwal & Kejadian Siskamling" description="Kelola jadwal ronda dan tinjau laporan kejadian. Sedang dikembangkan." />
   if (activePath === '/rt/statistik')

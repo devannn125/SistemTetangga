@@ -4,6 +4,9 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { clearAuthData } from '../../services/authService'
 import ComplaintPage from './pages/ComplaintPage'
 import FinancePage from './pages/FinancePage'
+import GuestPage from './pages/GuestPage'
+import IuranPage from './pages/IuranPage'
+import LetterPage from './pages/LetterPage'
 import SiskamlingPage from './pages/SiskamlingPage'
 import HealthPage from './pages/HealthPage'
 import InventoryPage from './pages/InventoryPage'
@@ -13,7 +16,9 @@ import OrgPage from './pages/OrgPage'
 const wargaMenus = [
   { label: 'Beranda', path: '/warga', icon: 'home' },
   { label: 'Pengaduan', path: '/warga/pengaduan', icon: 'alert' },
+  { label: 'Tamu', path: '/warga/tamu', icon: 'idCard' },
   { label: 'Keuangan', path: '/warga/keuangan', icon: 'receipt' },
+  { label: 'Iuran', path: '/warga/iuran', icon: 'wallet' },
   { label: 'Siskamling', path: '/warga/siskamling', icon: 'shield' },
   { label: 'Kesehatan', path: '/warga/kesehatan', icon: 'heart' },
   { label: 'Inventaris', path: '/warga/inventaris', icon: 'box' },
@@ -47,20 +52,20 @@ function handleLogout() {
   window.location.assign('/login')
 }function WargaSidebar({ activePath }) {
   return (
-    <aside className="sticky top-0 flex h-screen w-[250px] shrink-0 flex-col border-r border-neutral-900 bg-white max-md:static max-md:h-auto max-md:w-full max-md:border-r-0 max-md:border-b">
-      <div className="flex h-15 border-b border-neutral-900 px-4 py-5">
+    <aside className="sticky top-0 flex h-screen w-[250px] shrink-0 flex-col border-r border-neutral-900 bg-white max-md:static max-md:h-auto max-md:w-full max-md:flex-none max-md:border-r-0 max-md:border-b">
+      <div className="flex h-15 shrink-0 border-b border-neutral-900 px-4 py-5">
         <a className="flex items-center gap-2 text-sm font-extrabold text-black no-underline" href="/warga">
           <Icon name="building" className="h-5 w-5" />
           SIW MASYARAKAT
         </a>
       </div>
 
-      <div className="px-4 py-6">
+      <div className="shrink-0 px-4 py-6">
         <p className="text-xl font-extrabold leading-tight text-black">Portal Warga</p>
         <p className="mt-1 text-xs font-semibold uppercase leading-5 text-neutral-500">Layanan Digital Masyarakat</p>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 px-3 max-md:grid max-md:grid-cols-2" aria-label="Menu portal warga">
+      <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 max-md:grid max-md:max-h-none max-md:grid-cols-2 max-md:overflow-visible" aria-label="Menu portal warga">
         {wargaMenus.map((item) => {
           const isActive = activePath === item.path
 
@@ -176,49 +181,6 @@ function HomePage() {
 
 
 
-function LetterPage() {
-  return (
-    <PageShell
-      description="Ajukan berbagai keperluan surat pengantar dan keterangan secara digital."
-      eyebrow="Pengajuan"
-      title="Pengajuan Surat Resmi"
-    >
-      <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <form className="border border-neutral-900 bg-white p-5">
-          <h2 className="text-base font-extrabold text-black">Lengkapi Data</h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-bold text-black">
-              Nama Lengkap Pemohon
-              <input className="h-11 border border-neutral-400 px-3 outline-0 focus:border-sky-600" placeholder="Nama lengkap" />
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-black">
-              NIK
-              <input className="h-11 border border-neutral-400 px-3 outline-0 focus:border-sky-600" placeholder="16 digit NIK" />
-            </label>
-          </div>
-          <label className="mt-4 grid gap-2 text-sm font-bold text-black">
-            Keperluan Secara Detail
-            <textarea className="min-h-28 resize-none border border-neutral-400 px-3 py-3 outline-0 focus:border-sky-600" placeholder="Jelaskan tujuan pembuatan surat..." />
-          </label>
-          <div className="mt-5 flex justify-end gap-3">
-            <button className="h-10 border border-neutral-900 px-5 text-xs font-extrabold" type="button">Batal</button>
-            <button className="h-10 border border-black bg-black px-5 text-xs font-extrabold text-white" type="button">Ajukan Surat</button>
-          </div>
-        </form>
-
-        <aside className="border border-neutral-900 bg-white p-5">
-          <h2 className="text-base font-extrabold text-black">Panduan Pengajuan</h2>
-          <ul className="mt-4 space-y-3 text-sm leading-6 text-neutral-600">
-            <li>Pilih jenis surat sesuai kebutuhan.</li>
-            <li>Lengkapi data dan tujuan dengan benar.</li>
-            <li>Tunggu validasi dari pengurus RT/RW.</li>
-          </ul>
-        </aside>
-      </section>
-    </PageShell>
-  )
-}
-
 function AnnouncementPage() {
   return (
     <PageShell
@@ -297,7 +259,9 @@ function FeedbackPage() {
 
 function renderPage(activePath) {
   if (activePath === '/warga/pengaduan') return <ComplaintPage />
+  if (activePath === '/warga/tamu') return <GuestPage />
   if (activePath === '/warga/keuangan') return <FinancePage />
+  if (activePath === '/warga/iuran') return <IuranPage />
   if (activePath === '/warga/siskamling') return <SiskamlingPage />
   if (activePath === '/warga/kesehatan') return <HealthPage />
   if (activePath === '/warga/inventaris') return <InventoryPage />

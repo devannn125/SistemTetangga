@@ -45,7 +45,7 @@ export function LoginPage() {
   const [showRequestDialog, setShowRequestDialog] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [form, setForm] = useState({
-    nik: '',
+    email: '',
     password: '',
   })
   const [requestForm, setRequestForm] = useState({
@@ -70,9 +70,9 @@ export function LoginPage() {
     setRequestMessage('')
   }
 
-  function fillDemoAccount(identifier, password) {
+  function fillDemoAccount(email, password) {
     setForm({
-      nik: identifier,
+      email,
       password,
     })
     setError('')
@@ -81,8 +81,8 @@ export function LoginPage() {
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (!form.nik.trim() || !form.password.trim()) {
-      setError('NIK/Email/ID dan kata sandi wajib diisi.')
+    if (!form.email.trim() || !form.password.trim()) {
+      setError('Email dan kata sandi wajib diisi.')
       return
     }
 
@@ -91,7 +91,7 @@ export function LoginPage() {
 
     try {
       const response = await login({
-        identifier: form.nik,
+        email: form.email,
         password: form.password,
       })
 
@@ -104,9 +104,11 @@ export function LoginPage() {
       const fallbackDest =
         roleLower === 'warga'
           ? '/warga'
-          : ['admin', 'dukuh'].includes(roleLower)
-            ? '/dashboard'
-            : `/role/${roleLower}`
+          : roleLower === 'sekretaris'
+            ? '/sek'
+            : ['admin', 'dukuh'].includes(roleLower)
+              ? '/dashboard'
+              : `/role/${roleLower}`
 
       const destination = response.data?.redirect_to || fallbackDest
       window.location.assign(destination)
@@ -178,11 +180,11 @@ export function LoginPage() {
               <PortalInput
                 disabled={isLoading}
                 icon="idCard"
-                id="nik"
-                label="Nomor NIK / Email / No. HP / ID"
+                id="email"
+                label="Email"
                 onChange={handleChange}
-                placeholder="Contoh: 3471000000000001 atau email"
-                value={form.nik}
+                placeholder="nama@contoh.com"
+                value={form.email}
               />
 
               <div>
@@ -250,7 +252,7 @@ export function LoginPage() {
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 <button
                   className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
-                  onClick={() => fillDemoAccount('3471000000000002', 'password')}
+                  onClick={() => fillDemoAccount('siti@example.com', 'password')}
                   type="button"
                 >
                   Warga
@@ -275,6 +277,13 @@ export function LoginPage() {
                   type="button"
                 >
                   Kepala Dukuh
+                </button>
+                <button
+                  className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
+                  onClick={() => fillDemoAccount('sekretaris@example.com', 'password')}
+                  type="button"
+                >
+                  Sekretaris
                 </button>
                 <button
                   className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"

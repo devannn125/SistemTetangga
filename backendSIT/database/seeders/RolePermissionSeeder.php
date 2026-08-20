@@ -6,16 +6,36 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Seeder matriks RBAC lengkap per PRD Bab 3.2 (disesuaikan dengan 5 role yang ada:
- * ADMIN, DUKUH, RW, RT, WARGA). ADMIN diberi akses penuh (ALL) di semua modul.
- * Aman dijalankan ulang (idempotent).
+ * Seeder matriks RBAC lengkap per PRD Bab 3.2 (disesuaikan dengan 6 role yang
+ * ada: ADMIN, DUKUH, RW, RT, SEKRETARIS, WARGA). ADMIN diberi akses penuh
+ * (ALL) di semua modul. Aman dijalankan ulang (idempotent).
  */
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->seedRoles();
         $this->seedModules();
         $this->seedPermissions();
+    }
+
+    private function seedRoles(): void
+    {
+        $roles = [
+            ['kode' => 'ADMIN', 'nama_role' => 'Administrator', 'level' => 1, 'is_strategic' => true, 'deskripsi' => 'Administrator sistem'],
+            ['kode' => 'DUKUH', 'nama_role' => 'Kepala Dukuh', 'level' => 2, 'is_strategic' => true, 'deskripsi' => 'Pengelola tingkat kelurahan/dukuh'],
+            ['kode' => 'RW', 'nama_role' => 'Ketua RW', 'level' => 3, 'is_strategic' => false, 'deskripsi' => 'Pengurus tingkat RW'],
+            ['kode' => 'RT', 'nama_role' => 'Ketua RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Pengurus tingkat RT'],
+            ['kode' => 'SEKRETARIS', 'nama_role' => 'Sekretaris RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Sekretaris tingkat RT'],
+            ['kode' => 'WARGA', 'nama_role' => 'Warga', 'level' => 5, 'is_strategic' => false, 'deskripsi' => 'Pengguna umum'],
+        ];
+
+        foreach ($roles as $role) {
+            \App\Models\Role::firstOrCreate(
+                ['kode' => $role['kode']],
+                ['id_role' => 'ROLE-'.$role['kode']] + $role
+            );
+        }
     }
 
     private function seedModules(): void
@@ -68,7 +88,13 @@ class RolePermissionSeeder extends Seeder
         $roles = DB::table('role')->pluck('id_role', 'kode');
 
         $matrix = $this->buildMatrix();
-        $counter = DB::table('role_permission')->count() + 1;
+
+        // Nomor urut id_role_permission dijamin unik: pakai angka maksimal yang
+        // sudah ada (RP-###), bukan jumlah baris — aman bila ada baris dihapus.
+        $max = (int) DB::table('role_permission')
+            ->pluck('id_role_permission')
+            ->map(fn ($id) => (int) preg_replace('/\D/', '', (string) $id))
+            ->max() ?: 0;
 
         foreach ($roles as $roleKode => $roleId) {
             foreach ($matrix[$roleKode] as $module => $grants) {
@@ -83,19 +109,26 @@ class RolePermissionSeeder extends Seeder
                         continue;
                     }
 
-                    DB::table('role_permission')->updateOrInsert(
-                        [
-                            'id_role' => $roleId,
-                            'id_module' => $moduleId,
-                            'id_permission_action' => $actionId,
-                            'resource_scope' => $grant['scope'] ?? '*',
-                        ],
-                        [
-                            'scope_level' => $grant['level'] ?? 'ALL',
-                            'id_role_permission' => 'RP-'.str_pad((string) $counter, 3, '0', STR_PAD_LEFT),
-                        ]
-                    );
-                    $counter++;
+                    $exists = DB::table('role_permission')
+                        ->where('id_role', $roleId)
+                        ->where('id_module', $moduleId)
+                        ->where('id_permission_action', $actionId)
+                        ->where('resource_scope', $grant['scope'] ?? '*')
+                        ->exists();
+
+                    if ($exists) {
+                        continue;
+                    }
+
+                    $max++;
+                    DB::table('role_permission')->insert([
+                        'id_role_permission' => 'RP-'.str_pad((string) $max, 3, '0', STR_PAD_LEFT),
+                        'id_role' => $roleId,
+                        'id_module' => $moduleId,
+                        'id_permission_action' => $actionId,
+                        'resource_scope' => $grant['scope'] ?? '*',
+                        'scope_level' => $grant['level'] ?? 'ALL',
+                    ]);
                 }
             }
         }
@@ -170,11 +203,29 @@ class RolePermissionSeeder extends Seeder
                 'AUDIT' => $view('RT'),
             ],
 
+            // Sekretaris RT: verifikasi data & surat, kelola tata tertib/pengumuman.
+            'SEKRETARIS' => [
+                'DASHBOARD' => $view('RT'),
+                'WARGA' => $crud('RT'),
+                'KELUARGA' => $crud('RT'),
+                'PERUMAHAN' => $crud('RT'),
+                'TAMU' => $view('RT'),
+                'KEUANGAN' => $view('RT'),
+                'IURAN' => $view('RT'),
+                'SURAT' => array_merge($view('RT'), [['action' => 'VERIFY', 'level' => 'RT']]),
+                'SISKAMLING' => $view('RT'),
+                'PENGUMUMAN' => $crud('RT'),
+                'PERATURAN' => $crud('RT'),
+                'ORGANISASI' => $view('RT'),
+                'PESAN' => $view('RT'),
+                'PENGADUAN' => $view('RT'),
+            ],
+
             // Warga: hanya data sendiri + layanan.
             'WARGA' => [
                 'DASHBOARD' => $view('OWN'),
                 'WARGA' => $view('OWN'),
-                'TAMU' => [['action' => 'CREATE', 'level' => 'OWN']],
+                'TAMU' => [['action' => 'CREATE', 'level' => 'OWN'], ['action' => 'VIEW', 'level' => 'OWN']],
                 'KEUANGAN' => $view('OWN'),
                 'IURAN' => $view('OWN'),
                 'SURAT' => [['action' => 'CREATE', 'level' => 'OWN'], ['action' => 'VIEW', 'level' => 'OWN']],

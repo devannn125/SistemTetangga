@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('families', FamilyController::class);
 
     // Perumahan & Kos.
+    Route::get('/houses/mine', [HouseController::class, 'mine']);
     Route::apiResource('houses', HouseController::class);
     Route::apiResource('house-photos', HousePhotoController::class);
     Route::apiResource('kos-rooms', KosRoomController::class);

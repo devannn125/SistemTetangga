@@ -38,6 +38,31 @@ class HouseController extends BaseApiController
         return (new HouseResource($house->load(['pemilik', 'wilayah'])))->response()->setStatusCode(201);
     }
 
+    /**
+     * GET /api/houses/mine
+     * Rumah milik keluarga user + rumah kos tempat ia tinggal (Own Data) —
+     * dipakai warga untuk memilih rumah tujuan saat mendaftarkan tamu.
+     */
+    public function mine(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user->id_citizen) {
+            return response()->json(['data' => []]);
+        }
+
+        $houseIds = House::idsAccessibleByCitizen($user->id_citizen);
+
+        $houses = House::query()
+            ->with(['pemilik', 'wilayah', 'photos', 'rooms'])
+            ->whereIn('id_house', $houseIds)
+            ->where('status_aktif', 1)
+            ->latest()
+            ->get();
+
+        return HouseResource::collection($houses);
+    }
+
     public function show(string $id)
     {
         $this->authorizeModule('PERUMAHAN', 'VIEW');

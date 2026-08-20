@@ -75,7 +75,7 @@ class AuthLoginTest extends TestCase
 
         // Role tidak dikirim -> auto-pilih WARGA.
         $response = $this->postJson('/api/login', [
-            'identifier' => '3471000000000001',
+            'email' => 'budi@warga.test',
             'password' => 'password123',
         ]);
 
@@ -106,7 +106,7 @@ class AuthLoginTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/login', [
-            'identifier' => 'admin@rt.test',
+            'email' => 'admin@rt.test',
             'password' => 'secretpass',
         ]);
 
@@ -138,7 +138,7 @@ class AuthLoginTest extends TestCase
 
         // Request dengan role WARGA yang tidak dimiliki -> tetap 422 (bukan login sebagai warga).
         $response = $this->postJson('/api/login', [
-            'identifier' => 'admin2@rt.test',
+            'email' => 'admin2@rt.test',
             'password' => 'secretpass',
             'role' => 'WARGA',
         ]);
@@ -150,11 +150,11 @@ class AuthLoginTest extends TestCase
     public function test_login_fails_with_invalid_credentials(): void
     {
         $response = $this->postJson('/api/login', [
-            'identifier' => 'nonexistent@example.com',
+            'email' => 'nonexistent@example.com',
             'password' => 'wrongpass',
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['identifier']);
+            ->assertJsonValidationErrors(['email']);
     }
 }

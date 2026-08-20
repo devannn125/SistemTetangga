@@ -17,29 +17,23 @@ class AuthController extends Controller
 {
     /**
      * POST /api/auth/login
-     * Body: { "identifier": "NIK/email/no_hp", "password": "..." }
+     * Body: { "email": "...", "password": "..." }
      * `role` opsional. Jika tidak dikirim, role dipilih otomatis dari role aktif akun.
      */
     public function login(LoginRequest $request): JsonResponse|UserResource
     {
-        $identifier = $request->validated('identifier');
+        $email = $request->validated('email');
         $password = $request->validated('password');
         $requestedRole = $request->validated('role'); // sudah di-uppercase di LoginRequest
 
-        // Cari user berdasarkan email, no_hp, ATAU nik milik data citizen-nya
+        // Login hanya melalui email (sudah di-lowercase oleh LoginRequest).
         $user = User::with(['citizen', 'userRoles.role'])
-            ->where(function ($query) use ($identifier) {
-                $query->where('email', $identifier)
-                    ->orWhere('no_hp', $identifier)
-                    ->orWhereHas('citizen', function ($q) use ($identifier) {
-                        $q->where('nik', $identifier);
-                    });
-            })
+            ->where('email', $email)
             ->first();
 
         if (! $user || ! $user->password_hash || ! Hash::check($password, $user->password_hash)) {
             throw ValidationException::withMessages([
-                'identifier' => ['NIK/Email/No HP atau password salah.'],
+                'email' => ['Email atau password salah.'],
             ]);
         }
 
@@ -78,7 +72,7 @@ class AuthController extends Controller
 
         if ($activeRoleCodes->isEmpty()) {
             throw ValidationException::withMessages([
-                'identifier' => ['Akun ini tidak memiliki role aktif.'],
+                'email' => ['Akun ini tidak memiliki role aktif.'],
             ]);
         }
 
@@ -94,7 +88,7 @@ class AuthController extends Controller
 
             if (! $requestedRole) {
                 throw ValidationException::withMessages([
-                    'identifier' => ['Tidak dapat menentukan role akun.'],
+                    'email' => ['Tidak dapat menentukan role akun.'],
                 ]);
             }
         } elseif (! $activeRoleCodes->contains($requestedRole)) {

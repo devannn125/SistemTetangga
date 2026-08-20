@@ -63,9 +63,27 @@ export function getHouses(params = {}) {
   return request(`/houses${query ? `?${query}` : ''}`)
 }
 
+export function getMyHouses() {
+  return request('/houses/mine')
+}
+
 export function getGuests(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request(`/guests${query ? `?${query}` : ''}`)
+}
+
+export function createGuest(payload) {
+  return request('/guests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateGuest(id, payload) {
+  return request(`/guests/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
 }
 
 export function getComplaints(params = {}) {
@@ -85,9 +103,26 @@ export function getFinanceTransactions(params = {}) {
   return request(`/finance-transactions${query ? `?${query}` : ''}`)
 }
 
+export function getFeeBills(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/fee-bills${query ? `?${query}` : ''}`)
+}
+
+export function getLetterRequests(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/letter-requests${query ? `?${query}` : ''}`)
+}
+
 export function createLetterRequest(payload) {
   return request('/letter-requests', {
     method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateLetterRequest(id, payload) {
+  return request(`/letter-requests/${id}`, {
+    method: 'PATCH',
     body: JSON.stringify(payload),
   })
 }

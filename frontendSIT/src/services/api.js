@@ -197,3 +197,86 @@ export function createFeedback(payload) {
     body: JSON.stringify(payload),
   })
 }
+
+export function getRegulations(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/regulations${query ? `?${query}` : ''}`)
+}
+
+export function createRegulation(payload) {
+  return request('/regulations', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateRegulation(id, payload) {
+  return request(`/regulations/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteRegulation(id) {
+  return request(`/regulations/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export function getOrganizationMembers(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/organization-members${query ? `?${query}` : ''}`)
+}
+
+export function getFeedback(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/feedback${query ? `?${query}` : ''}`)
+}
+
+export function getMasterData(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/master-data${query ? `?${query}` : ''}`)
+}
+
+export function getSiskamlingSchedules(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/siskamling-schedules${query ? `?${query}` : ''}`)
+}
+
+export function getSiskamlingIncidents(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/siskamling-incidents${query ? `?${query}` : ''}`)
+}
+
+export function getSiskamlingCheckins(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/siskamling-checkins${query ? `?${query}` : ''}`)
+}
+
+export function createCitizen(payload) {
+  return request('/citizens', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateCitizen(id, payload) {
+  return request(`/citizens/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function createFamily(payload) {
+  return request('/families', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateFamily(id, payload) {
+  return request(`/families/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}

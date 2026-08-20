@@ -36,6 +36,7 @@ class FinanceTransactionController extends BaseApiController
 
         $data = $request->validated();
         $data['dicatat_oleh'] = $this->requestUser()->id_users;
+        $data['id_wilayah'] = $data['id_wilayah'] ?? $this->rbac->anchorWilayahId($this->requestUser());
 
         $transaction = FinanceTransaction::create($data);
 

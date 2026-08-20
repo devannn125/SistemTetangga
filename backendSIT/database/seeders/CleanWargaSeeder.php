@@ -103,25 +103,90 @@ class CleanWargaSeeder extends Seeder
             ['status' => 'ACTIVE', 'assigned_at' => now()]
         );
 
-        // Akun demo Sekretaris RT (verifikasi surat), terhubung ke CIT-002 (RT01).
+        // Akun demo Sekretaris RT (verifikasi surat) — warga sendiri (citizen baru),
+        // tidak menumpang citizen milik akun lain (1 warga = 1 akun).
         $sekRole = Role::firstOrCreate(
             ['kode' => 'SEKRETARIS'],
             ['id_role' => 'ROLE-SEKRETARIS', 'nama_role' => 'Sekretaris RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Sekretaris tingkat RT']
+        );
+        $sekCitizen = Citizen::firstOrCreate(
+            ['nik' => '3471000000000022'],
+            [
+                'nama_lengkap' => 'Sari Wulandari',
+                'tempat_lahir' => 'Sleman',
+                'tanggal_lahir' => '1992-11-03',
+                'jenis_kelamin' => 'P',
+                'status_nikah' => 'KAWIN',
+                'status_warga' => 'TETAP',
+                'kewarganegaraan' => 'WNI',
+                'status_ekonomi' => 'MAMPU',
+                'penerima_bansos' => false,
+                'tanggal_masuk_rt' => '2018-01-01',
+                'id_wilayah' => $rt->id_wilayah,
+                'alamat_kk_luar_rt' => false,
+                'berdomisili_luar_rt' => false,
+                'status_hidup' => 'HIDUP',
+                'status_aktif' => true,
+            ]
         );
         $sek = User::firstOrCreate(
             ['email' => 'sekretaris@example.com'],
             [
                 'id_users' => 'USR-SEK',
-                'nama_users' => 'Sekretaris RT',
+                'nama_users' => 'Sari Wulandari',
                 'no_hp' => '081234567088',
                 'password_hash' => Hash::make('password'),
                 'auth_provider' => 'EMAIL',
                 'status' => 'ACTIVE',
-                'id_citizen' => 'CIT-002',
+                'id_citizen' => $sekCitizen->id_citizen,
             ]
         );
+        $sek->forceFill(['id_citizen' => $sekCitizen->id_citizen, 'nama_users' => 'Sari Wulandari'])->save();
         DB::table('user_role')->updateOrInsert(
             ['id_users' => $sek->id_users, 'id_role' => $sekRole->id_role, 'id_wilayah' => $rt->id_wilayah],
+            ['status' => 'ACTIVE', 'assigned_at' => now()]
+        );
+
+        // Akun demo Bendahara RT (kelola keuangan & iuran) — warga sendiri.
+        $benRole = Role::firstOrCreate(
+            ['kode' => 'BENDAHARA'],
+            ['id_role' => 'ROLE-BENDAHARA', 'nama_role' => 'Bendahara RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Bendahara tingkat RT']
+        );
+        $benCitizen = Citizen::firstOrCreate(
+            ['nik' => '3471000000000023'],
+            [
+                'nama_lengkap' => 'Dewi Lestari',
+                'tempat_lahir' => 'Bantul',
+                'tanggal_lahir' => '1990-02-14',
+                'jenis_kelamin' => 'P',
+                'status_nikah' => 'KAWIN',
+                'status_warga' => 'TETAP',
+                'kewarganegaraan' => 'WNI',
+                'status_ekonomi' => 'MAMPU',
+                'penerima_bansos' => false,
+                'tanggal_masuk_rt' => '2017-01-01',
+                'id_wilayah' => $rt->id_wilayah,
+                'alamat_kk_luar_rt' => false,
+                'berdomisili_luar_rt' => false,
+                'status_hidup' => 'HIDUP',
+                'status_aktif' => true,
+            ]
+        );
+        $ben = User::firstOrCreate(
+            ['email' => 'bendahara@example.com'],
+            [
+                'id_users' => 'USR-BEN',
+                'nama_users' => 'Dewi Lestari',
+                'no_hp' => '081234567077',
+                'password_hash' => Hash::make('password'),
+                'auth_provider' => 'EMAIL',
+                'status' => 'ACTIVE',
+                'id_citizen' => $benCitizen->id_citizen,
+            ]
+        );
+        $ben->forceFill(['id_citizen' => $benCitizen->id_citizen, 'nama_users' => 'Dewi Lestari'])->save();
+        DB::table('user_role')->updateOrInsert(
+            ['id_users' => $ben->id_users, 'id_role' => $benRole->id_role, 'id_wilayah' => $rt->id_wilayah],
             ['status' => 'ACTIVE', 'assigned_at' => now()]
         );
     }

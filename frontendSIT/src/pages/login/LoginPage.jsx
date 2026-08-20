@@ -106,9 +106,11 @@ export function LoginPage() {
           ? '/warga'
           : roleLower === 'sekretaris'
             ? '/sek'
-            : ['admin', 'dukuh'].includes(roleLower)
-              ? '/dashboard'
-              : `/role/${roleLower}`
+            : roleLower === 'bendahara'
+              ? '/ben'
+              : ['admin', 'dukuh'].includes(roleLower)
+                ? '/dashboard'
+                : `/role/${roleLower}`
 
       const destination = response.data?.redirect_to || fallbackDest
       window.location.assign(destination)
@@ -277,6 +279,13 @@ export function LoginPage() {
                   type="button"
                 >
                   Kepala Dukuh
+                </button>
+                <button
+                  className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"
+                  onClick={() => fillDemoAccount('bendahara@example.com', 'password')}
+                  type="button"
+                >
+                  Bendahara
                 </button>
                 <button
                   className="border border-neutral-400 bg-white px-2.5 py-1 font-semibold text-neutral-800 transition hover:border-black hover:bg-neutral-100"

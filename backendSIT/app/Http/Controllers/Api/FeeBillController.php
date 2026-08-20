@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\FeeBillRequest;
 use App\Http\Resources\FeeBillResource;
 use App\Models\Citizen;
+use App\Models\Family;
 use App\Models\FeeBill;
 use App\Services\RbacService;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,6 +52,16 @@ class FeeBillController extends BaseApiController
     public function store(FeeBillRequest $request)
     {
         $this->authorizeModule('IURAN', 'CREATE');
+
+        $scopeIds = $this->rbac->wilayahScopeIds($this->requestUser(), 'IURAN', 'CREATE');
+        if ($scopeIds !== null) {
+            $familyInScope = Family::where('id_family', $request->validated('id_family'))
+                ->whereIn('id_wilayah', $scopeIds)
+                ->exists();
+            if (! $familyInScope) {
+                abort(403, 'Tagihan hanya bisa dibuat untuk keluarga di lingkup wilayah Anda.');
+            }
+        }
 
         $bill = FeeBill::create($request->validated());
 

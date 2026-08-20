@@ -14,19 +14,21 @@ class HouseRequest extends FormRequest
 
     public function rules(): array
     {
+        $required = $this->isMethod('PATCH') ? 'sometimes' : 'required';
+
         return [
-            'tipe' => ['required', Rule::in(['NON_KOS', 'KOS'])],
-            'alamat' => ['required', 'string', 'max:255'],
-            'id_wilayah' => ['required', 'exists:wilayah,id_wilayah'],
+            'tipe' => [$required, Rule::in(['NON_KOS', 'KOS'])],
+            'alamat' => [$required, 'string', 'max:255'],
+            'id_wilayah' => [$required, 'exists:wilayah,id_wilayah'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'id_pemilik_citizen' => ['nullable', 'exists:citizen,id_citizen'],
             'status_kepemilikan' => ['nullable', Rule::in(['MILIK_SENDIRI', 'KONTRAK'])],
             'id_kategori_kos' => ['nullable', 'exists:master_data,id_master'],
             'jumlah_kamar' => ['nullable', 'integer', 'min:0'],
-            'jumlah_penghuni' => ['integer', 'min:0'],
+            'jumlah_penghuni' => ['sometimes', 'integer', 'min:0'],
             'status_pajak' => ['nullable', Rule::in(['LUNAS', 'BELUM_LUNAS'])],
-            'status_aktif' => ['boolean'],
+            'status_aktif' => ['sometimes', 'boolean'],
         ];
     }
 }

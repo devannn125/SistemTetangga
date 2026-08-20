@@ -5,6 +5,7 @@ import { RolePage } from './pages/role/RolePage'
 import { WargaPage } from './pages/warga/WargaPage'
 import { RtPage } from './pages/rt/RtPage'
 import { SekretarisPage } from './pages/sek/SekretarisPage'
+import { BendaharaPage } from './pages/ben/BendaharaPage'
 import { useDashboardData } from './hooks/useDashboardData'
 import { usePathname } from './services/router'
 
@@ -30,6 +31,10 @@ function App() {
 
   if (pathname.startsWith('/sek')) {
     return <SekretarisPage />
+  }
+
+  if (pathname.startsWith('/ben')) {
+    return <BendaharaPage />
   }
 
   if (pathname.startsWith('/role')) {

@@ -15,6 +15,8 @@ class FamilyController extends BaseApiController
 
         $query = Family::query()->with(['kepalaKeluarga', 'wilayah'])->withCount('members');
 
+        $this->scopeQuery($query, 'KELUARGA', 'VIEW');
+
         if ($request->has('search')) {
             $term = $request->query('search');
             $query->where('no_kk', 'like', "%{$term}%");

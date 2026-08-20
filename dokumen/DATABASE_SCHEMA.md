@@ -1,6 +1,6 @@
 # Database Schema — Sistem Tetangga (Sesuai Struktur Aktual)
 
-> Dokumen ini mendeskripsikan skema database MySQL **persis sesuai struktur yang ada di database saat ini** (diekstrak dari export phpMyAdmin, 16 Agustus 2026). Tujuannya agar AI coding assistant (Copilot, Claude, dsb) di VSCode dapat membaca konteks skema tanpa perlu query database langsung.
+> Dokumen ini mendeskripsikan skema database MySQL **persis sesuai struktur yang ada di database saat ini** (diregenerasi dari database aktif via `mysqldump`, 20 Agustus 2026 — menggantikan export phpMyAdmin 16 Agustus 2026 yang berisi beberapa id referensi tidak konsisten seperti `WIL-RT-001`/`WIL-RW-001`/`WIL-KEL-001` yang tidak sesuai PK tabel `wilayah`). Tujuannya agar AI coding assistant (Copilot, Claude, dsb) di VSCode dapat membaca konteks skema tanpa perlu query database langsung.
 >
 > **Konvensi penamaan yang berlaku di skema ini:**
 > - Primary key setiap tabel: `id_<nama_tabel>` (contoh: `id_citizen`, `id_house`), kecuali tabel `users` yang PK-nya `id_users` (plural, mengikuti konvensi Laravel).
@@ -11,7 +11,7 @@
 > **⚠️ Penyimpangan/hal yang perlu diperhatikan dari skema ini** (dicatat apa adanya, bukan diperbaiki otomatis):
 > 1. `users.id_citizen` **tidak punya foreign key constraint** ke `citizen.id_citizen` di level database — relasinya cuma logis, harus divalidasi di application layer.
 > 2. `audit_log.id_permission_action` bertipe `varchar(50)`, **bukan foreign key** ke `permission_action` — kolom ini menyimpan kode aksi sebagai teks bebas (denormalized), bukan referensi relasional.
-> 3. `announcement_read_status.id_announcement_read_status` — nama kolom ini sebenarnya adalah **foreign key ke `announcement.id_announcement`**, bukan primary key baru. Kemungkinan besar hasil auto-naming dari tools desain skema. Perlakukan sebagai FK ke announcement, bukan identitas sendiri.
+> 3. `announcement_read_status.id_announcement_read_status` — nama kolom ini sebenarnya adalah **foreign key ke `announcement.id_announcement`**, bukan primary key baru. Kemungkinan besar hasil auto-naming dari tools desain skema. Perlakukan sebagai FK ke announcement, bukan identitas sendiri. **Data sudah diselaraskan** (nilai `ARS-001`/`ARS-002` lama diperbaiki menjadi `ANN-001`/`ANN-002`).
 > 4. `citizen_history.changed_by`, `iuran_tagihan.dikonfirmasi_oleh`, `permission_override.created_by` — **tidak punya foreign key constraint** meski secara logis berisi `users.id_users`. Validasi harus dilakukan di application layer.
 > 5. `notification_subscription` dan `announcement_read_status` adalah **tabel pivot dengan composite primary key** (tidak ada kolom PK tunggal beranama `id`).
 

@@ -27,6 +27,7 @@ class RolePermissionSeeder extends Seeder
             ['kode' => 'RW', 'nama_role' => 'Ketua RW', 'level' => 3, 'is_strategic' => false, 'deskripsi' => 'Pengurus tingkat RW'],
             ['kode' => 'RT', 'nama_role' => 'Ketua RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Pengurus tingkat RT'],
             ['kode' => 'SEKRETARIS', 'nama_role' => 'Sekretaris RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Sekretaris tingkat RT'],
+            ['kode' => 'BENDAHARA', 'nama_role' => 'Bendahara RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Bendahara tingkat RT'],
             ['kode' => 'WARGA', 'nama_role' => 'Warga', 'level' => 5, 'is_strategic' => false, 'deskripsi' => 'Pengguna umum'],
         ];
 
@@ -218,6 +219,23 @@ class RolePermissionSeeder extends Seeder
                 'PERATURAN' => $crud('RT'),
                 'ORGANISASI' => $view('RT'),
                 'PESAN' => $view('RT'),
+                'PENGADUAN' => $view('RT'),
+            ],
+
+            // Bendahara RT: kelola keuangan & iuran, baca data warga (iuran/bansos),
+            // input status pajak rumah (PRD 6.3.1).
+            'BENDAHARA' => [
+                'DASHBOARD' => $view('RT'),
+                'WARGA' => $view('RT'),
+                'KELUARGA' => $view('RT'),
+                'PERUMAHAN' => array_merge($view('RT'), [['action' => 'UPDATE', 'level' => 'RT']]),
+                'KEUANGAN' => $crud('RT'),
+                'IURAN' => $crud('RT'),
+                'SURAT' => $view('RT'),
+                'SISKAMLING' => $view('RT'),
+                'PENGUMUMAN' => $view('RT'),
+                'PERATURAN' => $view('RT'),
+                'ORGANISASI' => $view('RT'),
                 'PENGADUAN' => $view('RT'),
             ],
 

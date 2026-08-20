@@ -60,6 +60,7 @@ class RolePermissionSeeder extends Seeder
             'MASTER' => 'Master Data',
             'USER' => 'User Management',
             'AUDIT' => 'Audit Log',
+            'INVENTARIS' => 'Inventaris',
         ];
 
         $urutan = 1;
@@ -147,7 +148,7 @@ class RolePermissionSeeder extends Seeder
         $admin = [];
         $modules = ['DASHBOARD', 'WARGA', 'KELUARGA', 'SURAT', 'KEUANGAN', 'IURAN', 'SISKAMLING',
             'PENGUMUMAN', 'PERUMAHAN', 'TAMU', 'PENGADUAN', 'PERATURAN', 'ORGANISASI', 'PESAN',
-            'NOTIFIKASI', 'MASTER', 'USER', 'AUDIT'];
+            'NOTIFIKASI', 'MASTER', 'USER', 'AUDIT', 'INVENTARIS'];
         foreach ($modules as $m) {
             $admin[$m] = array_map(fn ($a) => ['action' => $a, 'level' => 'ALL', 'scope' => '*'], $all);
         }
@@ -166,6 +167,7 @@ class RolePermissionSeeder extends Seeder
                 'PERATURAN' => $view('KELURAHAN'),
                 'ORGANISASI' => $view('KELURAHAN'),
                 'PENGADUAN' => $view('KELURAHAN'),
+                'INVENTARIS' => $view('KELURAHAN'),
             ],
 
             // Ketua RW: agregat seluruh RT di bawahnya + verifikasi warga baru.
@@ -180,6 +182,7 @@ class RolePermissionSeeder extends Seeder
                 'PERATURAN' => $view('RW'),
                 'ORGANISASI' => $view('RW'),
                 'PENGADUAN' => $view('RW'),
+                'INVENTARIS' => $view('RW'),
             ],
 
             // Ketua RT: operasional penuh satu RT.
@@ -202,6 +205,7 @@ class RolePermissionSeeder extends Seeder
                 'USER' => $crud('RT'),
                 'MASTER' => $crud('RT'),
                 'AUDIT' => $view('RT'),
+                'INVENTARIS' => array_merge($view('RT'), [['action' => 'APPROVE', 'level' => 'RT']]),
             ],
 
             // Sekretaris RT: verifikasi data & surat, kelola tata tertib/pengumuman.
@@ -220,6 +224,7 @@ class RolePermissionSeeder extends Seeder
                 'ORGANISASI' => $view('RT'),
                 'PESAN' => $view('RT'),
                 'PENGADUAN' => $view('RT'),
+                'INVENTARIS' => array_merge($view('RT'), [['action' => 'CREATE', 'level' => 'RT']]),
             ],
 
             // Bendahara RT: kelola keuangan & iuran, baca data warga (iuran/bansos),
@@ -237,6 +242,7 @@ class RolePermissionSeeder extends Seeder
                 'PERATURAN' => $view('RT'),
                 'ORGANISASI' => $view('RT'),
                 'PENGADUAN' => $view('RT'),
+                'INVENTARIS' => $view('RT'),
             ],
 
             // Warga: hanya data sendiri + layanan.

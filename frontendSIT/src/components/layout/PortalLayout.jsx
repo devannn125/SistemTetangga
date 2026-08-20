@@ -18,7 +18,7 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
         <p className="mt-1 text-xs font-semibold uppercase leading-5 text-neutral-500">{brandSubtitle}</p>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 px-3 max-md:grid max-md:grid-cols-2" aria-label="Menu portal">
+      <nav className="flex flex-1 flex-col gap-1 px-3 overflow-y-auto max-md:grid max-md:grid-cols-2" aria-label="Menu portal">
         {menuItems.map((item) => {
           const isActive = activePath === item.path
 

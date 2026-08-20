@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\HouseController;
 use App\Http\Controllers\Api\HousePhotoController;
 use App\Http\Controllers\Api\KosRoomController;
+use App\Http\Controllers\Api\InventoryPurchaseController;
 use App\Http\Controllers\Api\LetterRequestController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\ModuleController;
@@ -83,6 +84,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Keuangan & Iuran.
     Route::apiResource('finance-transactions', FinanceTransactionController::class);
     Route::apiResource('fee-bills', FeeBillController::class);
+
+    // Inventaris.
+    Route::apiResource('inventory-purchases', InventoryPurchaseController::class);
 
     // Notifikasi.
     Route::apiResource('notification-logs', NotificationLogController::class);

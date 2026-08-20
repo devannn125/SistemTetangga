@@ -29,7 +29,7 @@ class RbacService
     /**
      * Kode role yang diizinkan melihat data sensitif (PRD 3.4).
      */
-    public const SENSITIVE_ROLES = ['RT', 'SEK_BEN'];
+    public const SENSITIVE_ROLES = ['RT', 'SEKRETARIS', 'BENDAHARA'];
 
     public function can(User $user, string $moduleCode, string $action): bool
     {
@@ -121,7 +121,7 @@ class RbacService
      */
     public function canViewSensitive(User $user): bool
     {
-        return $this->hasAnyRole($user, ['RT']);
+        return $this->hasAnyRole($user, ['RT', 'SEKRETARIS', 'BENDAHARA']);
     }
 
     public function hasAnyRole(User $user, array $roleCodes): bool

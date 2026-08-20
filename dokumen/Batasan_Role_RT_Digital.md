@@ -25,6 +25,7 @@ Level hierarki: **1 = tertinggi (read-only lintas RT)** → **5 = warga/operasio
 | Struktur Organisasi | Read |
 | Notifikasi & Pesan/Kesan | Tidak ada akses |
 | User Management | Tidak ada akses |
+| Inventaris | Read |
 
 **Data sensitif** (kurang mampu, penyakit, WNA, bansos): **tidak boleh diakses.**
 
@@ -51,6 +52,7 @@ Level hierarki: **1 = tertinggi (read-only lintas RT)** → **5 = warga/operasio
 | Struktur Organisasi | Read |
 | Notifikasi & Pesan/Kesan | Tidak ada akses |
 | User Management | Tidak ada akses |
+| Inventaris | Read |
 
 **Peran tambahan sesuai Bab 6**:
 - Menerima eskalasi pengaduan (SIPANDU) yang tidak selesai dalam **3 hari** dari RT (6.10).
@@ -79,6 +81,7 @@ Level hierarki: **1 = tertinggi (read-only lintas RT)** → **5 = warga/operasio
 | Struktur Organisasi | CRUD |
 | Notifikasi & Pesan/Kesan | Read (pesan warga) |
 | User Management | RT Scope (kelola user dalam RT-nya sendiri) |
+| Inventaris | Read, Approve |
 
 **Wewenang eksekutif spesifik dari Bab 6**:
 - **Approval final** permohonan surat setelah verifikasi Sekretaris (6.5), lalu memicu proses tanda tangan digital via Privy (6.6).
@@ -111,6 +114,7 @@ Level hierarki: **1 = tertinggi (read-only lintas RT)** → **5 = warga/operasio
 | Struktur Organisasi | Read |
 | Notifikasi & Pesan/Kesan | Read (pesan warga) |
 | User Management | Tidak ada akses |
+| Inventaris | Read, Create |
 
 **Wewenang spesifik dari Bab 6**:
 - **Menginput/mengimpor data warga** (manual/Excel) dan melakukan validasi awal duplikasi NIK (6.2.1).
@@ -141,6 +145,7 @@ Level hierarki: **1 = tertinggi (read-only lintas RT)** → **5 = warga/operasio
 | Struktur Organisasi | Read |
 | Notifikasi & Pesan/Kesan | Tidak ada akses |
 | User Management | Tidak ada akses |
+| Inventaris | Read (hanya yang disetujui) |
 
 **Wewenang spesifik dari Bab 6**:
 - **Input pemasukan & pengeluaran** kas RT dengan kategori dan bukti (6.11.1).
@@ -227,7 +232,7 @@ Modul spesifik Admin RT **tidak ada di tabel permission matrix eksplisit PRD** (
 
 **Sifat akses**: Sama seperti Warga standar, ditambah akses ke agenda, dokumentasi, dan pengumuman kepemudaan (3.1).
 
-**Catatan dari Bab 10 (Non-Goals)**: Modul **Inventaris dan Agenda/Kalender penuh belum termasuk scope MVP**. Artinya kewenangan tambahan role ini juga **belum ada modul khusus untuk digarap** di fase sekarang.
+**Catatan dari Bab 10 (Non-Goals)**: Modul **Agenda/Kalender penuh belum termasuk scope MVP**. Modul Inventaris (pengajuan pembelian & approval) telah diimplementasikan sebagai bagian dari MVP. Artinya kewenangan tambahan role ini untuk Agenda/Kalender **belum ada modul khusus untuk digarap** di fase sekarang.
 
 **Rekomendasi implementasi**: Sama seperti Ibu PKK — untuk MVP, perlakukan sebagai Warga standar tanpa menu tambahan.
 
@@ -265,11 +270,11 @@ Berdasarkan tabel di atas, berikut menu yang relevan tampil di sidebar tiap role
 | Role | Menu Sidebar yang Relevan |
 |---|---|
 | **Warga** | Beranda, Pengaduan, Keuangan (read), Iuran (own), Surat Resmi (request), Siskamling (read), Peraturan, Struktur Organisasi, Pengumuman, Notifikasi, Feedback |
-| **Ketua RT** | Beranda/Dashboard (full), Data Warga (CRUD), Perumahan, Tamu (approve), Keuangan (read), Iuran (approve), Surat Keterangan (approve), Siskamling (CRUD jadwal), Informasi & Statistik (CRUD+export), Peraturan (CRUD), Struktur Organisasi (CRUD), Pesan Warga, User Management (RT scope) |
-| **Sekretaris RT** | Dashboard, Data Warga (CRUD), Perumahan (CRUD), Tamu (read), Surat Keterangan (verify), Peraturan (CRUD), Pesan Warga (read), Statistik |
-| **Bendahara RT** | Dashboard, Keuangan (CRUD), Iuran (CRUD), Data Warga (read terbatas), Perumahan (read, khusus status pajak) |
+| **Ketua RT** | Beranda/Dashboard (full), Data Warga (CRUD), Perumahan, Tamu (approve), Keuangan (read), Iuran (approve), Surat Keterangan (approve), Siskamling (CRUD jadwal), Informasi & Statistik (CRUD+export), Peraturan (CRUD), Struktur Organisasi (CRUD), Pesan Warga, User Management (RT scope), Inventaris (approve) |
+| **Sekretaris RT** | Dashboard, Data Warga (CRUD), Perumahan (CRUD), Tamu (read), Surat Keterangan (verify), Peraturan (CRUD), Pesan Warga (read), Statistik, Inventaris (pengajuan) |
+| **Bendahara RT** | Dashboard, Keuangan (CRUD), Iuran (CRUD), Data Warga (read terbatas), Perumahan (read, khusus status pajak), Inventaris (read approved) |
 | **Admin RT** | Dashboard, Master Data, Manajemen User, Konfigurasi Notifikasi |
-| **Ketua RW** | Dashboard (read), Data Warga (verify), Keuangan (monitor), Surat Keterangan (read), Statistik (read+export), Eskalasi Pengaduan |
-| **Kelurahan** | Dashboard (read), Data Warga (read), Statistik (read+export), Peraturan (read) — tanpa menu operasional |
+| **Ketua RW** | Dashboard (read), Data Warga (verify), Keuangan (monitor), Surat Keterangan (read), Statistik (read+export), Eskalasi Pengaduan, Inventaris (read) |
+| **Kelurahan** | Dashboard (read), Data Warga (read), Statistik (read+export), Peraturan (read), Inventaris (read) — tanpa menu operasional |
 | **Pengurus Siskamling** | Sama seperti Warga + Jadwal Ronda, Presensi (check-in GPS), Lapor Kejadian, Panic Button |
 | **Ibu PKK / Karang Taruna** | Sama seperti Warga (belum ada modul tambahan aktif di MVP) |

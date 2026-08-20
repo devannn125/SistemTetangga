@@ -514,7 +514,8 @@ Ekspor laporan lintas modul (kependudukan, surat, siskamling, keuangan) dalam fo
 - **Modul AI Assistant / Chat Agent (OpenClaw)** — termasuk Q&A otomatis, ringkasan berbasis AI, draft dokumen otomatis, insight analytics berbasis AI, reminder cerdas berbasis AI. Seluruh requirement ini **dihilangkan dari scope saat ini** dan dapat dibahas sebagai fase terpisah di masa depan.
 - Arsitektur event-driven microservices, Kafka/RabbitMQ, database-per-service, Kubernetes — digantikan oleh arsitektur monolith modular sesuai Bab 5.
 - Modul Monitoring Kesehatan penuh (jadwal Posyandu, alert wabah) — hanya kategori statistik (j) Penyakit Warga yang dipertahankan sebagai field data, bukan modul CRUD penuh, kecuali diputuskan lain di kemudian hari.
-- Modul Inventaris dan Agenda/Kalender penuh — belum termasuk scope MVP dokumen ini, dapat ditambahkan di fase berikutnya.
+- Modul Agenda/Kalender penuh — belum termasuk scope MVP dokumen ini, dapat ditambahkan di fase berikutnya.
+- Modul Inventaris penuh (master barang, peminjaman, mutasi) — **hanya workflow pengajuan pembelian & approval yang diimplementasikan di MVP**, fitur lain dapat ditambahkan di fase berikutnya.
 
 ---
 

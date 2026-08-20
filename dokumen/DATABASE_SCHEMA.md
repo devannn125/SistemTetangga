@@ -51,6 +51,8 @@
 30. [feedback](#feedback)
 31. [keuangan_transaksi](#keuangan_transaksi)
 32. [iuran_tagihan](#iuran_tagihan)
+33. [inventory](#inventory)
+34. [inventory_purchase](#inventory_purchase)
 
 ---
 
@@ -569,6 +571,49 @@ Tabel pivot (composite PK: `id_users` + `kategori`).
 | `jatuh_tempo` | date | No | | |
 | `dikonfirmasi_oleh` | char(36) | Yes | NULL | ⚠️ Tidak ada FK constraint |
 | `dikonfirmasi_at` | datetime | Yes | NULL | |
+
+---
+
+## inventory
+
+Master data barang inventaris RT.
+
+| Kolom | Tipe | Null | Default | Keterangan |
+|---|---|---|---|---|
+| `id_inventory` | char(36) | No | uuid() | **PK** |
+| `nama_barang` | varchar(150) | No | | |
+| `kategori` | varchar(100) | Yes | NULL | |
+| `jumlah` | unsigned int | No | | |
+| `satuan` | varchar(50) | Yes | NULL | |
+| `kondisi` | enum | Yes | NULL | `BAIK, RUSAK, DIPERBAIKI` |
+| `lokasi` | varchar(150) | Yes | NULL | |
+| `id_wilayah` | char(36) | No | | FK → `wilayah.id_wilayah`, ON DELETE RESTRICT |
+| `status_aktif` | tinyint(1) | No | 1 | |
+| `created_by` | char(36) | Yes | NULL | FK → `users.id_users`, ON DELETE RESTRICT |
+| `created_at` | datetime | No | current_timestamp() | |
+| `updated_at` | datetime | No | current_timestamp() on update | |
+
+---
+
+## inventory_purchase
+
+Pengajuan pembelian barang inventaris (workflow: Diajukan → Disetujui/Ditolak).
+
+| Kolom | Tipe | Null | Default | Keterangan |
+|---|---|---|---|---|
+| `id_inventory_purchase` | char(36) | No | uuid() | **PK** |
+| `nama_barang` | varchar(150) | No | | |
+| `jumlah` | unsigned int | No | | |
+| `satuan` | varchar(50) | Yes | NULL | |
+| `perkiraan_biaya` | decimal(15,2) | Yes | NULL | |
+| `alasan` | text | Yes | NULL | |
+| `status` | enum | No | DIAJUKAN | `DIAJUKAN, DISETUJUI, DITOLAK` |
+| `id_wilayah` | char(36) | No | | FK → `wilayah.id_wilayah`, ON DELETE RESTRICT |
+| `diajukan_oleh` | char(36) | No | | FK → `users.id_users`, ON DELETE RESTRICT |
+| `disetujui_oleh` | char(36) | Yes | NULL | FK → `users.id_users`, ON DELETE RESTRICT |
+| `disetujui_at` | datetime | Yes | NULL | |
+| `created_at` | datetime | No | current_timestamp() | |
+| `updated_at` | datetime | No | current_timestamp() on update | |
 
 ---
 

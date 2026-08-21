@@ -63,6 +63,18 @@ export function getHouses(params = {}) {
   return request(`/houses${query ? `?${query}` : ''}`)
 }
 
+export function createHouse(payload) {
+  return request('/houses', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getWilayah(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/wilayah${query ? `?${query}` : ''}`)
+}
+
 export function getMyHouses() {
   return request('/houses/mine')
 }

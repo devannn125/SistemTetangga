@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Concerns\ResolvesActorWilayah;
 use App\Http\Requests\FamilyRequest;
 use App\Http\Resources\FamilyResource;
 use App\Models\Family;
@@ -9,6 +10,7 @@ use Illuminate\Http\Request;
 
 class FamilyController extends BaseApiController
 {
+    use ResolvesActorWilayah;
     public function index(Request $request)
     {
         $this->authorizeModule('KELUARGA', 'VIEW');
@@ -32,7 +34,10 @@ class FamilyController extends BaseApiController
     {
         $this->authorizeModule('KELUARGA', 'CREATE');
 
-        $family = Family::create($request->validated());
+        $data = $request->validated();
+        $data['id_wilayah'] = $this->resolveActorWilayah($request->user());
+
+        $family = Family::create($data);
 
         $this->audit('KELUARGA', 'CREATE', 'family', $family->id_family);
 

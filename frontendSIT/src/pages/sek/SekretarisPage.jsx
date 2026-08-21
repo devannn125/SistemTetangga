@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import WargaPage from './pages/WargaPage'
 import LetterPage from './pages/LetterPage'
 import InventoryPage from './pages/InventoryPage'
+import PerumahanPage from './pages/PerumahanPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 const sekMenus = [
@@ -32,7 +33,7 @@ function renderPage(activePath) {
   if (activePath === '/sek/surat') return <LetterPage />
   if (activePath === '/sek/inventaris') return <InventoryPage />
   if (activePath === '/sek/warga') return <WargaPage />
-  if (activePath === '/sek/perumahan') return <PlaceholderPage title="Perumahan" desc="Kelola data rumah dan kos (CRUD) - Segera hadir" />
+  if (activePath === '/sek/perumahan') return <PerumahanPage />
   if (activePath === '/sek/tamu') return <PlaceholderPage title="Tamu" desc="Daftar tamu warga (Read-only) - Segera hadir" />
   if (activePath === '/sek/keuangan') return <PlaceholderPage title="Keuangan" desc="Pemasukan & pengeluaran kas RT (Read-only) - Segera hadir" />
   if (activePath === '/sek/iuran') return <PlaceholderPage title="Iuran" desc="Tagihan iuran warga per KK (Read-only) - Segera hadir" />

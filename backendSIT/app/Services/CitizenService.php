@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Concerns\ResolvesActorWilayah;
 use App\Models\Citizen;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class CitizenService
 {
+    use ResolvesActorWilayah;
     /**
      * List warga dengan filter, pencarian, dan pagination.
      * Scoping "role boleh lihat apa" sudah ditegakkan lewat CitizenPolicy@viewAny
@@ -58,6 +60,7 @@ class CitizenService
     public function create(array $data, User $actor): Citizen
     {
         $data = $this->stripSensitiveInputIfUnauthorized($data, $actor);
+        $data['id_wilayah'] = $this->resolveActorWilayah($actor);
 
         return DB::transaction(function () use ($data) {
             return Citizen::create($data);

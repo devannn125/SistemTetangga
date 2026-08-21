@@ -56,7 +56,7 @@ function handleLogout() {
       <div className="flex h-15 shrink-0 border-b border-neutral-900 px-4 py-5">
         <a className="flex items-center gap-2 text-sm font-extrabold text-black no-underline" href="/warga">
           <Icon name="building" className="h-5 w-5" />
-          SIW MASYARAKAT
+          Kenaran
         </a>
       </div>
 
@@ -286,7 +286,7 @@ export function WargaPage() {
         {renderPage(activeMenu.path)}
         <footer className="border-t border-neutral-900 bg-white px-6 py-5 text-xs font-semibold text-neutral-500">
           <div className="mx-auto flex max-w-6xl justify-between gap-4 max-sm:flex-col">
-            <span>&copy; 2024 SIW Masyarakat - Sistem Informasi Warga</span>
+            <span>&copy; 2024 Kenaran</span>
             <span>Kontak Pengurus | Bantuan | Kebijakan Privasi</span>
           </div>
         </footer>

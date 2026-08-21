@@ -9,7 +9,7 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
       <div className="flex h-15 border-b border-neutral-900 px-4 py-5">
         <a className="flex items-center gap-2 text-sm font-extrabold text-black no-underline" href={homePath}>
           <Icon name="building" className="h-5 w-5" />
-          SIW MASYARAKAT
+          Kenaran
         </a>
       </div>
 
@@ -75,7 +75,7 @@ function PortalFooter({ label }) {
   return (
     <footer className="border-t border-neutral-900 bg-white px-6 py-5 text-xs font-semibold text-neutral-500">
       <div className="mx-auto flex max-w-6xl justify-between gap-4 max-sm:flex-col">
-        <span>&copy; 2024 SIW Masyarakat - {label}</span>
+        <span>&copy; 2024 Kenaran - {label}</span>
         <span>Kontak Pengurus | Bantuan | Kebijakan Privasi</span>
       </div>
     </footer>
@@ -92,7 +92,7 @@ export function PortalLayout({
   homePath,
   brandTitle,
   brandSubtitle,
-  footerLabel = 'Sistem Informasi Warga',
+  footerLabel = 'Kenaran',
   children,
 }) {
   return (

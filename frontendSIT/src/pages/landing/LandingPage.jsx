@@ -50,7 +50,7 @@ export function LandingPage() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-6 max-md:h-auto max-md:flex-wrap max-md:py-4">
           <a className="flex items-center gap-2 text-xl font-extrabold text-black no-underline" href="/">
             <Icon name="building" className="h-5 w-5" />
-            <span>S.I.W.</span>
+            <span>Kenaran</span>
           </a>
 
           {isWargaLoggedIn ? (
@@ -147,8 +147,8 @@ export function LandingPage() {
       <footer className="bg-black px-6 py-10 text-neutral-400">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-8 max-md:flex-col max-md:items-start">
           <div>
-            <strong className="block text-sm tracking-[0.2em] text-white">S.I.W.</strong>
-            <p className="mt-3 text-sm">&copy; 2024 Sistem Informasi Warga. All rights reserved.</p>
+            <strong className="block text-sm tracking-[0.2em] text-white">Kenaran</strong>
+            <p className="mt-3 text-sm">&copy; 2024 Kenaran. All rights reserved.</p>
           </div>
 
           <nav className="flex flex-wrap gap-7 text-sm font-medium" aria-label="Tautan bantuan">

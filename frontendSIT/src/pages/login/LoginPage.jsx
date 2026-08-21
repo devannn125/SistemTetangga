@@ -148,7 +148,7 @@ export function LoginPage() {
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-8 px-6 max-md:h-auto max-md:flex-wrap max-md:py-4">
           <a className="flex items-center gap-2 text-2xl font-extrabold text-black no-underline" href="/">
             <Icon name="building" className="h-6 w-6" />
-            <span>SIW MASYARAKAT</span>
+            <span>Kenaran</span>
           </a>
 
           <a
@@ -427,7 +427,7 @@ export function LoginPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-8 max-md:flex-col max-md:items-start">
           <a className="flex items-center gap-2 text-sm font-extrabold tracking-[0.08em] text-white no-underline" href="/">
             <Icon name="building" className="h-5 w-5" />
-            SIW MASYARAKAT
+            Kenaran
           </a>
 
           <nav className="flex flex-wrap gap-8 text-xs" aria-label="Tautan portal">
@@ -436,7 +436,7 @@ export function LoginPage() {
             <a className="text-neutral-400 no-underline transition hover:text-white" href="/">Bantuan</a>
           </nav>
 
-          <p className="text-sm">&copy; 2024 Sistem Informasi Warga. Transparansi & Stabilitas.</p>
+          <p className="text-sm">&copy; 2024 Kenaran. Transparansi & Stabilitas.</p>
         </div>
       </footer>
     </main>

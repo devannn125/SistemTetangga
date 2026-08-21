@@ -19,7 +19,7 @@ class FamilyRequest extends FormRequest
         return [
             'no_kk' => ['required', 'string', 'max:32', Rule::unique('family', 'no_kk')->ignore($id, 'id_family')],
             'id_kepala_keluarga' => ['nullable', 'exists:citizen,id_citizen'],
-            'id_wilayah' => ['required', 'exists:wilayah,id_wilayah'],
+            'id_wilayah' => ['nullable', 'exists:wilayah,id_wilayah'],
             'status' => ['required', Rule::in(['ACTIVE', 'PINDAH', 'DIHAPUS'])],
         ];
     }

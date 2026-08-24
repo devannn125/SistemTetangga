@@ -1,6 +1,8 @@
-﻿import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../components/ui/ConfirmContext'
+import { useToast } from '../../components/ui/ToastContext'
 import { clearAuthData } from '../../services/authService'
 import ComplaintPage from './pages/ComplaintPage'
 import FinancePage from './pages/FinancePage'
@@ -247,6 +249,8 @@ function FeedbackPage() {
   const [form, setForm] = useState({ kategori: 'MASUKAN', judul: '', deskripsi: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notice, setNotice] = useState({ type: '', msg: '' })
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     import('../../services/api').then(api => {
@@ -268,6 +272,13 @@ function FeedbackPage() {
       return
     }
 
+    const approved = await confirm({
+      title: 'Konfirmasi Kirim',
+      message: `Kirim ${form.kategori === 'KELUHAN' ? 'keluhan' : 'pesan'} "${form.judul}" kepada pengurus RT?`,
+      confirmLabel: 'Ya, Kirim',
+    })
+    if (!approved) return
+
     setIsSubmitting(true)
     setNotice({ type: '', msg: '' })
 
@@ -280,14 +291,14 @@ function FeedbackPage() {
         isi_feedback: form.deskripsi,
         isi_pesan: form.deskripsi // Menambahkan ini agar lolos validasi backend
       })
-      setNotice({ type: 'success', msg: 'Pesan berhasil dikirim!' })
+      showToast('Pesan berhasil dikirim.')
       setForm({ kategori: 'MASUKAN', judul: '', deskripsi: '' })
-      
+
       // Refresh list
       const res = await api.getFeedback({ per_page: 5 })
       setFeedbacks(Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [])
     } catch (err) {
-      setNotice({ type: 'error', msg: err.message || 'Gagal mengirim pesan.' })
+      showToast(err.message || 'Gagal mengirim pesan.', 'error')
     } finally {
       setIsSubmitting(false)
     }

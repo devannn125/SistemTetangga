@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getCitizens, getWilayah } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 export default function RtOrganizationPage() {
   const [members, setMembers] = useState([])
@@ -8,7 +10,8 @@ export default function RtOrganizationPage() {
   const [wilayahs, setWilayahs] = useState([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
   
   const [form, setForm] = useState({ 
     id_citizen: '', 
@@ -49,24 +52,35 @@ export default function RtOrganizationPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const approved = await confirm({
+      title: 'Konfirmasi Simpan',
+      message: `Yakin ingin menunjuk warga ini sebagai "${form.jabatan}"? Perubahan pengurus otomatis menyesuaikan hak aksesnya di sistem.`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     try {
       await createOrganizationMember(form)
-      setNotice('Pengurus berhasil ditambahkan.')
+      showToast('Pengurus berhasil ditambahkan.')
       setIsModalOpen(false)
       loadData()
     } catch (err) {
-      setNotice('Gagal menyimpan: ' + err.message)
+      showToast('Gagal menyimpan: ' + err.message, 'error')
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm('Hapus data pengurus ini?')) return
+    const approved = await confirm({
+      title: 'Konfirmasi Cabut',
+      message: 'Yakin ingin mencabut pengurus ini dari struktur organisasi?',
+      confirmLabel: 'Ya, Cabut',
+    })
+    if (!approved) return
     try {
       await deleteOrganizationMember(id)
-      setNotice('Data pengurus berhasil dihapus.')
+      showToast('Data pengurus berhasil dihapus.')
       loadData()
     } catch (err) {
-      setNotice('Gagal menghapus: ' + err.message)
+      showToast('Gagal menghapus: ' + err.message, 'error')
     }
   }
 
@@ -77,12 +91,6 @@ export default function RtOrganizationPage() {
       description="Kelola jabatan dan periode pengurus lingkungan (RT)."
     >
       <section className="mt-6 space-y-6">
-        {notice && (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
-            {notice}
-          </div>
-        )}
-
         <div className="flex justify-end">
           <button onClick={() => setIsModalOpen(true)} className="rounded-full bg-black px-4 py-2 text-xs font-extrabold uppercase text-white hover:bg-neutral-900">
             + Tambah Pengurus

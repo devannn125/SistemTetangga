@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getSiskamlingSchedules, createSiskamlingSchedule, deleteSiskamlingSchedule, getCitizens, getWilayah } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 const initialAlerts = [
   { id: 101, tanggal: '2026-08-20', laporan: 'Mati lampu di blok A, patroli diperketat.', eskalasi: false },
@@ -11,8 +13,9 @@ export default function RtSiskamlingPage() {
   const [citizens, setCitizens] = useState([])
   const [wilayahs, setWilayahs] = useState([])
   const [alerts, setAlerts] = useState(initialAlerts)
-  const [notice, setNotice] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
   
   const [form, setForm] = useState({ 
     id_wilayah: '', 
@@ -51,12 +54,17 @@ export default function RtSiskamlingPage() {
 
   function handleEscalateAlert(id) {
     setAlerts(alerts.map(a => a.id === id ? { ...a, eskalasi: true } : a))
-    setNotice('Kejadian berhasil dieskalasi ke tingkat RW/Dukuh secara langsung.')
+    showToast('Kejadian berhasil dieskalasi ke tingkat RW/Dukuh secara langsung.')
   }
 
   async function handleAddSchedule(e) {
     e.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Jadwal',
+      message: `Yakin ingin menambahkan jadwal ronda pada tanggal ${form.tanggal_jadwal} (shift ${form.shift})?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     try {
       await createSiskamlingSchedule({
         id_wilayah: form.id_wilayah,
@@ -64,22 +72,27 @@ export default function RtSiskamlingPage() {
         shift: form.shift,
         tanggal_jadwal: form.tanggal_jadwal
       })
-      setNotice('Jadwal ronda baru berhasil ditambahkan.')
+      showToast('Jadwal ronda baru berhasil ditambahkan.')
       setIsModalOpen(false)
       loadData()
     } catch (err) {
-      setNotice('Gagal menyimpan jadwal: ' + err.message)
+      showToast('Gagal menyimpan jadwal: ' + err.message, 'error')
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm('Hapus jadwal ini?')) return
+    const approved = await confirm({
+      title: 'Konfirmasi Hapus',
+      message: 'Yakin ingin menghapus jadwal ronda ini?',
+      confirmLabel: 'Ya, Hapus',
+    })
+    if (!approved) return
     try {
       await deleteSiskamlingSchedule(id)
-      setNotice('Jadwal berhasil dihapus.')
+      showToast('Jadwal berhasil dihapus.')
       loadData()
     } catch (err) {
-      setNotice('Gagal menghapus: ' + err.message)
+      showToast('Gagal menghapus: ' + err.message, 'error')
     }
   }
 
@@ -90,12 +103,6 @@ export default function RtSiskamlingPage() {
       description="Kelola jadwal ronda warga. Kejadian atau laporan darurat dapat langsung dieskalasi ke RW/Dukuh tanpa melalui proses bertingkat (Bypass)."
     >
       <section className="mt-8 space-y-8">
-        {notice && (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
-            {notice}
-          </div>
-        )}
-
         {/* JADWAL */}
         <div>
           <div className="flex justify-between items-center mb-4">

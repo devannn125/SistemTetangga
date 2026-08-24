@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getLetterRequests, updateLetterRequest } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 const statusTabs = [
   { id: 'DIVERIFIKASI', label: 'Perlu Persetujuan' },
@@ -30,6 +32,8 @@ export default function ApprovalLetterPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [processingId, setProcessingId] = useState('')
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -57,14 +61,22 @@ export default function ApprovalLetterPage() {
   const filteredLetters = letters.filter((letter) => activeStatus === 'all' || letter.status === activeStatus)
 
   async function handleDecision(id, status) {
-    setNotice('')
+    const approved = await confirm({
+      title: status === 'DISETUJUI' ? 'Konfirmasi Persetujuan' : 'Konfirmasi Penolakan',
+      message:
+        status === 'DISETUJUI'
+          ? 'Setujui permohonan surat ini dan terbitkan tanda tangan digital RT?'
+          : 'Tolak permohonan surat ini?',
+      confirmLabel: status === 'DISETUJUI' ? 'Ya, Setujui' : 'Ya, Tolak',
+    })
+    if (!approved) return
     setProcessingId(id)
     try {
       await updateLetterRequest(id, { status })
       setLetters((current) => current.map((letter) => (letter.id_letter_request === id ? { ...letter, status } : letter)))
-      setNotice(`Permohonan surat berhasil ${status === 'DISETUJUI' ? 'disetujui' : 'ditolak'}.`)
+      showToast(`Permohonan surat berhasil ${status === 'DISETUJUI' ? 'disetujui' : 'ditolak'}.`)
     } catch (error) {
-      setNotice(error.message || 'Gagal memperbarui status surat.')
+      showToast(error.message || 'Gagal memperbarui status surat.', 'error')
     } finally {
       setProcessingId('')
     }

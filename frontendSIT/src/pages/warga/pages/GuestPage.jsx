@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Icon } from '../../../components/ui/Icon'
 import { createGuest, getGuests, getMyHouses } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 function PageShell({ children, eyebrow, title, description }) {
   return (
@@ -67,6 +68,8 @@ export default function GuestPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -109,7 +112,12 @@ export default function GuestPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Daftarkan Tamu',
+      message: `Daftarkan tamu atas nama "${form.nama}"? Tamu akan menunggu persetujuan Ketua RT.`,
+      confirmLabel: 'Ya, Daftarkan',
+    })
+    if (!approved) return
     setIsSubmitting(true)
 
     try {
@@ -125,9 +133,9 @@ export default function GuestPage() {
       const created = response?.data || response
       setGuests((current) => [created, ...current])
       setForm({ ...initialForm, id_house: houses[0]?.id_house || '' })
-      setNotice('Tamu berhasil didaftarkan dan menunggu persetujuan Ketua RT.')
+      showToast('Tamu berhasil didaftarkan dan menunggu persetujuan Ketua RT.')
     } catch (error) {
-      setNotice(error.message || 'Tamu belum berhasil didaftarkan. Periksa data input.')
+      showToast(error.message || 'Tamu belum berhasil didaftarkan. Periksa data input.', 'error')
     } finally {
       setIsSubmitting(false)
     }

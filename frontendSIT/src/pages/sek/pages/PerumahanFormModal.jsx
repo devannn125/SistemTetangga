@@ -6,6 +6,8 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import 'leaflet/dist/leaflet.css'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 const DEFAULT_CENTER = [-7.7956, 110.3695]
 
@@ -88,6 +90,8 @@ export default function PerumahanFormModal({
     status_pajak: 'LUNAS',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (open) {
@@ -155,6 +159,15 @@ export default function PerumahanFormModal({
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const approved = await confirm({
+      title: mode === 'edit' ? 'Konfirmasi Perubahan' : 'Konfirmasi Simpan',
+      message:
+        mode === 'edit'
+          ? 'Simpan perubahan data perumahan ini?'
+          : 'Yakin ingin menyimpan data perumahan baru?',
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     setIsSubmitting(true)
     try {
       const payload = { ...form }
@@ -169,8 +182,9 @@ export default function PerumahanFormModal({
       }
       await onSubmit(payload)
       onClose()
-    } catch {
-      // Error handled by parent
+      showToast(mode === 'edit' ? 'Perubahan data perumahan berhasil disimpan.' : 'Data perumahan baru berhasil ditambahkan.')
+    } catch (error) {
+      showToast(error.message || 'Gagal menyimpan data perumahan.', 'error')
     } finally {
       setIsSubmitting(false)
     }

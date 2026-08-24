@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react'
 import { getCitizens, createCitizen, updateCitizen, getFamilies, createFamily, updateFamily, getMasterData } from '../../../services/api'
 import { PageShell } from '../../../components/layout/PageShell'
-import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 import WargaFormModal from './WargaFormModal'
 import KKFormModal from './KKFormModal'
 import {
   formatDate,
-  getStatusClass,
-  getAgamaName,
-  getPendidikanName,
-  getProfesiName,
   getFamilyName,
   getKepalaName,
   toRows,
@@ -26,7 +23,8 @@ export default function WargaPage() {
   // Modals
   const [wargaModal, setWargaModal] = useState({ open: false, mode: 'create', data: null })
   const [kkModal, setKKModal] = useState({ open: false, mode: 'create', data: null })
-  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, type: '' })
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   // Load master data for dropdowns
   useEffect(() => {
@@ -95,12 +93,10 @@ export default function WargaPage() {
     if (wargaModal.mode === 'edit') {
       await updateCitizen(wargaModal.data.id_citizen, payload)
       setCitizens((prev) => prev.map(c => c.id_citizen === wargaModal.data.id_citizen ? { ...c, ...payload } : c))
-      setNotice('Data warga berhasil diperbarui.')
     } else {
       const response = await createCitizen(payload)
       const created = response?.data || response
       setCitizens((prev) => [created, ...prev])
-      setNotice('Data warga berhasil ditambahkan.')
     }
   }
 
@@ -108,36 +104,32 @@ export default function WargaPage() {
     if (kkModal.mode === 'edit') {
       await updateFamily(kkModal.data.id_family, payload)
       setFamilies((prev) => prev.map(f => f.id_family === kkModal.data.id_family ? { ...f, ...payload } : f))
-      setNotice('Data KK berhasil diperbarui.')
     } else {
       const response = await createFamily(payload)
       const created = response?.data || response
       setFamilies((prev) => [created, ...prev])
-      setNotice('Data KK berhasil ditambahkan.')
     }
   }
 
-  function confirmDelete(id, type) {
-    setDeleteConfirm({ open: true, id, type })
-  }
-
-  async function handleDelete() {
-    const { id, type } = deleteConfirm
-    setNotice('')
+  async function handleDelete(id, type) {
+    const approved = await confirm({
+      title: 'Konfirmasi Hapus',
+      message: `Yakin ingin menonaktifkan ${type === 'warga' ? 'warga' : 'KK'} ini?`,
+      confirmLabel: 'Ya, Hapus',
+    })
+    if (!approved) return
     try {
       if (type === 'warga') {
         await updateCitizen(id, { status_aktif: false })
         setCitizens((prev) => prev.map(c => c.id_citizen === id ? { ...c, status_aktif: false } : c))
-        setNotice('Data warga dinonaktifkan.')
+        showToast('Data warga berhasil dinonaktifkan.')
       } else {
         await updateFamily(id, { status: 'DIHAPUS' })
         setFamilies((prev) => prev.map(f => f.id_family === id ? { ...f, status: 'DIHAPUS' } : f))
-        setNotice('Data KK dinonaktifkan.')
+        showToast('Data KK berhasil dinonaktifkan.')
       }
     } catch (error) {
-      setNotice(error.message || 'Gagal menghapus data.')
-    } finally {
-      setDeleteConfirm({ open: false, id: null, type: '' })
+      showToast(error.message || 'Gagal menghapus data.', 'error')
     }
   }
 
@@ -247,7 +239,7 @@ export default function WargaPage() {
                         </button>
                         <button
                           className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 transition"
-                          onClick={() => confirmDelete(item[idKey], activeTab)}
+                          onClick={() => handleDelete(item[idKey], activeTab)}
                           type="button"
                         >
                           Hapus
@@ -268,7 +260,6 @@ export default function WargaPage() {
           initialData={wargaModal.data}
           families={families}
           masterData={masterData}
-          loading={isLoading}
           mode={wargaModal.mode}
         />
 
@@ -280,15 +271,6 @@ export default function WargaPage() {
           citizens={citizens}
           loading={isLoading}
           mode={kkModal.mode}
-        />
-
-        <ConfirmDialog
-          open={deleteConfirm.open}
-          title="Konfirmasi Hapus"
-          message={`Yakin ingin menonaktifkan ${deleteConfirm.type === 'warga' ? 'warga' : 'KK'} ini?`}
-          confirmLabel="Hapus"
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteConfirm({ open: false, id: null, type: '' })}
         />
       </section>
     </PageShell>

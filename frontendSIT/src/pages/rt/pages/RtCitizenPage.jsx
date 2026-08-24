@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getCitizens, updateCitizen, createCitizen, getWilayah } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 function getVerificationStatusClass(status) {
   return {
@@ -27,6 +29,8 @@ export default function RtCitizenPage() {
   const [notice, setNotice] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingData, setEditingData] = useState(null)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
   
   const [formData, setFormData] = useState({
     nik: '',
@@ -89,20 +93,27 @@ export default function RtCitizenPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: editingData ? 'Konfirmasi Perubahan' : 'Konfirmasi Simpan',
+      message: editingData
+        ? `Simpan perubahan data warga atas nama "${formData.nama_lengkap}" dan ajukan ulang verifikasi ke RW?`
+        : `Yakin ingin menambahkan warga baru atas nama "${formData.nama_lengkap}"? Data akan berstatus Pending untuk diverifikasi RW.`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     try {
       const payload = { ...formData, status_verifikasi: 'PENDING' }
       if (editingData) {
         await updateCitizen(editingData.id_citizen, payload)
-        setNotice('Data berhasil diupdate dan diajukan ulang ke RW.')
+        showToast('Data warga berhasil diperbarui dan diajukan ulang ke RW.')
       } else {
-        await createCitizen(payload) 
-        setNotice('Warga baru berhasil ditambahkan dan berstatus Pending.')
+        await createCitizen(payload)
+        showToast('Warga baru berhasil ditambahkan dengan status Pending.')
       }
       setIsModalOpen(false)
       loadData()
     } catch (err) {
-      setNotice(err.message || 'Gagal menyimpan data')
+      showToast(err.message || 'Gagal menyimpan data', 'error')
     }
   }
 

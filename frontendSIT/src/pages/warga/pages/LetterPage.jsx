@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createLetterRequest, getLetterRequests } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 function PageShell({ children, eyebrow, title, description }) {
   return (
@@ -65,6 +67,8 @@ export default function LetterPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -97,7 +101,12 @@ export default function LetterPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Pengajuan',
+      message: `Ajukan permohonan Surat Keterangan ${form.jenis_surat === 'USAHA' ? 'Usaha' : 'Domisili'}?`,
+      confirmLabel: 'Ya, Ajukan',
+    })
+    if (!approved) return
     setIsSubmitting(true)
 
     try {
@@ -111,9 +120,9 @@ export default function LetterPage() {
       const created = response?.data || response
       setLetters((current) => [created, ...current])
       setForm(initialForm)
-      setNotice('Permohonan surat berhasil diajukan dan menunggu verifikasi Sekretaris.')
+      showToast('Permohonan surat berhasil diajukan dan menunggu verifikasi Sekretaris.')
     } catch (error) {
-      setNotice(error.message || 'Surat belum berhasil diajukan. Periksa data input.')
+      showToast(error.message || 'Surat belum berhasil diajukan. Periksa data input.', 'error')
     } finally {
       setIsSubmitting(false)
     }

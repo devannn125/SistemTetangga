@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 export default function KKFormModal({
   open,
@@ -16,6 +18,8 @@ export default function KKFormModal({
     status: 'ACTIVE',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (open) {
@@ -41,6 +45,15 @@ export default function KKFormModal({
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const approved = await confirm({
+      title: mode === 'edit' ? 'Konfirmasi Perubahan' : 'Konfirmasi Simpan',
+      message:
+        mode === 'edit'
+          ? `Simpan perubahan data KK nomor "${form.no_kk}"?`
+          : `Yakin ingin menyimpan Kartu Keluarga baru dengan nomor "${form.no_kk}"?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     setIsSubmitting(true)
     try {
       const payload = { ...form }
@@ -49,8 +62,9 @@ export default function KKFormModal({
       })
       await onSubmit(payload)
       onClose()
+      showToast(mode === 'edit' ? 'Perubahan data KK berhasil disimpan.' : 'Data KK baru berhasil ditambahkan.')
     } catch (error) {
-      // Error handled by parent
+      showToast(error.message || 'Gagal menyimpan data KK.', 'error')
     } finally {
       setIsSubmitting(false)
     }

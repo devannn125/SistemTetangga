@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getHouses, createHouse, deleteHouse, getWilayah, getCitizens } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 export default function RtHousingPage() {
   const [houses, setHouses] = useState([])
@@ -9,7 +11,8 @@ export default function RtHousingPage() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form, setForm] = useState({ tipe: 'NON_KOS', alamat: '', id_wilayah: '', id_pemilik_citizen: '' })
-  const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   async function loadData() {
     setLoading(true)
@@ -40,26 +43,37 @@ export default function RtHousingPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const approved = await confirm({
+      title: 'Konfirmasi Simpan',
+      message: `Yakin ingin menyimpan data rumah baru di alamat "${form.alamat}"?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     try {
       const payload = { ...form }
-      if (!payload.id_pemilik_citizen) delete payload.id_pemilik_citizen // optional
+      if (!payload.id_pemilik_citizen) delete payload.id_pemilik_citizen
       await createHouse(payload)
-      setNotice('Data rumah berhasil ditambahkan.')
+      showToast('Data rumah berhasil ditambahkan.')
       setIsModalOpen(false)
       loadData()
     } catch (err) {
-      setNotice('Gagal menyimpan: ' + err.message)
+      showToast('Gagal menyimpan: ' + err.message, 'error')
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm('Hapus data rumah ini?')) return
+    const approved = await confirm({
+      title: 'Konfirmasi Hapus',
+      message: 'Yakin ingin menghapus data rumah ini? Tindakan ini tidak dapat dibatalkan.',
+      confirmLabel: 'Ya, Hapus',
+    })
+    if (!approved) return
     try {
       await deleteHouse(id)
-      setNotice('Data rumah berhasil dihapus.')
+      showToast('Data rumah berhasil dihapus.')
       loadData()
     } catch (err) {
-      setNotice('Gagal menghapus: ' + err.message)
+      showToast('Gagal menghapus: ' + err.message, 'error')
     }
   }
 
@@ -70,12 +84,6 @@ export default function RtHousingPage() {
       description="Kelola data rumah warga dan kos di lingkungan Anda."
     >
       <section className="mt-6 space-y-6">
-        {notice && (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
-            {notice}
-          </div>
-        )}
-
         <div className="flex justify-end">
           <button onClick={() => setIsModalOpen(true)} className="rounded-full bg-black px-4 py-2 text-xs font-extrabold uppercase text-white hover:bg-neutral-900">
             + Tambah Rumah

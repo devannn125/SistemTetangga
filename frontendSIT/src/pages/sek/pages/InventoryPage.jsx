@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getInventoryPurchases, createInventoryPurchase } from '../../../services/api'
 import { PageShell } from '../../../components/layout/PageShell'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 import {
   formatDate,
   formatCurrency,
@@ -23,6 +25,8 @@ export default function InventoryPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ nama_barang: '', jumlah: '', satuan: '', perkiraan_biaya: '', alasan: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -55,7 +59,12 @@ export default function InventoryPage() {
 
   async function handleCreate(event) {
     event.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Pengajuan',
+      message: `Kirim pengajuan pembelian "${form.nama_barang}" sebanyak ${form.jumlah} ${form.satuan || 'unit'}?`,
+      confirmLabel: 'Ya, Kirim',
+    })
+    if (!approved) return
     setIsSubmitting(true)
     try {
       const response = await createInventoryPurchase({
@@ -69,9 +78,9 @@ export default function InventoryPage() {
       setPurchases((current) => [created, ...current])
       setForm({ nama_barang: '', jumlah: '', satuan: '', perkiraan_biaya: '', alasan: '' })
       setShowForm(false)
-      setNotice('Pengajuan pembelian berhasil dikirim.')
+      showToast('Pengajuan pembelian berhasil dikirim.')
     } catch (error) {
-      setNotice(error.message || 'Gagal mengirim pengajuan.')
+      showToast(error.message || 'Gagal mengirim pengajuan.', 'error')
     } finally {
       setIsSubmitting(false)
     }

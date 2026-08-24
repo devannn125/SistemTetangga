@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getComplaints, updateComplaint } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 const statusTabs = [
   { id: 'PENDING', label: 'Perlu Ditugaskan' },
@@ -39,6 +41,8 @@ export default function RtComplaintPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [processingId, setProcessingId] = useState('')
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -69,7 +73,12 @@ export default function RtComplaintPage() {
   )
 
   async function handleAssign(complaint) {
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Penugasan',
+      message: `Tugaskan pengaduan "${complaint.judul}" ke petugas dan ubah statusnya menjadi Diproses?`,
+      confirmLabel: 'Ya, Tugaskan',
+    })
+    if (!approved) return
     setProcessingId(complaint.id_complaint)
     try {
       await updateComplaint(complaint.id_complaint, {
@@ -83,16 +92,21 @@ export default function RtComplaintPage() {
       setComplaints((current) =>
         current.map((item) => (item.id_complaint === complaint.id_complaint ? { ...item, status: 'DIPROSES' } : item)),
       )
-      setNotice('Pengaduan berhasil ditugaskan dan status berubah menjadi Diproses.')
+      showToast('Pengaduan berhasil ditugaskan dan status berubah menjadi Diproses.')
     } catch (error) {
-      setNotice(error.message || 'Gagal menugaskan pengaduan.')
+      showToast(error.message || 'Gagal menugaskan pengaduan.', 'error')
     } finally {
       setProcessingId('')
     }
   }
 
   async function handleEscalate(complaint) {
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Eskalasi',
+      message: `Eskalasikan pengaduan "${complaint.judul}" ke tingkat RW?`,
+      confirmLabel: 'Ya, Eskalasi',
+    })
+    if (!approved) return
     setProcessingId(complaint.id_complaint)
     try {
       await updateComplaint(complaint.id_complaint, {
@@ -106,9 +120,9 @@ export default function RtComplaintPage() {
       setComplaints((current) =>
         current.map((item) => (item.id_complaint === complaint.id_complaint ? { ...item, status: 'ESKALASI' } : item)),
       )
-      setNotice('Pengaduan ditandai Eskalasi dan perlu diteruskan ke RW.')
+      showToast('Pengaduan ditandai Eskalasi dan perlu diteruskan ke RW.')
     } catch (error) {
-      setNotice(error.message || 'Gagal menandai eskalasi.')
+      showToast(error.message || 'Gagal menandai eskalasi.', 'error')
     } finally {
       setProcessingId('')
     }

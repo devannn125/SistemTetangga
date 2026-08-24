@@ -19,7 +19,6 @@ export function getStatusClass(status) {
     BELUM_BAYAR: 'bg-amber-100 text-amber-900',
     LUNAS: 'bg-emerald-100 text-emerald-900',
     SEBAGIAN: 'bg-sky-100 text-sky-900',
-    LUNAS: 'bg-emerald-100 text-emerald-900',
     BELUM_LUNAS: 'bg-amber-100 text-amber-900',
   }[status] || 'bg-neutral-100 text-neutral-900'
 }

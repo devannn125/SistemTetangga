@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { PortalLayout } from '../../components/layout/PortalLayout'
 import { PageShell } from '../../components/layout/PageShell'
 import { getAuthData } from '../../services/authService'
+import { useConfirm } from '../../components/ui/ConfirmContext'
+import { useToast } from '../../components/ui/ToastContext'
 import {
   createFeeBill,
   createFinanceTransaction,
@@ -111,6 +113,8 @@ function KeuanganPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -143,7 +147,12 @@ function KeuanganPage() {
 
   async function handleCreate(event) {
     event.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Simpan',
+      message: `Catat ${form.tipe === 'PEMASUKAN' ? 'pemasukan' : 'pengeluaran'} sebesar ${formatCurrency(form.jumlah)}${form.kategori ? ` (${form.kategori})` : ''}?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     setIsSubmitting(true)
     try {
       const response = await createFinanceTransaction({
@@ -156,23 +165,27 @@ function KeuanganPage() {
       const created = response?.data || response
       setTransactions((current) => [created, ...current])
       setForm(initialTransaction)
-      setNotice('Transaksi berhasil dicatat.')
+      showToast('Transaksi berhasil dicatat.')
     } catch (error) {
-      setNotice(error.message || 'Gagal menyimpan transaksi.')
+      showToast(error.message || 'Gagal menyimpan transaksi.', 'error')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('Hapus transaksi ini?')) return
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Hapus',
+      message: 'Yakin ingin menghapus transaksi ini?',
+      confirmLabel: 'Ya, Hapus',
+    })
+    if (!approved) return
     try {
       await deleteFinanceTransaction(id)
       setTransactions((current) => current.filter((t) => t.id_keuangan_transaksi !== id))
-      setNotice('Transaksi dihapus.')
+      showToast('Transaksi berhasil dihapus.')
     } catch (error) {
-      setNotice(error.message || 'Gagal menghapus transaksi.')
+      showToast(error.message || 'Gagal menghapus transaksi.', 'error')
     }
   }
 
@@ -269,6 +282,8 @@ function IuranPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [processingId, setProcessingId] = useState('')
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -308,7 +323,12 @@ function IuranPage() {
 
   async function handleCreate(event) {
     event.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Tagihan',
+      message: `Buat tagihan iuran ${formatPeriod(form.periode)} sebesar ${formatCurrency(form.jumlah_tagihan)} untuk ${familyLabel(form.id_family)}?`,
+      confirmLabel: 'Ya, Buat',
+    })
+    if (!approved) return
     setIsSubmitting(true)
     try {
       const response = await createFeeBill({
@@ -321,37 +341,46 @@ function IuranPage() {
       const created = response?.data || response
       setBills((current) => [created, ...current])
       setForm({ ...initialBill, id_family: form.id_family })
-      setNotice('Tagihan berhasil dibuat.')
+      showToast('Tagihan berhasil dibuat.')
     } catch (error) {
-      setNotice(error.message || 'Gagal membuat tagihan.')
+      showToast(error.message || 'Gagal membuat tagihan.', 'error')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   async function handleStatus(id, status) {
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Status Pembayaran',
+      message: `Ubah status tagihan ini menjadi "${status === 'LUNAS' ? 'Lunas' : 'Sebagian'}"?`,
+      confirmLabel: 'Ya, Ubah',
+    })
+    if (!approved) return
     setProcessingId(id)
     try {
       await updateFeeBill(id, { status })
       setBills((current) => current.map((b) => (b.id_iuran_tagihan === id ? { ...b, status } : b)))
-      setNotice('Status tagihan diperbarui.')
+      showToast('Status tagihan berhasil diperbarui.')
     } catch (error) {
-      setNotice(error.message || 'Gagal memperbarui tagihan.')
+      showToast(error.message || 'Gagal memperbarui tagihan.', 'error')
     } finally {
       setProcessingId('')
     }
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('Hapus tagihan ini?')) return
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Hapus',
+      message: 'Yakin ingin menghapus tagihan ini?',
+      confirmLabel: 'Ya, Hapus',
+    })
+    if (!approved) return
     try {
       await deleteFeeBill(id)
       setBills((current) => current.filter((b) => b.id_iuran_tagihan !== id))
-      setNotice('Tagihan dihapus.')
+      showToast('Tagihan berhasil dihapus.')
     } catch (error) {
-      setNotice(error.message || 'Gagal menghapus tagihan.')
+      showToast(error.message || 'Gagal menghapus tagihan.', 'error')
     }
   }
 
@@ -502,6 +531,8 @@ function PerumahanPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [savingId, setSavingId] = useState('')
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -526,14 +557,20 @@ function PerumahanPage() {
   }, [])
 
   async function handlePajak(id, status_pajak) {
-    setNotice('')
+    if (!status_pajak) return
+    const approved = await confirm({
+      title: 'Konfirmasi Status Pajak',
+      message: `Ubah status pajak rumah ini menjadi "${status_pajak === 'LUNAS' ? 'Lunas' : 'Belum Lunas'}"?`,
+      confirmLabel: 'Ya, Ubah',
+    })
+    if (!approved) return
     setSavingId(id)
     try {
       await updateHouse(id, { status_pajak })
       setHouses((current) => current.map((h) => (h.id_house === id ? { ...h, status_pajak } : h)))
-      setNotice('Status pajak diperbarui.')
+      showToast('Status pajak berhasil diperbarui.')
     } catch (error) {
-      setNotice(error.message || 'Gagal memperbarui status pajak.')
+      showToast(error.message || 'Gagal memperbarui status pajak.', 'error')
     } finally {
       setSavingId('')
     }

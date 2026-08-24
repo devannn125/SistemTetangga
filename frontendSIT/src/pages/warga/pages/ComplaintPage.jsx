@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
 import { createComplaint, getComplaints } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 function PageShell({ children, eyebrow, title, description }) {
   return (
@@ -127,6 +129,8 @@ export default function ComplaintPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -187,7 +191,12 @@ export default function ComplaintPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Kirim Laporan',
+      message: `Kirim pengaduan "${form.judul}" dengan tingkat urgensi ${form.urgensi}?`,
+      confirmLabel: 'Ya, Kirim',
+    })
+    if (!approved) return
     setIsSubmitting(true)
 
     try {
@@ -202,9 +211,9 @@ export default function ComplaintPage() {
       setReports((current) => [created, ...current])
       setForm(initialForm)
       setProofFile(null)
-      setNotice('Laporan berhasil dikirim dan masuk ke database.')
+      showToast('Laporan berhasil dikirim dan masuk ke database.')
     } catch (error) {
-      setNotice(error.message || 'Laporan belum berhasil dikirim. Periksa koneksi dan data input.')
+      showToast(error.message || 'Laporan belum berhasil dikirim. Periksa koneksi dan data input.', 'error')
     } finally {
       setIsSubmitting(false)
     }

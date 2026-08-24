@@ -282,7 +282,7 @@ export default function RtStatisticsPage() {
                 <div className="mt-4 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <p className="text-xs font-bold uppercase text-neutral-500">Jenis Kelamin</p>
-                    <p className="mt-1 font-semibold text-black">Laki-laki {demographicSummary.kependudukan.jenis_kelamin?.L || 0} • Perempuan {demographicSummary.kependudukan.jenis_kelamin?.P || 0}</p>
+                    <p className="mt-1 font-semibold text-black">Laki-laki {demographicSummary.kependudukan.jenis_kelamin?.L || 0} â€¢ Perempuan {demographicSummary.kependudukan.jenis_kelamin?.P || 0}</p>
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase text-neutral-500">Usia Produktif / Tidak</p>

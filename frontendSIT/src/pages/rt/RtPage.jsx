@@ -3,6 +3,8 @@ import { PortalLayout } from '../../components/layout/PortalLayout'
 import { PageShell } from '../../components/layout/PageShell'
 import { getAuthData } from '../../services/authService'
 import { getInventoryPurchases, updateInventoryPurchase } from '../../services/api'
+import { useConfirm } from '../../components/ui/ConfirmContext'
+import { useToast } from '../../components/ui/ToastContext'
 import ApprovalGuestPage from './pages/ApprovalGuestPage'
 import ApprovalLetterPage from './pages/ApprovalLetterPage'
 import RtComplaintPage from './pages/RtComplaintPage'
@@ -178,6 +180,8 @@ function ApprovalInventoryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [processingId, setProcessingId] = useState('')
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -205,14 +209,22 @@ function ApprovalInventoryPage() {
   const filteredPurchases = purchases.filter((p) => activeStatus === 'all' || p.status === activeStatus)
 
   async function handleDecision(id, status) {
-    setNotice('')
+    const approved = await confirm({
+      title: status === 'DISETUJUI' ? 'Konfirmasi Approval' : 'Konfirmasi Penolakan',
+      message:
+        status === 'DISETUJUI'
+          ? 'Setujui pengajuan pembelian barang ini? Bendahara akan melanjutkan proses pembelian.'
+          : 'Tolak pengajuan pembelian barang ini?',
+      confirmLabel: status === 'DISETUJUI' ? 'Ya, Setujui' : 'Ya, Tolak',
+    })
+    if (!approved) return
     setProcessingId(id)
     try {
       await updateInventoryPurchase(id, { status })
       setPurchases((current) => current.map((p) => (p.id_inventory_purchase === id ? { ...p, status } : p)))
-      setNotice(`Pengajuan pembelian berhasil ${status === 'DISETUJUI' ? 'disetujui' : 'ditolak'}.`)
+      showToast(`Pengajuan pembelian berhasil ${status === 'DISETUJUI' ? 'disetujui' : 'ditolak'}.`)
     } catch (error) {
-      setNotice(error.message || 'Gagal memperbarui status pengajuan.')
+      showToast(error.message || 'Gagal memperbarui status pengajuan.', 'error')
     } finally {
       setProcessingId('')
     }

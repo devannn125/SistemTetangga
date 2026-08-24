@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getFeeBills, updateFeeBill } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 function formatCurrency(value) {
   return `Rp ${Number(value || 0).toLocaleString('id-ID')}`
@@ -29,6 +31,8 @@ export default function RtFeeBillPage() {
   const [notice, setNotice] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [searchText, setSearchText] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -71,14 +75,19 @@ export default function RtFeeBillPage() {
   }, [bills])
 
   async function handleApprove(bill) {
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Approval',
+      message: `Setujui (publish) tagihan iuran periode ${bill.periode}? Tagihan akan aktif dan dapat dilihat warga.`,
+      confirmLabel: 'Ya, Setujui',
+    })
+    if (!approved) return
     try {
       // Simulate approval (changing DRAFT to BELUM_BAYAR so it becomes an active bill)
       await updateFeeBill(bill.id_fee_bill, { status: 'BELUM_BAYAR' })
       setBills(bills.map(b => b.id_fee_bill === bill.id_fee_bill ? { ...b, status: 'BELUM_BAYAR' } : b))
-      setNotice(`Tagihan periode ${bill.periode} berhasil disetujui (publish).`)
+      showToast(`Tagihan periode ${bill.periode} berhasil disetujui (publish).`)
     } catch (error) {
-      setNotice(error.message || 'Gagal menyetujui tagihan.')
+      showToast(error.message || 'Gagal menyetujui tagihan.', 'error')
     }
   }
 

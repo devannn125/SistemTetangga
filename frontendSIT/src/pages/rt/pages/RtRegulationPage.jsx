@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { createRegulation, deleteRegulation, getRegulations, getWilayah, updateRegulation } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 const allowedCategories = [
   { id: 'WARGA_TETAP', label: 'Tata Tertib Warga Tetap' },
@@ -37,6 +39,8 @@ export default function RtRegulationPage() {
   const [notice, setNotice] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -96,7 +100,14 @@ export default function RtRegulationPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    setNotice('')
+    const approved = await confirm({
+      title: editingId ? 'Konfirmasi Perubahan' : 'Konfirmasi Simpan',
+      message: editingId
+        ? `Simpan perubahan peraturan "${form.judul}"? Perubahan akan tercatat sebagai versi baru.`
+        : `Yakin ingin menerbitkan peraturan "${form.judul}"? Warga akan menerima notifikasi peraturan baru.`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     setIsSaving(true)
 
     try {
@@ -107,23 +118,28 @@ export default function RtRegulationPage() {
         if (editingId) return current.map((item) => (item.id_regulation === editingId ? saved : item))
         return [saved, ...current]
       })
-      setNotice(editingId ? 'Peraturan RT berhasil diperbarui.' : 'Peraturan RT berhasil dibuat.')
+      showToast(editingId ? 'Peraturan RT berhasil diperbarui.' : 'Peraturan RT berhasil dibuat.')
       resetForm()
     } catch (error) {
-      setNotice(error.message || 'Gagal menyimpan peraturan.')
+      showToast(error.message || 'Gagal menyimpan peraturan.', 'error')
     } finally {
       setIsSaving(false)
     }
   }
 
   async function handleDeactivate(id) {
-    setNotice('')
+    const approved = await confirm({
+      title: 'Konfirmasi Nonaktifkan',
+      message: 'Yakin ingin menonaktifkan peraturan ini?',
+      confirmLabel: 'Ya, Nonaktifkan',
+    })
+    if (!approved) return
     try {
       await deleteRegulation(id)
       setRegulations((current) => current.map((item) => (item.id_regulation === id ? { ...item, status: 'NONAKTIF' } : item)))
-      setNotice('Peraturan berhasil dinonaktifkan.')
+      showToast('Peraturan berhasil dinonaktifkan.')
     } catch (error) {
-      setNotice(error.message || 'Gagal menonaktifkan peraturan.')
+      showToast(error.message || 'Gagal menonaktifkan peraturan.', 'error')
     }
   }
 

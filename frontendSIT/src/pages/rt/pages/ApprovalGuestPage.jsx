@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getGuests, updateGuest } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 const statusTabs = [
   { id: 'all', label: 'Semua' },
@@ -30,6 +32,8 @@ export default function ApprovalGuestPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [processingId, setProcessingId] = useState('')
   const [notice, setNotice] = useState('')
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     let alive = true
@@ -57,16 +61,24 @@ export default function ApprovalGuestPage() {
   const filteredGuests = guests.filter((guest) => activeStatus === 'all' || guest.status === activeStatus)
 
   async function handleDecision(id, status) {
-    setNotice('')
+    const approved = await confirm({
+      title: status === 'DISETUJUI' ? 'Konfirmasi Persetujuan' : 'Konfirmasi Penolakan',
+      message:
+        status === 'DISETUJUI'
+          ? 'Setujui pendaftaran tamu ini untuk menginap?'
+          : 'Tolak pendaftaran tamu ini?',
+      confirmLabel: status === 'DISETUJUI' ? 'Ya, Setujui' : 'Ya, Tolak',
+    })
+    if (!approved) return
     setProcessingId(id)
     try {
       await updateGuest(id, { status })
       setGuests((current) =>
         current.map((guest) => (guest.id_guest === id ? { ...guest, status } : guest)),
       )
-      setNotice(`Tamu berhasil ${status === 'DISETUJUI' ? 'disetujui' : 'ditolak'}.`)
+      showToast(`Tamu berhasil ${status === 'DISETUJUI' ? 'disetujui' : 'ditolak'}.`)
     } catch (error) {
-      setNotice(error.message || 'Gagal memperbarui status tamu.')
+      showToast(error.message || 'Gagal memperbarui status tamu.', 'error')
     } finally {
       setProcessingId('')
     }

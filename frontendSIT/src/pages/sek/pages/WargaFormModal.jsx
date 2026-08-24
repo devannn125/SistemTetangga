@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 import { formatDate } from './utils'
 
 const Select = ({ value, onChange, options, placeholder, className = '', disabled = false }) => (
@@ -78,11 +80,12 @@ export default function WargaFormModal({
   initialData,
   families,
   masterData,
-  loading,
   mode = 'create',
 }) {
   const [form, setForm] = useState(emptyForm)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (open) {
@@ -132,6 +135,15 @@ export default function WargaFormModal({
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const approved = await confirm({
+      title: mode === 'edit' ? 'Konfirmasi Perubahan' : 'Konfirmasi Simpan',
+      message:
+        mode === 'edit'
+          ? `Simpan perubahan data warga atas nama "${form.nama_lengkap || 'warga ini'}"?`
+          : `Yakin ingin menyimpan data warga baru atas nama "${form.nama_lengkap}"?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
     setIsSubmitting(true)
     try {
       const payload = { ...form }
@@ -140,8 +152,9 @@ export default function WargaFormModal({
       })
       await onSubmit(payload)
       onClose()
+      showToast(mode === 'edit' ? 'Perubahan data warga berhasil disimpan.' : 'Data warga baru berhasil ditambahkan.')
     } catch (error) {
-      // Error handled by parent
+      showToast(error.message || 'Gagal menyimpan data warga.', 'error')
     } finally {
       setIsSubmitting(false)
     }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getAnnouncements, createAnnouncement, getWilayah } from '../../../services/api'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 
 export default function RtAnnouncementPage() {
   const [announcements, setAnnouncements] = useState([])
@@ -9,6 +11,8 @@ export default function RtAnnouncementPage() {
   const [formData, setFormData] = useState({ judul: '', isi: '', krusial: false, kategori: 'LAINNYA', id_wilayah: '' })
   const [notice, setNotice] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   async function loadData() {
     setIsLoading(true)
@@ -39,32 +43,36 @@ export default function RtAnnouncementPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    // Berdasarkan validasi backend: status_approval = 'RW' jika butuh persetujuan, 'RT' jika lgsg publish
-    const statusApproval = formData.krusial ? 'RW' : 'RT'
-    
-    // Perbaikan: Kita harus mengirimkan atribut sesuai validasi AnnouncementRequest backend
+    const approved = await confirm({
+      title: formData.krusial ? 'Konfirmasi Pengajuan' : 'Konfirmasi Terbitkan',
+      message: formData.krusial
+        ? `Ajukan pengumuman "${formData.judul}" ke RW untuk disetujui?`
+        : `Terbitkan pengumuman "${formData.judul}" kepada seluruh warga RT?`,
+      confirmLabel: formData.krusial ? 'Ya, Ajukan' : 'Ya, Terbitkan',
+    })
+    if (!approved) return
     try {
+      // Berdasarkan validasi backend: status_approval = 'RW' jika butuh persetujuan, 'RT' jika lgsg publish
+      const statusApproval = formData.krusial ? 'RW' : 'RT'
       const payload = {
         judul: formData.judul,
         isi: formData.isi,
         kategori: formData.kategori,
         id_wilayah: formData.id_wilayah,
-        target: 'SEMUA_WARGA', // Default target
+        target: 'SEMUA_WARGA',
         status_approval: statusApproval,
         is_pinned: false,
-        // Karena ada validasi required pada created_by di backend, kita gunakan 'USR-001'
-        // Jika sistem auth berjalan penuh, harusnya ini diambil dari user context.
-        created_by: 'USR-001' 
+        created_by: 'USR-001',
       }
 
       await createAnnouncement(payload)
-      
-      setNotice(formData.krusial ? 'Pengumuman Krusial berhasil diajukan dan sedang Menunggu Persetujuan RW.' : 'Pengumuman berhasil diterbitkan.')
+
+      showToast(formData.krusial ? 'Pengumuman krusial berhasil diajukan dan menunggu persetujuan RW.' : 'Pengumuman berhasil diterbitkan.')
       setIsModalOpen(false)
       setFormData(f => ({ judul: '', isi: '', krusial: false, kategori: 'LAINNYA', id_wilayah: f.id_wilayah }))
       loadData()
     } catch (err) {
-      setNotice('Gagal menerbitkan pengumuman: ' + err.message)
+      showToast('Gagal menerbitkan pengumuman: ' + err.message, 'error')
     }
   }
 

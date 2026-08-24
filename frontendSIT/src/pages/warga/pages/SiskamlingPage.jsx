@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { getSiskamlingSchedules } from '../../../services/api'
 
 function PageShell({ children, eyebrow, title, description }) {

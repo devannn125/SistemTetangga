@@ -21,7 +21,7 @@ export default function RtUserManagementPage() {
     setNotice(`Role pengguna berhasil diubah menjadi ${role}.`)
   }
 
-  function handleResetPassword(id) {
+  function handleResetPassword() {
     setNotice('Password berhasil di-reset menjadi default (123456).')
   }
 
@@ -70,7 +70,7 @@ export default function RtUserManagementPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <button onClick={() => handleResetPassword(u.id)} className="text-sky-600 font-bold uppercase text-xs">Reset Password</button>
+                      <button onClick={() => handleResetPassword()} className="text-sky-600 font-bold uppercase text-xs">Reset Password</button>
                       <button onClick={() => handleSuspend(u.id)} className={`font-bold uppercase text-xs ${u.status === 'AKTIF' ? 'text-red-600' : 'text-emerald-600'}`}>
                         {u.status === 'AKTIF' ? 'Suspend' : 'Aktifkan'}
                       </button>

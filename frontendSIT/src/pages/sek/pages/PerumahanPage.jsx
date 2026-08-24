@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getHouses, createHouse, updateHouse, getCitizens, getMasterData, getWilayah } from '../../../services/api'
 import { PageShell } from '../../../components/layout/PageShell'
-import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
+import { useConfirm } from '../../../components/ui/ConfirmContext'
+import { useToast } from '../../../components/ui/ToastContext'
 import PerumahanFormModal from './PerumahanFormModal'
-import { formatDate, toRows } from './utils'
+import { toRows } from './utils'
 
 export default function PerumahanPage() {
   const [houses, setHouses] = useState([])
@@ -11,10 +12,10 @@ export default function PerumahanPage() {
   const [masterData, setMasterData] = useState({ kategori_kos: [] })
   const [wilayah, setWilayah] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [notice, setNotice] = useState('')
 
   const [perumahanModal, setPerumahanModal] = useState({ open: false, mode: 'create', data: null })
-  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null })
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     async function loadAllData() {
@@ -50,30 +51,26 @@ export default function PerumahanPage() {
     if (perumahanModal.mode === 'edit') {
       await updateHouse(perumahanModal.data.id_house, payload)
       setHouses((prev) => prev.map(h => h.id_house === perumahanModal.data.id_house ? { ...h, ...payload } : h))
-      setNotice('Data perumahan berhasil diperbarui.')
     } else {
       const response = await createHouse(payload)
       const created = response?.data || response
       setHouses((prev) => [created, ...prev])
-      setNotice('Data perumahan berhasil ditambahkan.')
     }
   }
 
-  function confirmDelete(id) {
-    setDeleteConfirm({ open: true, id })
-  }
-
-  async function handleDelete() {
-    const { id } = deleteConfirm
-    setNotice('')
+  async function handleDelete(id) {
+    const approved = await confirm({
+      title: 'Konfirmasi Nonaktifkan',
+      message: 'Yakin ingin menonaktifkan perumahan ini?',
+      confirmLabel: 'Ya, Nonaktifkan',
+    })
+    if (!approved) return
     try {
       await updateHouse(id, { status_aktif: false })
       setHouses((prev) => prev.map(h => h.id_house === id ? { ...h, status_aktif: false } : h))
-      setNotice('Data perumahan dinonaktifkan.')
+      showToast('Data perumahan berhasil dinonaktifkan.')
     } catch (error) {
-      setNotice(error.message || 'Gagal menonaktifkan data.')
-    } finally {
-      setDeleteConfirm({ open: false, id: null })
+      showToast(error.message || 'Gagal menonaktifkan data.', 'error')
     }
   }
 
@@ -121,12 +118,6 @@ export default function PerumahanPage() {
       description="Kelola data rumah warga dan kos/kost (CRUD) tingkat RT."
     >
       <section className="mt-8 space-y-6">
-        {notice ? (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
-            {notice}
-          </div>
-        ) : null}
-
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-neutral-900"
@@ -175,7 +166,7 @@ export default function PerumahanPage() {
                         </button>
                         <button
                           className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 transition"
-                          onClick={() => confirmDelete(item.id_house)}
+                          onClick={() => handleDelete(item.id_house)}
                           type="button"
                         >
                           Nonaktifkan
@@ -197,15 +188,6 @@ export default function PerumahanPage() {
           citizens={citizens}
           masterData={masterData}
           mode={perumahanModal.mode}
-        />
-
-        <ConfirmDialog
-          open={deleteConfirm.open}
-          title="Konfirmasi Nonaktifkan"
-          message="Yakin ingin menonaktifkan perumahan ini?"
-          confirmLabel="Nonaktifkan"
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteConfirm({ open: false, id: null })}
         />
       </section>
     </PageShell>

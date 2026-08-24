@@ -40,6 +40,7 @@ class StoreCitizenRequest extends FormRequest
             'berdomisili_luar_rt' => ['nullable', 'boolean'],
             'status_hidup' => ['nullable', Rule::in(['HIDUP', 'MENINGGAL'])],
             'status_aktif' => ['nullable', 'boolean'],
+            'status_verifikasi' => ['nullable', Rule::in(['PENDING', 'VERIFIED_RW', 'APPROVED_DUKUH', 'REJECTED'])],
         ];
     }
 

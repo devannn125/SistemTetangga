@@ -110,6 +110,13 @@ export function createComplaint(payload) {
   })
 }
 
+export function updateComplaint(id, payload) {
+  return request(`/complaints/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getFinanceTransactions(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request(`/finance-transactions${query ? `?${query}` : ''}`)

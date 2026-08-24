@@ -5,6 +5,10 @@ import { getAuthData } from '../../services/authService'
 import { getInventoryPurchases, updateInventoryPurchase } from '../../services/api'
 import ApprovalGuestPage from './pages/ApprovalGuestPage'
 import ApprovalLetterPage from './pages/ApprovalLetterPage'
+import RtComplaintPage from './pages/RtComplaintPage'
+import RtFeeBillPage from './pages/RtFeeBillPage'
+import RtFinancePage from './pages/RtFinancePage'
+import RtRegulationPage from './pages/RtRegulationPage'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RT
 // (Dashboard full, Data Warga CRUD, Perumahan, Tamu approve, Keuangan read,
@@ -16,6 +20,7 @@ const rtMenus = [
   { label: 'Data Warga', path: '/rt/warga', icon: 'users' },
   { label: 'Perumahan', path: '/rt/perumahan', icon: 'box' },
   { label: 'Tamu', path: '/rt/tamu', icon: 'idCard' },
+  { label: 'Pengaduan', path: '/rt/pengaduan', icon: 'alert' },
   { label: 'Keuangan', path: '/rt/keuangan', icon: 'wallet' },
   { label: 'Iuran', path: '/rt/iuran', icon: 'receipt' },
   { label: 'Surat Keterangan', path: '/rt/surat', icon: 'file' },

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
-import { getFeeBills } from '../../../services/api'
+import { getFeeBills, updateFeeBill } from '../../../services/api'
 
 function formatCurrency(value) {
   return `Rp ${Number(value || 0).toLocaleString('id-ID')}`
@@ -13,6 +13,7 @@ function formatDate(value) {
 
 function getStatusClass(status) {
   return {
+    DRAFT: 'bg-neutral-100 text-neutral-600',
     BELUM_BAYAR: 'bg-amber-100 text-amber-900',
     SEBAGIAN: 'bg-sky-100 text-sky-900',
     LUNAS: 'bg-emerald-100 text-emerald-900',
@@ -51,24 +52,41 @@ export default function RtFeeBillPage() {
     }
   }, [])
 
+  const filteredBills = useMemo(() => {
+    if (!searchText) return bills
+    const lower = searchText.toLowerCase()
+    return bills.filter((b) => b.periode?.toLowerCase().includes(lower) || b.family?.kepala_keluarga?.toLowerCase().includes(lower))
+  }, [bills, searchText])
+
   const summary = useMemo(() => {
-    const total = bills.reduce((sum, bill) => sum + Number(bill.jumlah_tagihan || 0), 0)
-    const paid = bills.filter((bill) => bill.status === 'LUNAS').reduce((sum, bill) => sum + Number(bill.jumlah_tagihan || 0), 0)
-    return { total, paid, unpaid: total - paid }
+    return bills.reduce(
+      (acc, bill) => {
+        acc.total += Number(bill.jumlah_tagihan || 0)
+        acc.paid += Number(bill.jumlah_terbayar || 0)
+        acc.unpaid += Number(bill.jumlah_tagihan || 0) - Number(bill.jumlah_terbayar || 0)
+        return acc
+      },
+      { total: 0, paid: 0, unpaid: 0 },
+    )
   }, [bills])
 
-  const filteredBills = bills.filter((bill) =>
-    [bill.periode, bill.status, bill.keterangan, bill.family?.nomor_kk, bill.family?.kepala_keluarga]
-      .join(' ')
-      .toLowerCase()
-      .includes(searchText.toLowerCase()),
-  )
+  async function handleApprove(bill) {
+    setNotice('')
+    try {
+      // Simulate approval (changing DRAFT to BELUM_BAYAR so it becomes an active bill)
+      await updateFeeBill(bill.id_fee_bill, { status: 'BELUM_BAYAR' })
+      setBills(bills.map(b => b.id_fee_bill === bill.id_fee_bill ? { ...b, status: 'BELUM_BAYAR' } : b))
+      setNotice(`Tagihan periode ${bill.periode} berhasil disetujui (publish).`)
+    } catch (error) {
+      setNotice(error.message || 'Gagal menyetujui tagihan.')
+    }
+  }
 
   return (
     <PageShell
       eyebrow="Iuran"
       title="Approval Iuran Bulanan"
-      description="Ketua RT memeriksa draf tagihan yang disiapkan Bendahara. Konfirmasi pembayaran warga tetap menjadi kewenangan Bendahara RT."
+      description="Ketua RT memeriksa draf tagihan yang disiapkan Bendahara dan memberikan persetujuan (Publish). Konfirmasi pelunasan warga tetap menjadi kewenangan Bendahara RT."
     >
       <section className="mt-8 space-y-6">
         {notice ? (
@@ -77,13 +95,9 @@ export default function RtFeeBillPage() {
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-          Backend saat ini hanya menyimpan status pembayaran. Tombol publish draf belum diaktifkan agar RT tidak berubah menjadi konfirmator pembayaran.
-        </div>
-
         <div className="grid gap-4 md:grid-cols-3">
           <article className="rounded-xl border border-neutral-300 bg-white p-6">
-            <p className="text-xs font-bold uppercase text-neutral-500">Total Tagihan</p>
+            <p className="text-xs font-bold uppercase text-neutral-500">Total Tagihan (Aktif & Lunas)</p>
             <div className="mt-3 text-2xl font-extrabold text-black">{formatCurrency(summary.total)}</div>
             <p className="mt-2 text-sm text-neutral-600">{isLoading ? 'Memuat data...' : `${bills.length} tagihan`}</p>
           </article>
@@ -122,6 +136,7 @@ export default function RtFeeBillPage() {
                     <th className="py-3 pr-4">Jatuh Tempo</th>
                     <th className="py-3 pr-4">Jumlah</th>
                     <th className="py-3 pr-4">Status</th>
+                    <th className="py-3 pr-4 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -133,6 +148,13 @@ export default function RtFeeBillPage() {
                       <td className="py-4 pr-4 font-bold text-black">{formatCurrency(bill.jumlah_tagihan)}</td>
                       <td className="py-4 pr-4">
                         <span className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(bill.status)}`}>{bill.status}</span>
+                      </td>
+                      <td className="py-4 pr-4 text-right">
+                        {bill.status === 'DRAFT' || bill.status === 'PENDING' ? (
+                          <button onClick={() => handleApprove(bill)} className="text-sky-600 font-bold uppercase text-xs">Setujui</button>
+                        ) : (
+                          <span className="text-neutral-400 text-xs italic">Aktif</span>
+                        )}
                       </td>
                     </tr>
                   ))}

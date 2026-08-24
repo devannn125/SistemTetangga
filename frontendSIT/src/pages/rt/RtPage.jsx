@@ -9,6 +9,14 @@ import RtComplaintPage from './pages/RtComplaintPage'
 import RtFeeBillPage from './pages/RtFeeBillPage'
 import RtFinancePage from './pages/RtFinancePage'
 import RtRegulationPage from './pages/RtRegulationPage'
+import RtCitizenPage from './pages/RtCitizenPage'
+import RtSiskamlingPage from './pages/RtSiskamlingPage'
+import RtAnnouncementPage from './pages/RtAnnouncementPage'
+import RtUserManagementPage from './pages/RtUserManagementPage'
+import RtHousingPage from './pages/RtHousingPage'
+import RtOrganizationPage from './pages/RtOrganizationPage'
+import RtMessagePage from './pages/RtMessagePage'
+import RtStatisticsPage from './pages/RtStatisticsPage'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RT
 // (Dashboard full, Data Warga CRUD, Perumahan, Tamu approve, Keuangan read,
@@ -25,9 +33,9 @@ const rtMenus = [
   { label: 'Iuran', path: '/rt/iuran', icon: 'receipt' },
   { label: 'Surat Keterangan', path: '/rt/surat', icon: 'file' },
   { label: 'Siskamling', path: '/rt/siskamling', icon: 'shield' },
-  { label: 'Informasi & Statistik', path: '/rt/statistik', icon: 'chart' },
+  { label: 'Informasi & Statistik', path: '/rt/statistik', icon: 'trendingUp' },
   { label: 'Peraturan', path: '/rt/peraturan', icon: 'scroll' },
-  { label: 'Struktur Organisasi', path: '/rt/organisasi', icon: 'building' },
+  { label: 'Struktur Organisasi', path: '/rt/organisasi', icon: 'users' },
   { label: 'Pesan Warga', path: '/rt/pesan', icon: 'message' },
   { label: 'Pengumuman', path: '/rt/pengumuman', icon: 'megaphone' },
   { label: 'Manajemen User', path: '/rt/user', icon: 'key' },
@@ -41,33 +49,100 @@ function getCurrentMenu() {
 
 function HomePage() {
   const authUser = getAuthData()
+  const [counts, setCounts] = useState({ guests: 0, letters: 0, bills: 0, inventory: 0 })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    import('../../services/api').then(api => {
+      Promise.all([
+        api.getGuests({ per_page: 100 }),
+        api.getLetterRequests({ per_page: 100 }),
+        api.getFeeBills({ per_page: 100 }),
+        api.getInventoryPurchases({ per_page: 100 })
+      ]).then(([resGuests, resLetters, resBills, resInv]) => {
+        const guestsArr = Array.isArray(resGuests?.data) ? resGuests.data : Array.isArray(resGuests) ? resGuests : []
+        const lettersArr = Array.isArray(resLetters?.data) ? resLetters.data : Array.isArray(resLetters) ? resLetters : []
+        const billsArr = Array.isArray(resBills?.data) ? resBills.data : Array.isArray(resBills) ? resBills : []
+        const invArr = Array.isArray(resInv?.data) ? resInv.data : Array.isArray(resInv) ? resInv : []
+
+        setCounts({
+          guests: guestsArr.filter(g => g.status === 'MENUNGGU').length,
+          letters: lettersArr.filter(l => l.status === 'MENUNGGU' || l.status === 'DIPROSES').length,
+          bills: billsArr.filter(b => b.status === 'DRAFT' || b.status === 'PENDING').length,
+          inventory: invArr.filter(i => i.status_pengajuan === 'DIAJUKAN' || i.status === 'DIAJUKAN' || i.status === 'MENUNGGU').length
+        })
+        setLoading(false)
+      }).catch(err => {
+        console.error('Failed to fetch approval counts', err)
+        setLoading(false)
+      })
+    })
+  }, [])
 
   return (
     <PageShell
       eyebrow="Portal Ketua RT"
       title={`Selamat datang, ${authUser?.nama_users || 'Ketua RT'}`}
-      description="Kelola data warga, verifikasi pengaduan, dan pantau keuangan RT dari satu tempat."
+      description="Pusat notifikasi dan persetujuan (approval) harian RT."
     >
-      <section className="mt-8 grid gap-5 md:grid-cols-3">
-        <article className="border border-neutral-900 bg-white p-6">
-          <h2 className="text-lg font-extrabold text-black">Tamu Menunggu Approval</h2>
-          <p className="mt-3 text-sm leading-6 text-neutral-600">Belum ada data — hubungkan ke backend.</p>
+      <section className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        
+        <article className={`rounded-2xl border ${counts.guests > 0 ? 'border-sky-300 bg-sky-50' : 'border-neutral-300 bg-white'} p-6 shadow-sm flex flex-col justify-between`}>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold uppercase text-neutral-500">Tamu Menginap</h2>
+              {counts.guests > 0 && <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse">{counts.guests}</span>}
+            </div>
+            <p className="text-2xl font-extrabold text-black mt-2">{loading ? '...' : counts.guests} Pengajuan</p>
+            <p className="mt-2 text-xs text-neutral-600">Laporan tamu lebih dari 1x24 jam.</p>
+          </div>
+          <a href="/rt/tamu" className={`mt-6 inline-flex w-full justify-center rounded-full px-4 py-2 text-xs font-extrabold uppercase ${counts.guests > 0 ? 'bg-sky-600 text-white hover:bg-sky-700' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
+            Buka Tamu
+          </a>
         </article>
-        <article className="border border-neutral-900 bg-white p-6">
-          <h2 className="text-lg font-extrabold text-black">Surat Perlu Approval</h2>
-          <p className="mt-3 text-sm leading-6 text-neutral-600">Belum ada data — hubungkan ke backend.</p>
+
+        <article className={`rounded-2xl border ${counts.letters > 0 ? 'border-amber-300 bg-amber-50' : 'border-neutral-300 bg-white'} p-6 shadow-sm flex flex-col justify-between`}>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold uppercase text-neutral-500">Surat Pengantar</h2>
+              {counts.letters > 0 && <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse">{counts.letters}</span>}
+            </div>
+            <p className="text-2xl font-extrabold text-black mt-2">{loading ? '...' : counts.letters} Menunggu</p>
+            <p className="mt-2 text-xs text-neutral-600">Permohonan surat pengantar warga.</p>
+          </div>
+          <a href="/rt/surat" className={`mt-6 inline-flex w-full justify-center rounded-full px-4 py-2 text-xs font-extrabold uppercase ${counts.letters > 0 ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
+            Buka Surat
+          </a>
         </article>
-        <article className="border border-neutral-900 bg-white p-6">
-          <h2 className="text-lg font-extrabold text-black">Iuran Perlu Konfirmasi</h2>
-          <p className="mt-3 text-sm leading-6 text-neutral-600">Belum ada data — hubungkan ke backend.</p>
+
+        <article className={`rounded-2xl border ${counts.bills > 0 ? 'border-emerald-300 bg-emerald-50' : 'border-neutral-300 bg-white'} p-6 shadow-sm flex flex-col justify-between`}>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold uppercase text-neutral-500">Draf Iuran</h2>
+              {counts.bills > 0 && <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse">{counts.bills}</span>}
+            </div>
+            <p className="text-2xl font-extrabold text-black mt-2">{loading ? '...' : counts.bills} Draf Baru</p>
+            <p className="mt-2 text-xs text-neutral-600">Draf tagihan iuran bulanan dari Bendahara.</p>
+          </div>
+          <a href="/rt/iuran" className={`mt-6 inline-flex w-full justify-center rounded-full px-4 py-2 text-xs font-extrabold uppercase ${counts.bills > 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
+            Buka Iuran
+          </a>
         </article>
-        <article className="border border-neutral-900 bg-white p-6">
-          <h2 className="text-lg font-extrabold text-black">Inventaris Perlu Approval</h2>
-          <p className="mt-3 text-sm leading-6 text-neutral-600">Pengajuan pembelian barang dari Sekretaris.</p>
-          <a className="mt-4 inline-flex text-xs font-extrabold uppercase text-black no-underline hover:text-sky-700" href="/rt/inventaris">
+
+        <article className={`rounded-2xl border ${counts.inventory > 0 ? 'border-purple-300 bg-purple-50' : 'border-neutral-300 bg-white'} p-6 shadow-sm flex flex-col justify-between`}>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold uppercase text-neutral-500">Inventaris</h2>
+              {counts.inventory > 0 && <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse">{counts.inventory}</span>}
+            </div>
+            <p className="text-2xl font-extrabold text-black mt-2">{loading ? '...' : counts.inventory} Pengajuan</p>
+            <p className="mt-2 text-xs text-neutral-600">Pembelian aset dari Sekretaris.</p>
+          </div>
+          <a href="/rt/inventaris" className={`mt-6 inline-flex w-full justify-center rounded-full px-4 py-2 text-xs font-extrabold uppercase ${counts.inventory > 0 ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
             Buka Inventaris
           </a>
         </article>
+
       </section>
     </PageShell>
   )
@@ -235,34 +310,21 @@ function ApprovalInventoryPage() {
 // TODO: begitu tiap modul digarap, pindahkan ke file sendiri di src/pages/rt/pages/,
 // mengikuti pola yang sudah ada di src/pages/warga/pages/
 function renderPage(activePath) {
-  if (activePath === '/rt/warga')
-    return <PageShell eyebrow="Kependudukan" title="Data Warga" description="CRUD data warga tingkat RT. Sedang dikembangkan." />
-  if (activePath === '/rt/perumahan')
-    return <PageShell eyebrow="Perumahan" title="Data Rumah & Kos" description="CRUD data rumah warga dan kos. Sedang dikembangkan." />
-  if (activePath === '/rt/tamu')
-    return <ApprovalGuestPage />
-  if (activePath === '/rt/keuangan')
-    return <PageShell eyebrow="Keuangan" title="Keuangan RT" description="Ringkasan kas RT (read-only, input oleh Bendahara). Sedang dikembangkan." />
-  if (activePath === '/rt/iuran')
-    return <PageShell eyebrow="Iuran" title="Approval Iuran Warga" description="Persetujuan dan pemantauan status iuran. Sedang dikembangkan." />
-  if (activePath === '/rt/surat')
-    return <ApprovalLetterPage />
-  if (activePath === '/rt/siskamling')
-    return <PageShell eyebrow="Siskamling" title="Jadwal & Kejadian Siskamling" description="Kelola jadwal ronda dan tinjau laporan kejadian. Sedang dikembangkan." />
-  if (activePath === '/rt/statistik')
-    return <PageShell eyebrow="Informasi & Statistik" title="Statistik Warga" description="Statistik kependudukan kategori a-j, termasuk data sensitif. Sedang dikembangkan." />
-  if (activePath === '/rt/peraturan')
-    return <PageShell eyebrow="Peraturan" title="Tata Tertib RT" description="Kelola tata tertib warga tetap & tidak tetap. Sedang dikembangkan." />
-  if (activePath === '/rt/organisasi')
-    return <PageShell eyebrow="Organisasi" title="Struktur Organisasi & Pengurus" description="Kelola jabatan dan periode pengurus RT. Sedang dikembangkan." />
-  if (activePath === '/rt/pesan')
-    return <PageShell eyebrow="Komunikasi" title="Pesan & Kesan Warga" description="Tinjau pesan, keluhan, dan apresiasi warga. Sedang dikembangkan." />
-  if (activePath === '/rt/pengumuman')
-    return <PageShell eyebrow="Informasi" title="Pengumuman" description="Kelola pengumuman untuk warga. Sedang dikembangkan." />
-  if (activePath === '/rt/user')
-    return <PageShell eyebrow="Sistem" title="Manajemen User" description="Kelola akun pengguna dalam lingkup RT. Sedang dikembangkan." />
-  if (activePath === '/rt/inventaris')
-    return <ApprovalInventoryPage />
+  if (activePath === '/rt/warga') return <RtCitizenPage />
+  if (activePath === '/rt/perumahan') return <RtHousingPage />
+  if (activePath === '/rt/tamu') return <ApprovalGuestPage />
+  if (activePath === '/rt/pengaduan') return <RtComplaintPage />
+  if (activePath === '/rt/keuangan') return <RtFinancePage />
+  if (activePath === '/rt/iuran') return <RtFeeBillPage />
+  if (activePath === '/rt/surat') return <ApprovalLetterPage />
+  if (activePath === '/rt/siskamling') return <RtSiskamlingPage />
+  if (activePath === '/rt/statistik') return <RtStatisticsPage />
+  if (activePath === '/rt/peraturan') return <RtRegulationPage />
+  if (activePath === '/rt/organisasi') return <RtOrganizationPage />
+  if (activePath === '/rt/pesan') return <RtMessagePage />
+  if (activePath === '/rt/pengumuman') return <RtAnnouncementPage />
+  if (activePath === '/rt/user') return <RtUserManagementPage />
+  if (activePath === '/rt/inventaris') return <ApprovalInventoryPage />
   return <HomePage />
 }
 

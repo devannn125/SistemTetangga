@@ -311,3 +311,68 @@ export function getStatistikDetail(kode) {
 export function getStatistikKeluarga() {
   return request('/statistics/informasi/keluarga')
 }
+
+// --- ANNOUNCEMENT ---
+export function getAnnouncements(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/announcements${query ? `?${query}` : ''}`)
+}
+
+export function createAnnouncement(payload) {
+  return request('/announcements', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateAnnouncement(id, payload) {
+  return request(`/announcements/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteAnnouncement(id) {
+  return request(`/announcements/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+
+export function createSiskamlingSchedule(payload) {
+  return request('/siskamling-schedules', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateSiskamlingSchedule(id, payload) {
+  return request(`/siskamling-schedules/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteSiskamlingSchedule(id) {
+  return request(`/siskamling-schedules/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+
+// --- ADDED MISSING FUNCTIONS ---
+export function deleteHouse(id) {
+  return request(`/houses/${id}`, { method: 'DELETE' })
+}
+
+export function createOrganizationMember(payload) {
+  return request('/organization-members', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function deleteOrganizationMember(id) {
+  return request(`/organization-members/${id}`, { method: 'DELETE' })
+}
+
+export function getDashboardStatistics() {
+  return request(`/dashboard`)
+}

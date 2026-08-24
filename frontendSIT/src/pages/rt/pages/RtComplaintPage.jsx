@@ -27,7 +27,7 @@ function getStatusClass(status) {
 
 function isPastSla(complaint) {
   if (complaint.status !== 'PENDING') return false
-  const createdAt = new Date(complaint.created_at)
+  const createdAt = new Date(complaint.created_at || complaint.tanggal)
   if (Number.isNaN(createdAt.getTime())) return false
   const threeDays = 3 * 24 * 60 * 60 * 1000
   return Date.now() - createdAt.getTime() > threeDays

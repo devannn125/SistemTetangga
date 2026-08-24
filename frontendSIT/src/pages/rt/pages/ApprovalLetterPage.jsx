@@ -72,7 +72,7 @@ export default function ApprovalLetterPage() {
 
   return (
     <PageShell
-      description="Berikan persetujuan final pada permohonan surat warga yang telah diverifikasi Sekretaris."
+      description="Berikan persetujuan (tanda tangan digital RT) pada permohonan surat warga. Surat pengantar akan selesai di sini, sedangkan surat tertentu seperti Domisili akan diteruskan ke RW/Dukuh."
       eyebrow="Surat Keterangan"
       title="Approval Permohonan Surat"
     >

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { clearAuthData } from '../../services/authService'
@@ -184,6 +184,26 @@ function HomePage() {
 
 
 function AnnouncementPage() {
+  const [items, setItems] = React.useState([])
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    // Gunakan modul api yang sama dengan RT agar token autentikasi terkirim
+    import('../../services/api').then(({ getAnnouncements }) => {
+      getAnnouncements({ per_page: 100 })
+        .then(res => {
+          const arr = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+          // Hanya tampilkan pengumuman yang sudah disetujui (aktif) atau dari RT langsung
+          setItems(arr.filter(a => ['RT', 'DUKUH_DISETUJUI'].includes(a.status_approval) || !a.status_approval))
+          setLoading(false)
+        })
+        .catch(err => {
+          console.error(err)
+          setLoading(false)
+        })
+    })
+  }, [])
+
   return (
     <PageShell
       description="Baca informasi terbaru yang dibagikan pengurus lingkungan."
@@ -191,11 +211,17 @@ function AnnouncementPage() {
       title="Pengumuman Warga"
     >
       <section className="mt-6 grid gap-4">
-        {announcements.map((item) => (
-          <article className="border border-neutral-900 bg-white p-5" key={item.title}>
-            <p className="text-xs font-extrabold uppercase text-neutral-500">{item.type} - {item.date}</p>
-            <h2 className="mt-2 text-lg font-extrabold text-black">{item.title}</h2>
-            <p className="mt-3 text-sm leading-6 text-neutral-600">Informasi lengkap akan diperbarui oleh pengurus RT/RW.</p>
+        {loading ? (
+          <div className="p-8 text-center text-sm text-neutral-500 bg-white border">Memuat pengumuman...</div>
+        ) : items.length === 0 ? (
+          <div className="p-8 text-center text-sm text-neutral-500 bg-white border">Belum ada pengumuman.</div>
+        ) : items.map((item) => (
+          <article className="border border-neutral-900 bg-white p-5" key={item.id_announcement || item.id || item.judul}>
+            <p className="text-xs font-extrabold uppercase text-neutral-500">
+              {item.kategori || 'Berita'} - {item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : (item.tanggal || '-')}
+            </p>
+            <h2 className="mt-2 text-lg font-extrabold text-black">{item.judul}</h2>
+            <p className="mt-3 text-sm leading-6 text-neutral-600">{item.isi}</p>
           </article>
         ))}
       </section>
@@ -216,6 +242,57 @@ function NotificationPage() {
 }
 
 function FeedbackPage() {
+  const [feedbacks, setFeedbacks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState({ kategori: 'MASUKAN', judul: '', deskripsi: '' })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [notice, setNotice] = useState({ type: '', msg: '' })
+
+  useEffect(() => {
+    import('../../services/api').then(api => {
+      api.getFeedback({ per_page: 5 }).then(res => {
+        const arr = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+        setFeedbacks(arr)
+        setLoading(false)
+      }).catch(err => {
+        console.error(err)
+        setLoading(false)
+      })
+    })
+  }, [])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!form.judul.trim() || !form.deskripsi.trim()) {
+      setNotice({ type: 'error', msg: 'Judul dan isi pesan wajib diisi.' })
+      return
+    }
+
+    setIsSubmitting(true)
+    setNotice({ type: '', msg: '' })
+
+    try {
+      const api = await import('../../services/api')
+      await api.createFeedback({
+        judul: form.judul,
+        kategori: form.kategori,
+        deskripsi: form.deskripsi,
+        isi_feedback: form.deskripsi,
+        isi_pesan: form.deskripsi // Menambahkan ini agar lolos validasi backend
+      })
+      setNotice({ type: 'success', msg: 'Pesan berhasil dikirim!' })
+      setForm({ kategori: 'MASUKAN', judul: '', deskripsi: '' })
+      
+      // Refresh list
+      const res = await api.getFeedback({ per_page: 5 })
+      setFeedbacks(Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [])
+    } catch (err) {
+      setNotice({ type: 'error', msg: err.message || 'Gagal mengirim pesan.' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <PageShell
       description="Sampaikan aspirasi, kritik membangun, atau apresiasi kepada pengurus lingkungan."
@@ -223,35 +300,72 @@ function FeedbackPage() {
       title="Pesan & Kesan"
     >
       <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <form className="border border-neutral-900 bg-white p-5">
-          <label className="grid gap-2 text-sm font-bold text-black">
-            Kategori Pesan
-            <select className="h-11 border border-neutral-400 px-3 outline-0 focus:border-sky-600">
-              <option>Aspirasi / Usulan</option>
-              <option>Keluhan</option>
-              <option>Apresiasi</option>
-            </select>
-          </label>
-          <label className="mt-4 grid gap-2 text-sm font-bold text-black">
-            Isi Pesan
-            <textarea className="min-h-40 resize-none border border-neutral-400 px-3 py-3 outline-0 focus:border-sky-600" placeholder="Tuliskan detail pesan Anda di sini..." />
-          </label>
-          <button className="mt-5 h-10 border border-black bg-black px-5 text-xs font-extrabold text-white" type="button">
-            Kirim Pesan
-          </button>
-        </form>
+        <div className="border border-neutral-900 bg-white p-5">
+          {notice.msg && (
+            <div className={`mb-5 rounded px-4 py-3 text-sm font-bold ${notice.type === 'error' ? 'bg-red-50 text-red-900' : 'bg-emerald-50 text-emerald-900'}`}>
+              {notice.msg}
+            </div>
+          )}
+          <form onSubmit={handleSubmit}>
+            <label className="grid gap-2 text-sm font-bold text-black">
+              Kategori Pesan
+              <select 
+                className="h-11 border border-neutral-400 px-3 outline-0 focus:border-sky-600"
+                value={form.kategori}
+                onChange={e => setForm({ ...form, kategori: e.target.value })}
+              >
+                <option value="MASUKAN">Aspirasi / Usulan</option>
+                <option value="KELUHAN">Keluhan</option>
+                <option value="APRESIASI">Apresiasi</option>
+                <option value="LAINNYA">Lainnya</option>
+              </select>
+            </label>
+            <label className="mt-4 grid gap-2 text-sm font-bold text-black">
+              Judul Pesan
+              <input 
+                type="text"
+                className="h-11 border border-neutral-400 px-3 outline-0 focus:border-sky-600" 
+                placeholder="Topik pesan..." 
+                value={form.judul}
+                onChange={e => setForm({ ...form, judul: e.target.value })}
+              />
+            </label>
+            <label className="mt-4 grid gap-2 text-sm font-bold text-black">
+              Isi Pesan
+              <textarea 
+                className="min-h-40 resize-none border border-neutral-400 px-3 py-3 outline-0 focus:border-sky-600" 
+                placeholder="Tuliskan detail pesan Anda di sini..." 
+                value={form.deskripsi}
+                onChange={e => setForm({ ...form, deskripsi: e.target.value })}
+              />
+            </label>
+            <button 
+              className="mt-5 h-10 border border-black bg-black px-5 text-xs font-extrabold text-white disabled:opacity-50" 
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Mengirim...' : 'Kirim Pesan'}
+            </button>
+          </form>
+        </div>
 
         <aside className="border border-neutral-900 bg-white p-5">
-          <h2 className="text-base font-extrabold text-black">Kesan Warga</h2>
+          <h2 className="text-base font-extrabold text-black">Kesan Warga Terkini</h2>
           <div className="mt-4 space-y-3">
-            <article className="border border-neutral-300 p-4">
-              <p className="text-sm font-extrabold text-black">Bpk. Budi Santoso</p>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">Terima kasih atas perbaikan lampu jalan di area blok A.</p>
-            </article>
-            <article className="border border-neutral-300 p-4">
-              <p className="text-sm font-extrabold text-black">Anonim</p>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">Mohon dipertimbangkan jadwal pengangkutan sampah tambahan.</p>
-            </article>
+            {loading ? (
+              <p className="text-sm text-neutral-500">Memuat...</p>
+            ) : feedbacks.length === 0 ? (
+              <p className="text-sm text-neutral-500">Belum ada pesan yang dibagikan.</p>
+            ) : feedbacks.map((item) => (
+              <article key={item.id_feedback || item.id} className="border border-neutral-300 p-4">
+                <div className="flex justify-between items-start mb-1">
+                  <p className="text-sm font-extrabold text-black">{item.judul || 'Pesan'}</p>
+                  <span className="text-[10px] font-bold uppercase text-sky-700 bg-sky-50 px-2 py-0.5 rounded">{item.kategori || 'UMUM'}</span>
+                </div>
+                <p className="text-xs text-neutral-500 mb-2">{item.tanggal_submit || item.created_at?.slice(0,10)}</p>
+                <p className="text-sm leading-6 text-neutral-600 line-clamp-3">{item.isi_pesan || item.deskripsi || item.isi_feedback}</p>
+              </article>
+            ))}
           </div>
         </aside>
       </section>

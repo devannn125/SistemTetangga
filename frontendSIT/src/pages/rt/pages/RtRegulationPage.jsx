@@ -100,7 +100,7 @@ export default function RtRegulationPage() {
     setIsSaving(true)
 
     try {
-      const payload = { ...form, id_wilayah: Number(form.id_wilayah) }
+      const payload = { ...form }
       const response = editingId ? await updateRegulation(editingId, payload) : await createRegulation(payload)
       const saved = response?.data || response
       setRegulations((current) => {

@@ -12,6 +12,7 @@ import HealthPage from './pages/HealthPage'
 import InventoryPage from './pages/InventoryPage'
 import RulesPage from './pages/RulesPage'
 import OrgPage from './pages/OrgPage'
+import StatisticsPage from './pages/StatisticsPage'
 
 const wargaMenus = [
   { label: 'Beranda', path: '/warga', icon: 'home' },
@@ -24,6 +25,7 @@ const wargaMenus = [
   { label: 'Inventaris', path: '/warga/inventaris', icon: 'box' },
   { label: 'Peraturan', path: '/warga/peraturan', icon: 'scroll' },
   { label: 'Struktur Organisasi', path: '/warga/organisasi', icon: 'users' },
+  { label: 'Statistik', path: '/warga/statistik', icon: 'trendingUp' },
   { label: 'Surat Resmi', path: '/warga/surat-resmi', icon: 'file' },
   { label: 'Pengumuman', path: '/warga/pengumuman', icon: 'megaphone' },
   { label: 'Notifikasi', path: '/warga/notifikasi', icon: 'bell' },
@@ -267,6 +269,7 @@ function renderPage(activePath) {
   if (activePath === '/warga/inventaris') return <InventoryPage />
   if (activePath === '/warga/peraturan') return <RulesPage />
   if (activePath === '/warga/organisasi') return <OrgPage />
+  if (activePath === '/warga/statistik') return <StatisticsPage />
   if (activePath === '/warga/surat-resmi') return <LetterPage />
   if (activePath === '/warga/pengumuman') return <AnnouncementPage />
   if (activePath === '/warga/notifikasi') return <NotificationPage />

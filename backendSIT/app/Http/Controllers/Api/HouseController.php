@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Concerns\ResolvesActorWilayah;
 use App\Http\Requests\HouseRequest;
 use App\Http\Resources\HouseResource;
 use App\Models\House;
@@ -9,6 +10,8 @@ use Illuminate\Http\Request;
 
 class HouseController extends BaseApiController
 {
+    use ResolvesActorWilayah;
+
     public function index(Request $request)
     {
         $this->authorizeModule('PERUMAHAN', 'VIEW');
@@ -31,7 +34,10 @@ class HouseController extends BaseApiController
     {
         $this->authorizeModule('PERUMAHAN', 'CREATE');
 
-        $house = House::create($request->validated());
+        $data = $request->validated();
+        $data['id_wilayah'] = $this->resolveActorWilayah($request->user());
+
+        $house = House::create($data);
 
         $this->audit('PERUMAHAN', 'CREATE', 'house', $house->id_house);
 
@@ -76,7 +82,10 @@ class HouseController extends BaseApiController
 
         $house = House::findOrFail($id);
         $old = $house->toArray();
-        $house->update($request->validated());
+
+        $data = $request->validated();
+        $data['id_wilayah'] = $this->resolveActorWilayah($request->user());
+        $house->update($data);
 
         $this->audit('PERUMAHAN', 'UPDATE', 'house', $house->id_house, $old, $house->toArray());
 

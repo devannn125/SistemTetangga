@@ -19,7 +19,7 @@ class HouseRequest extends FormRequest
         return [
             'tipe' => [$required, Rule::in(['NON_KOS', 'KOS'])],
             'alamat' => [$required, 'string', 'max:255'],
-            'id_wilayah' => [$required, 'exists:wilayah,id_wilayah'],
+            'id_wilayah' => ['sometimes', 'nullable', 'exists:wilayah,id_wilayah'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'id_pemilik_citizen' => ['nullable', 'exists:citizen,id_citizen'],

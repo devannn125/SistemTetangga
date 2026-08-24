@@ -6,6 +6,7 @@ import WargaPage from './pages/WargaPage'
 import LetterPage from './pages/LetterPage'
 import InventoryPage from './pages/InventoryPage'
 import PerumahanPage from './pages/PerumahanPage'
+import InformasiStatistikPage from './pages/InformasiStatistikPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 const sekMenus = [
@@ -38,7 +39,7 @@ function renderPage(activePath) {
   if (activePath === '/sek/keuangan') return <PlaceholderPage title="Keuangan" desc="Pemasukan & pengeluaran kas RT (Read-only) - Segera hadir" />
   if (activePath === '/sek/iuran') return <PlaceholderPage title="Iuran" desc="Tagihan iuran warga per KK (Read-only) - Segera hadir" />
   if (activePath === '/sek/siskamling') return <PlaceholderPage title="Siskamling" desc="Jadwal ronda, kejadian, presensi (Read-only) - Segera hadir" />
-  if (activePath === '/sek/statistik') return <PlaceholderPage title="Informasi & Statistik" desc="Statistik warga kategori a-j - Segera hadir" />
+  if (activePath === '/sek/statistik') return <InformasiStatistikPage />
   if (activePath === '/sek/peraturan') return <PlaceholderPage title="Peraturan" desc="Tata tertib warga tetap & tidak tetap (CRUD) - Segera hadir" />
   if (activePath === '/sek/organisasi') return <PlaceholderPage title="Struktur Organisasi" desc="Daftar pengurus RT (Read-only) - Segera hadir" />
   if (activePath === '/sek/pesan') return <PlaceholderPage title="Pesan & Kesan" desc="Pesan, keluhan, apresiasi warga (Read-only) - Segera hadir" />

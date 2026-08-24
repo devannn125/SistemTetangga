@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\FinanceTransactionController;
 use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\HouseController;
 use App\Http\Controllers\Api\HousePhotoController;
+use App\Http\Controllers\Api\InformationStatisticController;
 use App\Http\Controllers\Api\KosRoomController;
 use App\Http\Controllers\Api\InventoryPurchaseController;
 use App\Http\Controllers\Api\LetterRequestController;
@@ -87,6 +88,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Inventaris.
     Route::apiResource('inventory-purchases', InventoryPurchaseController::class);
+
+    // Informasi & Statistik (PRD 6.8) — read-only.
+    Route::get('/statistics/informasi', [InformationStatisticController::class, 'index']);
+    Route::get('/statistics/informasi/keluarga', [InformationStatisticController::class, 'keluarga']);
+    Route::get('/statistics/informasi/{kode}', [InformationStatisticController::class, 'show']);
 
     // Notifikasi.
     Route::apiResource('notification-logs', NotificationLogController::class);

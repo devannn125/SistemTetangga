@@ -292,3 +292,15 @@ export function updateFamily(id, payload) {
     body: JSON.stringify(payload),
   })
 }
+
+export function getStatistikSummary() {
+  return request('/statistics/informasi')
+}
+
+export function getStatistikDetail(kode) {
+  return request(`/statistics/informasi/${kode}`)
+}
+
+export function getStatistikKeluarga() {
+  return request('/statistics/informasi/keluarga')
+}

@@ -196,8 +196,6 @@ export default function PerumahanPage() {
           initialData={perumahanModal.data}
           citizens={citizens}
           masterData={masterData}
-          wilayah={wilayah}
-          loading={isLoading}
           mode={perumahanModal.mode}
         />
 

@@ -1,5 +1,20 @@
 import { useEffect, useState } from 'react'
+import L from 'leaflet'
+import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import 'leaflet/dist/leaflet.css'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
+
+const DEFAULT_CENTER = [-7.7956, 110.3695]
+
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+})
 
 function Select({ value, onChange, options, placeholder, className = '' }) {
   return (
@@ -24,18 +39,6 @@ function Input({ value, onChange, type = 'text', placeholder, required, maxLengt
   )
 }
 
-function CheckboxSelect({ value, onChange, label }) {
-  return (
-    <label className="grid gap-2 text-sm font-bold text-black">
-      {label}
-      <select value={String(value)} onChange={(e) => onChange(e.target.value === 'true')} className="h-11 w-full rounded-xl border border-neutral-300 px-4 text-sm outline-none focus:border-sky-600">
-        <option value="false">Tidak</option>
-        <option value="true">Ya</option>
-      </select>
-    </label>
-  )
-}
-
 function Section({ title, children }) {
   return (
     <div className="space-y-4 pt-4 border-t border-neutral-200">
@@ -57,6 +60,13 @@ function Field({ label, required, children, className = '' }) {
   )
 }
 
+function MapClickHandler({ onPick }) {
+  useMapEvents({
+    click: (e) => onPick(e.latlng.lat, e.latlng.lng),
+  })
+  return null
+}
+
 export default function PerumahanFormModal({
   open,
   onClose,
@@ -64,14 +74,11 @@ export default function PerumahanFormModal({
   initialData,
   citizens,
   masterData,
-  wilayah,
-  loading,
   mode = 'create',
 }) {
   const [form, setForm] = useState({
     tipe: 'NON_KOS',
     alamat: '',
-    id_wilayah: '',
     latitude: '',
     longitude: '',
     id_pemilik_citizen: '',
@@ -88,9 +95,8 @@ export default function PerumahanFormModal({
         setForm({
           tipe: initialData.tipe || 'NON_KOS',
           alamat: initialData.alamat || '',
-          id_wilayah: initialData.id_wilayah || '',
-          latitude: initialData.latitude || '',
-          longitude: initialData.longitude || '',
+          latitude: initialData.latitude ?? '',
+          longitude: initialData.longitude ?? '',
           id_pemilik_citizen: initialData.id_pemilik_citizen || '',
           status_kepemilikan: initialData.status_kepemilikan || 'MILIK_SENDIRI',
           id_kategori_kos: initialData.id_kategori_kos || '',
@@ -101,7 +107,6 @@ export default function PerumahanFormModal({
         setForm({
           tipe: 'NON_KOS',
           alamat: '',
-          id_wilayah: wilayah?.[0]?.id_wilayah || '',
           latitude: '',
           longitude: '',
           id_pemilik_citizen: citizens?.[0]?.id_citizen || '',
@@ -115,7 +120,6 @@ export default function PerumahanFormModal({
       setForm({
         tipe: 'NON_KOS',
         alamat: '',
-        id_wilayah: '',
         latitude: '',
         longitude: '',
         id_pemilik_citizen: '',
@@ -125,7 +129,7 @@ export default function PerumahanFormModal({
         status_pajak: 'LUNAS',
       })
     }
-  }, [open, initialData, mode, citizens, masterData, wilayah])
+  }, [open, initialData, mode, citizens, masterData])
 
   function updateForm(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -139,6 +143,14 @@ export default function PerumahanFormModal({
     } else {
       updateForm('status_kepemilikan', '')
     }
+  }
+
+  function handlePickCoordinate(lat, lng) {
+    setForm((prev) => ({ ...prev, latitude: lat.toFixed(7), longitude: lng.toFixed(7) }))
+  }
+
+  function handleClearCoordinate() {
+    setForm((prev) => ({ ...prev, latitude: '', longitude: '' }))
   }
 
   async function handleSubmit(e) {
@@ -157,14 +169,17 @@ export default function PerumahanFormModal({
       }
       await onSubmit(payload)
       onClose()
-    } catch (error) {
+    } catch {
       // Error handled by parent
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const rtWilayah = wilayah?.filter(w => w.tipe === 'RT') || []
+  const latitude = Number(form.latitude)
+  const longitude = Number(form.longitude)
+  const hasCoordinate = form.latitude !== '' && form.longitude !== ''
+    && Number.isFinite(latitude) && Number.isFinite(longitude)
 
   return (
     <ConfirmDialog
@@ -190,23 +205,53 @@ export default function PerumahanFormModal({
           <Field label="Alamat" required>
             <Input value={form.alamat} onChange={(e) => updateForm('alamat', e.target.value)} required placeholder="Jl. Contoh No. 123" />
           </Field>
-          <Field label="RT" required>
-            <Select
-              value={form.id_wilayah}
-              onChange={(e) => updateForm('id_wilayah', e.target.value)}
-              options={rtWilayah}
-              placeholder="-- Pilih RT --"
-            />
-          </Field>
         </Section>
 
         <Section title="Koordinat (Opsional)">
-          <Field label="Latitude">
-            <Input type="number" step="any" value={form.latitude} onChange={(e) => updateForm('latitude', e.target.value)} placeholder="-7.7956000" />
-          </Field>
-          <Field label="Longitude">
-            <Input type="number" step="any" value={form.longitude} onChange={(e) => updateForm('longitude', e.target.value)} placeholder="110.3695000" />
-          </Field>
+          <div className="sm:col-span-2 space-y-3">
+            <p className="text-xs font-normal text-neutral-500">
+              Klik peta untuk menandai lokasi rumah, lalu geser pin bila perlu penyesuaian.
+            </p>
+            <div className="relative z-0 h-72 w-full overflow-hidden rounded-xl border border-neutral-300">
+              <MapContainer
+                center={hasCoordinate ? [latitude, longitude] : DEFAULT_CENTER}
+                zoom={16}
+                className="h-full w-full"
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <MapClickHandler onPick={handlePickCoordinate} />
+                {hasCoordinate && (
+                  <Marker
+                    draggable
+                    position={[latitude, longitude]}
+                    eventHandlers={{
+                      dragend: (e) => {
+                        const { lat, lng } = e.target.getLatLng()
+                        handlePickCoordinate(lat, lng)
+                      },
+                    }}
+                  />
+                )}
+              </MapContainer>
+            </div>
+            {hasCoordinate ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neutral-100 px-4 py-2.5 text-xs font-semibold text-neutral-700">
+                <span>Latitude: {form.latitude} &middot; Longitude: {form.longitude}</span>
+                <button
+                  type="button"
+                  onClick={handleClearCoordinate}
+                  className="rounded-lg border border-red-300 px-3 py-1 font-bold text-red-600 transition hover:bg-red-50"
+                >
+                  Hapus Koordinat
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs font-normal text-neutral-400">Belum ada koordinat yang dipilih.</p>
+            )}
+          </div>
         </Section>
 
         <Section title="Pemilik">

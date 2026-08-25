@@ -1,8 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
 import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getCitizens, getWilayah } from '../../../services/api'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
+
+const STRATEGIC_POSITIONS = [
+  'Ketua RW',
+  'Ketua RT',
+  'Sekretaris',
+  'Bendahara',
+]
+
+const POSITION_GROUPS = {
+  'KETUA_RW': ['Ketua RW'],
+  'KETUA_RT': ['Ketua RT'],
+  'SEKRETARIS': ['Sekretaris'],
+  'BENDAHARA': ['Bendahara'],
+}
+
+const getPositionGroup = (jabatan) => {
+  for (const [group, positions] of Object.entries(POSITION_GROUPS)) {
+    if (positions.includes(jabatan)) return group;
+  }
+  return null;
+}
+
+const getGroupPositions = (group) => {
+  return POSITION_GROUPS[group] || [];
+}
 
 export default function RtOrganizationPage() {
   const [members, setMembers] = useState([])
@@ -20,6 +45,28 @@ export default function RtOrganizationPage() {
     periode_mulai: new Date().toISOString().split('T')[0], 
     status_aktif: true 
   })
+
+  const occupiedPositions = useMemo(() => {
+    return members
+      .filter(m => m.status_aktif && STRATEGIC_POSITIONS.includes(m.jabatan))
+      .reduce((acc, m) => {
+        const key = `${m.jabatan}-${m.id_wilayah}-${m.periode_mulai}`;
+        acc[key] = m;
+        return acc;
+      }, {});
+  }, [members]);
+
+  const isPositionOccupied = useCallback((jabatan, idWilayah, periodeMulai) => {
+    const group = getPositionGroup(jabatan);
+    if (!group) return false;
+    
+    const groupPositions = getGroupPositions(group);
+    for (const pos of groupPositions) {
+      const key = `${pos}-${idWilayah}-${periodeMulai}`;
+      if (occupiedPositions[key]) return true;
+    }
+    return false;
+  }, [occupiedPositions]);
 
   async function loadData() {
     setLoading(true)
@@ -43,6 +90,7 @@ export default function RtOrganizationPage() {
       }
     } catch (err) {
       console.error(err)
+      showToast('Gagal memuat data struktur organisasi: ' + err.message, 'error')
     } finally {
       setLoading(false)
     }
@@ -136,7 +184,26 @@ export default function RtOrganizationPage() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-neutral-700 mb-1">Jabatan</label>
-                <input required value={form.jabatan} onChange={e => setForm({...form, jabatan: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Contoh: Sekretaris RT" />
+                <select 
+                  required 
+                  value={form.jabatan} 
+                  onChange={e => setForm({...form, jabatan: e.target.value})} 
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">-- Pilih Jabatan --</option>
+                  {STRATEGIC_POSITIONS.map(pos => (
+                    <option 
+                      key={pos} 
+                      value={pos}
+                      disabled={isPositionOccupied(pos, form.id_wilayah, form.periode_mulai)}
+                    >
+                      {pos} {isPositionOccupied(pos, form.id_wilayah, form.periode_mulai) ? '(Sudah diisi)' : ''}
+                    </option>
+                  ))}
+                </select>
+                {form.jabatan && isPositionOccupied(form.jabatan, form.id_wilayah, form.periode_mulai) && (
+                  <p className="mt-1 text-xs text-red-600">Jabatan ini sudah dipegang oleh pengurus lain pada periode ini.</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-bold text-neutral-700 mb-1">Wilayah</label>
@@ -154,7 +221,7 @@ export default function RtOrganizationPage() {
               </div>
               <div className="mt-6 flex justify-end gap-3 pt-4 border-t">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-xs font-bold text-neutral-600 hover:text-black">BATAL</button>
-                <button type="submit" className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white hover:bg-neutral-900">
+                <button type="submit" className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white hover:bg-neutral-900" disabled={form.jabatan && isPositionOccupied(form.jabatan, form.id_wilayah, form.periode_mulai)}>
                   Simpan
                 </button>
               </div>

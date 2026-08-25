@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSequentialId;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 /**
  * Tabel `master_data` menampung banyak jenis data referensi sekaligus (agama,
@@ -13,10 +13,12 @@ use Illuminate\Support\Str;
  */
 class MasterData extends Model
 {
+    use HasSequentialId;
+
+    public const ID_PREFIX = 'MST';
+
     protected $table = 'master_data';
     protected $primaryKey = 'id_master';
-    public $incrementing = false;
-    protected $keyType = 'string';
 
     protected $fillable = [
         'tipe',
@@ -36,17 +38,6 @@ class MasterData extends Model
     public const TIPE_AGAMA = 'AGAMA';
     public const TIPE_PENDIDIKAN = 'PENDIDIKAN';
     public const TIPE_PROFESI = 'PROFESI';
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function (MasterData $item) {
-            if (empty($item->{$item->getKeyName()})) {
-                $item->{$item->getKeyName()} = (string) Str::uuid();
-            }
-        });
-    }
 
     public function scopeTipe($query, string $tipe)
     {

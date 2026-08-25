@@ -29,6 +29,16 @@ class UserResource extends JsonResource
             'status' => $this->status,
             'role' => $this->active_role,
             'roles' => $this->available_roles ?? [],
+            'user_roles' => $this->whenLoaded('userRoles', fn () => $this->userRoles
+                ->map(fn ($ur) => [
+                    'id_user_role' => $ur->id_user_role,
+                    'kode' => $ur->role?->kode,
+                    'nama_role' => $ur->role?->nama_role,
+                    'id_wilayah' => $ur->id_wilayah,
+                    'status' => $ur->status,
+                ])
+                ->values()
+                ->all()),
             'last_login_at' => $this->last_login_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

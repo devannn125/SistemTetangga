@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSequentialId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserRole extends Model
 {
+    use HasSequentialId;
+
+    public const ID_PREFIX = 'UR';
+
     protected $table = 'user_role';
 
     protected $primaryKey = 'id_user_role';
-
-    public $incrementing = false;
-
-    protected $keyType = 'string';
 
     public $timestamps = false;
 

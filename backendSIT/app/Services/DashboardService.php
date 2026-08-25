@@ -9,11 +9,16 @@ use App\Models\FeeBill;
 use App\Models\FinanceTransaction;
 use App\Models\LetterRequest;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class DashboardService
 {
+    public function __construct(private readonly RbacService $rbac)
+    {
+    }
+
     public function summary(?string $role = null, ?string $userId = null): array
     {
         $roleCode = strtoupper(trim((string) $role));
@@ -35,25 +40,38 @@ class DashboardService
                 ->first();
         }
 
+        // Lingkup wilayah operasional user (null = global untuk admin/dukuh).
+        $scopeIds = $this->rbac->operationalScopeIds($userObj);
+
         $citizens = Citizen::query();
-        $totalCitizens = $citizens->count();
+        if ($scopeIds !== null) {
+            $citizens->whereIn('id_wilayah', $scopeIds);
+        }
+        $totalCitizens = (clone $citizens)->count();
         $maleCitizens = (clone $citizens)->where('jenis_kelamin', 'L')->count();
         $femaleCitizens = (clone $citizens)->where('jenis_kelamin', 'P')->count();
-        $totalFamilies = Family::count();
 
-        $income = (float) FinanceTransaction::where('tipe', 'PEMASUKAN')->sum('jumlah');
-        $expense = (float) FinanceTransaction::where('tipe', 'PENGELUARAN')->sum('jumlah');
-        $paidBills = (float) FeeBill::where('status', 'LUNAS')->sum('jumlah_tagihan');
-        $unpaidBills = (float) FeeBill::whereIn('status', ['BELUM_BAYAR', 'SEBAGIAN'])->sum('jumlah_tagihan');
-        $totalBills = FeeBill::count();
-        $paidCount = FeeBill::where('status', 'LUNAS')->count();
+        $families = Family::query();
+        if ($scopeIds !== null) {
+            $families->whereIn('id_wilayah', $scopeIds);
+        }
+        $totalFamilies = $families->count();
 
-        $pendingLetters = LetterRequest::whereIn('status', ['DIAJUKAN', 'DIVERIFIKASI'])->count();
-        $approvedLetters = LetterRequest::where('status', 'DISETUJUI')->count();
+        $income = (float) $this->financeQuery($scopeIds)->where('tipe', 'PEMASUKAN')->sum('jumlah');
+        $expense = (float) $this->financeQuery($scopeIds)->where('tipe', 'PENGELUARAN')->sum('jumlah');
 
-        $activeComplaints = $hasComplaints ? Complaint::whereIn('status', ['PENDING', 'DIPROSES', 'ESKALASI'])->count() : 0;
-        $escalatedComplaints = $hasComplaints ? Complaint::where('status', 'ESKALASI')->count() : 0;
-        $resolvedComplaints = $hasComplaints ? Complaint::where('status', 'SELESAI')->count() : 0;
+        $paidBills = (float) $this->feeBillQuery($scopeIds)->where('status', 'LUNAS')->sum('jumlah_tagihan');
+        $unpaidBills = (float) $this->feeBillQuery($scopeIds)->whereIn('status', ['BELUM_BAYAR', 'SEBAGIAN'])->sum('jumlah_tagihan');
+        $totalBills = (clone $this->feeBillQuery($scopeIds))->count();
+        $paidCount = $this->feeBillQuery($scopeIds)->where('status', 'LUNAS')->count();
+
+        $pendingLetters = $this->letterQuery($scopeIds)->whereIn('status', ['DIAJUKAN', 'DIVERIFIKASI'])->count();
+        $approvedLetters = $this->letterQuery($scopeIds)->where('status', 'DISETUJUI')->count();
+
+        $complaints = $hasComplaints ? $this->complaintQuery($scopeIds) : null;
+        $activeComplaints = $complaints ? (clone $complaints)->whereIn('status', ['PENDING', 'DIPROSES', 'ESKALASI'])->count() : 0;
+        $escalatedComplaints = $complaints ? (clone $complaints)->where('status', 'ESKALASI')->count() : 0;
+        $resolvedComplaints = $complaints ? (clone $complaints)->where('status', 'SELESAI')->count() : 0;
 
         $totalRw = Schema::hasTable('wilayah') ? DB::table('wilayah')->where('tipe', 'RW')->count() : 0;
         $totalRt = Schema::hasTable('wilayah') ? DB::table('wilayah')->where('tipe', 'RT')->count() : 0;
@@ -82,7 +100,7 @@ class DashboardService
                 'title' => $isDukuh ? 'Pengaduan & Eskalasi' : 'Pengaduan Aktif',
                 'value' => (string) $activeComplaints,
                 'accent' => 'amber',
-                'icon' => 'alert', 
+                'icon' => 'alert',
                 'note' => $isDukuh ? "{$escalatedComplaints} eskalasi wilayah" : "{$resolvedComplaints} selesai",
                 'detail' => $isDukuh ? "{$resolvedComplaints} aduan terselesaikan" : 'Formal SIPANDU',
                 'positive' => true,
@@ -135,16 +153,56 @@ class DashboardService
             'navigation' => $this->navigation($isDukuh),
             'summaryCards' => $summaryCards,
             'financeCards' => $financeCards,
-            'cashflow' => $this->cashflow(),
-            'complaintsByCategory' => $this->complaintsByCategory(),
-            'activities' => $this->activities($isDukuh),
+            'cashflow' => $this->cashflow($scopeIds),
+            'complaintsByCategory' => $this->complaintsByCategory($scopeIds),
+            'activities' => $this->activities($scopeIds, $isDukuh),
             'quickActions' => $quickActions,
         ];
     }
 
-    private function cashflow(): array
+    private function financeQuery(?array $scopeIds): Builder
     {
-        return FinanceTransaction::query()
+        $query = FinanceTransaction::query();
+        if ($scopeIds !== null) {
+            $query->whereIn('id_wilayah', $scopeIds);
+        }
+
+        return $query;
+    }
+
+    private function feeBillQuery(?array $scopeIds): Builder
+    {
+        $query = FeeBill::query();
+        if ($scopeIds !== null) {
+            $query->whereHas('family', fn (Builder $family) => $family->whereIn('id_wilayah', $scopeIds));
+        }
+
+        return $query;
+    }
+
+    private function letterQuery(?array $scopeIds): Builder
+    {
+        $query = LetterRequest::query();
+        if ($scopeIds !== null) {
+            $query->whereIn('id_wilayah', $scopeIds);
+        }
+
+        return $query;
+    }
+
+    private function complaintQuery(?array $scopeIds): Builder
+    {
+        $query = Complaint::query();
+        if ($scopeIds !== null) {
+            $query->whereHas('pengirim.citizen', fn (Builder $citizen) => $citizen->whereIn('id_wilayah', $scopeIds));
+        }
+
+        return $query;
+    }
+
+    private function cashflow(?array $scopeIds): array
+    {
+        return $this->financeQuery($scopeIds)
             ->orderBy('tanggal')
             ->get()
             ->groupBy(fn ($row) => date('Y-m', strtotime((string) $row->tanggal)))
@@ -160,13 +218,13 @@ class DashboardService
             ->all();
     }
 
-    private function complaintsByCategory(): array
+    private function complaintsByCategory(?array $scopeIds): array
     {
         if (! Schema::hasTable('complaint')) {
             return [];
         }
 
-        return Complaint::query()
+        return $this->complaintQuery($scopeIds)
             ->selectRaw('kategori as label, COUNT(*) as total')
             ->groupBy('kategori')
             ->orderByDesc('total')
@@ -175,12 +233,21 @@ class DashboardService
             ->all();
     }
 
-    private function activities(bool $isDukuh = false): array
+    private function activities(?array $scopeIds, bool $isDukuh = false): array
     {
-        $latestCitizen = Citizen::latest('created_at')->first();
+        $latestCitizen = Citizen::query()
+            ->when($scopeIds !== null, fn (Builder $q) => $q->whereIn('id_wilayah', $scopeIds))
+            ->latest('created_at')
+            ->first();
+
         $hasComplaints = Schema::hasTable('complaint');
-        $latestComplaint = $hasComplaints ? Complaint::latest('created_at')->first() : null;
-        $latestLetter = LetterRequest::latest('created_at')->first();
+        $latestComplaint = $hasComplaints
+            ? $this->complaintQuery($scopeIds)->latest('created_at')->first()
+            : null;
+
+        $latestLetter = $this->letterQuery($scopeIds)
+            ->latest('created_at')
+            ->first();
 
         return [
             [

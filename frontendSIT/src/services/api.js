@@ -373,6 +373,25 @@ export function deleteOrganizationMember(id) {
   return request(`/organization-members/${id}`, { method: 'DELETE' })
 }
 
+export function getUsers(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/users${query ? `?${query}` : ''}`)
+}
+
+export function updateUser(id, payload) {
+  return request(`/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function assignUserRole(id, roleKode) {
+  return request(`/users/${id}/role`, {
+    method: 'POST',
+    body: JSON.stringify({ role: roleKode }),
+  })
+}
+
 export function getDashboardStatistics() {
   return request(`/dashboard`)
 }

@@ -30,7 +30,7 @@ class InventorySeeder extends Seeder
         // Ensure Ketua RT user exists (for approvals)
         $rtRole = Role::firstOrCreate(
             ['kode' => 'RT'],
-            ['id_role' => 'ROLE-RT', 'nama_role' => 'Ketua RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Pengurus tingkat RT']
+            ['nama_role' => 'Ketua RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Pengurus tingkat RT']
         );
 
         $ketuaCitizen = \App\Models\Citizen::firstOrCreate(
@@ -57,7 +57,6 @@ class InventorySeeder extends Seeder
         $ketua = User::firstOrCreate(
             ['email' => 'ketua@example.com'],
             [
-                'id_users' => 'USR-RT',
                 'nama_users' => 'Budi Santoso',
                 'no_hp' => '081234567066',
                 'password_hash' => Hash::make('password'),
@@ -67,7 +66,7 @@ class InventorySeeder extends Seeder
             ]
         );
         $ketua->forceFill(['id_citizen' => $ketuaCitizen->id_citizen, 'nama_users' => 'Budi Santoso'])->save();
-        DB::table('user_role')->updateOrInsert(
+        \App\Models\UserRole::updateOrCreate(
             ['id_users' => $ketua->id_users, 'id_role' => $rtRole->id_role, 'id_wilayah' => $rt->id_wilayah],
             ['status' => 'ACTIVE', 'assigned_at' => now()]
         );
@@ -247,11 +246,6 @@ class InventorySeeder extends Seeder
 
             // If approved, create/update master inventory item
             if ($created->status === 'DISETUJUI') {
-                $invId = 'INV-' . strtoupper(Str::slug($created->nama_barang));
-                if (Str::length($invId) > 20) {
-                    $invId = 'INV-' . strtoupper(substr(Str::slug($created->nama_barang), 0, 15));
-                }
-                
                 // Check if inventory item already exists for this purchase
                 $existingInv = Inventory::where('nama_barang', $created->nama_barang)
                     ->where('id_wilayah', $rt->id_wilayah)
@@ -262,8 +256,8 @@ class InventorySeeder extends Seeder
                     $existingInv->increment('jumlah', $created->jumlah);
                 } else {
                     // Create new inventory item from approved purchase
+                    // (ID otomatis oleh trait HasSequentialId: INV-###)
                     Inventory::create([
-                        'id_inventory' => $invId . '-' . substr($created->id_inventory_purchase, -3),
                         'nama_barang' => $created->nama_barang,
                         'kategori' => 'Perlengkapan Acara',
                         'jumlah' => $created->jumlah,

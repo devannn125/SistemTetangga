@@ -27,13 +27,6 @@ class OrganizationMember extends Model
         'Bendahara' => 'BENDAHARA',
     ];
 
-    public const STRATEGIC_POSITION_GROUPS = [
-        'KETUA_RW' => ['Ketua RW'],
-        'KETUA_RT' => ['Ketua RT'],
-        'SEKRETARIS' => ['Sekretaris'],
-        'BENDAHARA' => ['Bendahara'],
-    ];
-
     public $timestamps = false;
 
     protected $table = 'organization_member';
@@ -71,31 +64,9 @@ class OrganizationMember extends Model
         return in_array($jabatan, self::STRATEGIC_POSITIONS);
     }
 
-    public static function getPositionGroup(string $jabatan): ?string
+    public static function isPositionTaken(string $jabatan, string $idWilayah, string $periodeMulai, ?string $excludeId = null): bool
     {
-        foreach (self::STRATEGIC_POSITION_GROUPS as $group => $positions) {
-            if (in_array($jabatan, $positions)) {
-                return $group;
-            }
-        }
-        return null;
-    }
-
-    public static function getGroupPositions(string $group): array
-    {
-        return self::STRATEGIC_POSITION_GROUPS[$group] ?? [];
-    }
-
-    public static function checkUniqueStrategicPosition(string $jabatan, string $idWilayah, string $periodeMulai, ?string $excludeId = null): bool
-    {
-        $group = self::getPositionGroup($jabatan);
-        if (!$group) {
-            return true;
-        }
-
-        $groupPositions = self::getGroupPositions($group);
-
-        $query = self::whereIn('jabatan', $groupPositions)
+        $query = self::where('jabatan', $jabatan)
             ->where('id_wilayah', $idWilayah)
             ->where('periode_mulai', $periodeMulai)
             ->where('status_aktif', true);
@@ -104,16 +75,25 @@ class OrganizationMember extends Model
             $query->where('id_organization_member', '!=', $excludeId);
         }
 
-        return !$query->exists();
+        return $query->exists();
+    }
+
+    public static function hasInactiveHistory(string $jabatan, string $idWilayah, string $periodeMulai, ?string $excludeId = null): bool
+    {
+        $query = self::where('jabatan', $jabatan)
+            ->where('id_wilayah', $idWilayah)
+            ->where('periode_mulai', $periodeMulai)
+            ->where('status_aktif', false);
+
+        if ($excludeId) {
+            $query->where('id_organization_member', '!=', $excludeId);
+        }
+
+        return $query->exists();
     }
 
     public function getRoleCode(): ?string
     {
         return self::POSITION_TO_ROLE[$this->jabatan] ?? null;
-    }
-
-    public function getPositionGroupName(): ?string
-    {
-        return self::getPositionGroup($this->jabatan);
     }
 }

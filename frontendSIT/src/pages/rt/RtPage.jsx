@@ -69,8 +69,8 @@ function HomePage() {
 
         setCounts({
           guests: guestsArr.filter(g => g.status === 'MENUNGGU').length,
-          letters: lettersArr.filter(l => l.status === 'MENUNGGU' || l.status === 'DIPROSES').length,
-          bills: billsArr.filter(b => b.status === 'DRAFT' || b.status === 'PENDING').length,
+          letters: lettersArr.filter(l => l.status === 'DIVERIFIKASI').length,
+          bills: billsArr.filter(b => b.status === 'BELUM_BAYAR' || b.status === 'SEBAGIAN').length,
           inventory: invArr.filter(i => i.status_pengajuan === 'DIAJUKAN' || i.status === 'DIAJUKAN' || i.status === 'MENUNGGU').length
         })
         setLoading(false)
@@ -110,7 +110,7 @@ function HomePage() {
               {counts.letters > 0 && <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse">{counts.letters}</span>}
             </div>
             <p className="text-2xl font-extrabold text-black mt-2">{loading ? '...' : counts.letters} Menunggu</p>
-            <p className="mt-2 text-xs text-neutral-600">Permohonan surat pengantar warga.</p>
+            <p className="mt-2 text-xs text-neutral-600">Permohonan surat menunggu persetujuan Anda.</p>
           </div>
           <a href="/rt/surat" className={`mt-6 inline-flex w-full justify-center rounded-full px-4 py-2 text-xs font-extrabold uppercase ${counts.letters > 0 ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
             Buka Surat
@@ -120,11 +120,11 @@ function HomePage() {
         <article className={`rounded-2xl border ${counts.bills > 0 ? 'border-emerald-300 bg-emerald-50' : 'border-neutral-300 bg-white'} p-6 shadow-sm flex flex-col justify-between`}>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-bold uppercase text-neutral-500">Draf Iuran</h2>
+              <h2 className="text-sm font-bold uppercase text-neutral-500">Iuran Belum Lunas</h2>
               {counts.bills > 0 && <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse">{counts.bills}</span>}
             </div>
-            <p className="text-2xl font-extrabold text-black mt-2">{loading ? '...' : counts.bills} Draf Baru</p>
-            <p className="mt-2 text-xs text-neutral-600">Draf tagihan iuran bulanan dari Bendahara.</p>
+            <p className="text-2xl font-extrabold text-black mt-2">{loading ? '...' : counts.bills} Tagihan</p>
+            <p className="mt-2 text-xs text-neutral-600">Tagihan belum atau sebagian terbayar.</p>
           </div>
           <a href="/rt/iuran" className={`mt-6 inline-flex w-full justify-center rounded-full px-4 py-2 text-xs font-extrabold uppercase ${counts.bills > 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
             Buka Iuran

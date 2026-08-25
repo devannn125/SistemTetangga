@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSequentialId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Wilayah extends Model
 {
+    use HasSequentialId;
+
+    public const ID_PREFIX = 'WIL';
+
     protected $table = 'wilayah';
 
     protected $primaryKey = 'id_wilayah';
-
-    public $incrementing = false;
-
-    protected $keyType = 'string';
 
     protected $fillable = ['nama_wilayah', 'tipe', 'kode_wilayah', 'parent_id'];
 

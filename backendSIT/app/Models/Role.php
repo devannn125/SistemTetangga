@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSequentialId;
 use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
+    use HasSequentialId;
+
+    public const ID_PREFIX = 'ROLE';
+
     protected $table = 'role';
 
     protected $primaryKey = 'id_role';
-
-    public $incrementing = false;
-
-    protected $keyType = 'string';
 
     public $timestamps = false;
 

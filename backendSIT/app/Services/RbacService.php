@@ -116,6 +116,40 @@ class RbacService
     }
 
     /**
+     * Lingkup operasional berbasis anchor user tanpa bergantung module+action,
+     * untuk dashboard/statistik agregat per-user. Null = tanpa filter
+     * (admin/dukuh/kelurahan atau akun tanpa role aktif).
+     */
+    public function operationalScopeIds(?User $user): ?array
+    {
+        if (! $user) {
+            return null;
+        }
+
+        $anchor = $this->anchorWilayahId($user);
+        if (! $anchor) {
+            return null;
+        }
+
+        $tipe = strtoupper((string) Wilayah::query()->where('id_wilayah', $anchor)->value('tipe'));
+
+        $scopeByTipe = [
+            'RT' => self::SCOPE_RT,
+            'RW' => self::SCOPE_RW,
+            'KELURAHAN' => self::SCOPE_KELURAHAN,
+            'KECAMATAN' => self::SCOPE_KELURAHAN,
+        ];
+
+        $scope = $scopeByTipe[$tipe] ?? self::SCOPE_ALL;
+
+        if ($scope === self::SCOPE_ALL) {
+            return null;
+        }
+
+        return $this->expandWilayah($anchor, $scope);
+    }
+
+    /**
      * Apakah user diperbolehkan melihat data sensitif (kurang mampu, bansos, WNA).
      * Hanya Ketua RT, Sekretaris & Bendahara (PRD 3.4).
      */

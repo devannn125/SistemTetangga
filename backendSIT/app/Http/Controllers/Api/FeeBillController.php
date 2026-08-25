@@ -17,7 +17,7 @@ class FeeBillController extends BaseApiController
     {
         $this->authorizeModule('IURAN', 'VIEW');
 
-        $query = FeeBill::query()->with('family')->latest('jatuh_tempo');
+        $query = FeeBill::query()->with('family.kepalaKeluarga')->latest('jatuh_tempo');
 
         $scope = $this->rbac->scopeFor($this->requestUser(), 'IURAN', 'VIEW');
 
@@ -74,7 +74,7 @@ class FeeBillController extends BaseApiController
     {
         $this->authorizeModule('IURAN', 'VIEW');
 
-        return new FeeBillResource(FeeBill::with('family')->findOrFail($id));
+        return new FeeBillResource(FeeBill::with('family.kepalaKeluarga')->findOrFail($id));
     }
 
     public function update(FeeBillRequest $request, string $id)

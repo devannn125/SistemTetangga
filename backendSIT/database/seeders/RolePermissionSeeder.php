@@ -34,7 +34,7 @@ class RolePermissionSeeder extends Seeder
         foreach ($roles as $role) {
             \App\Models\Role::firstOrCreate(
                 ['kode' => $role['kode']],
-                ['id_role' => 'ROLE-'.$role['kode']] + $role
+                $role
             );
         }
     }

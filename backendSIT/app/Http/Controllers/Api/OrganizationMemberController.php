@@ -84,6 +84,11 @@ class OrganizationMemberController extends BaseApiController
 
         $member = OrganizationMember::findOrFail($id);
         $oldJabatan = $member->jabatan;
+
+        if (OrganizationMember::hasInactiveHistory($member->jabatan, $member->id_wilayah, $member->periode_mulai, $member->id_organization_member)) {
+            abort(422, 'Sudah ada riwayat nonaktif dengan jabatan dan periode yang sama. Nonaktifkan/hapus riwayat tersebut terlebih dahulu.');
+        }
+
         $member->update(['status_aktif' => false]);
 
         if ($member->isStrategic()) {
@@ -121,11 +126,7 @@ class OrganizationMemberController extends BaseApiController
             if ($oldRoleCode) {
                 $oldRole = Role::where('kode', $oldRoleCode)->first();
                 if ($oldRole) {
-                    UserRole::where('id_users', $user->id_users)
-                        ->where('id_role', $oldRole->id_role)
-                        ->where('id_wilayah', $member->id_wilayah)
-                        ->where('status', 'ACTIVE')
-                        ->update(['status' => 'ENDED', 'periode_selesai' => now()->toDateString()]);
+                    $this->endUserRole($user, $oldRole->id_role, $member->id_wilayah, 'ENDED');
                 }
             }
         }
@@ -173,10 +174,27 @@ class OrganizationMemberController extends BaseApiController
             return;
         }
 
+        $this->endUserRole($user, $role->id_role, $member->id_wilayah, 'REVOKED');
+    }
+
+    /**
+     * Akhiri user_role aktif dengan aman terhadap index unik
+     * uq_user_role_wilayah_active (satu baris per user+role+wilayah+status):
+     * baris non-aktif lama untuk kombinasi yang sama dihapus dulu, jejak
+     * lengkapnya tetap tersimpan di audit_log.
+     */
+    private function endUserRole(User $user, string $roleId, string $idWilayah, string $status): void
+    {
         UserRole::where('id_users', $user->id_users)
-            ->where('id_role', $role->id_role)
-            ->where('id_wilayah', $member->id_wilayah)
+            ->where('id_role', $roleId)
+            ->where('id_wilayah', $idWilayah)
+            ->where('status', '!=', 'ACTIVE')
+            ->delete();
+
+        UserRole::where('id_users', $user->id_users)
+            ->where('id_role', $roleId)
+            ->where('id_wilayah', $idWilayah)
             ->where('status', 'ACTIVE')
-            ->update(['status' => 'REVOKED', 'periode_selesai' => now()->toDateString()]);
+            ->update(['status' => $status, 'periode_selesai' => now()->toDateString()]);
     }
 }

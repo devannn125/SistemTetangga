@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
-import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getCitizens, getWilayah } from '../../../services/api'
+import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getCitizens, getCitizenMe } from '../../../services/api'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
 
@@ -11,28 +11,10 @@ const STRATEGIC_POSITIONS = [
   'Bendahara',
 ]
 
-const POSITION_GROUPS = {
-  'KETUA_RW': ['Ketua RW'],
-  'KETUA_RT': ['Ketua RT'],
-  'SEKRETARIS': ['Sekretaris'],
-  'BENDAHARA': ['Bendahara'],
-}
-
-const getPositionGroup = (jabatan) => {
-  for (const [group, positions] of Object.entries(POSITION_GROUPS)) {
-    if (positions.includes(jabatan)) return group;
-  }
-  return null;
-}
-
-const getGroupPositions = (group) => {
-  return POSITION_GROUPS[group] || [];
-}
-
 export default function RtOrganizationPage() {
   const [members, setMembers] = useState([])
   const [citizens, setCitizens] = useState([])
-  const [wilayahs, setWilayahs] = useState([])
+  const [myWilayah, setMyWilayah] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const confirm = useConfirm()
@@ -48,7 +30,7 @@ export default function RtOrganizationPage() {
 
   const occupiedPositions = useMemo(() => {
     return members
-      .filter(m => m.status_aktif && STRATEGIC_POSITIONS.includes(m.jabatan))
+      .filter(m => m.status_aktif)
       .reduce((acc, m) => {
         const key = `${m.jabatan}-${m.id_wilayah}-${m.periode_mulai}`;
         acc[key] = m;
@@ -57,37 +39,38 @@ export default function RtOrganizationPage() {
   }, [members]);
 
   const isPositionOccupied = useCallback((jabatan, idWilayah, periodeMulai) => {
-    const group = getPositionGroup(jabatan);
-    if (!group) return false;
-    
-    const groupPositions = getGroupPositions(group);
-    for (const pos of groupPositions) {
-      const key = `${pos}-${idWilayah}-${periodeMulai}`;
-      if (occupiedPositions[key]) return true;
-    }
-    return false;
+    return Boolean(occupiedPositions[`${jabatan}-${idWilayah}-${periodeMulai}`]);
   }, [occupiedPositions]);
 
   async function loadData() {
     setLoading(true)
     try {
-      const [resM, resC, resW] = await Promise.all([
+      const resMe = await getCitizenMe()
+      const wil = resMe?.data?.wilayah || null
+      if (!wil?.id_wilayah) {
+        throw new Error('Akun Anda tidak terhubung ke data warga/wilayah RT manapun.')
+      }
+      setMyWilayah(wil)
+      setForm(f => ({ ...f, id_wilayah: wil.id_wilayah }))
+
+      const [resM, resC] = await Promise.all([
         getOrganizationMembers({ per_page: 100 }),
-        getCitizens({ per_page: 100 }),
-        getWilayah({ per_page: 100 })
+        getCitizens({ id_wilayah: wil.id_wilayah, per_page: 100 }),
       ])
       
       const arrM = Array.isArray(resM?.data) ? resM.data : Array.isArray(resM) ? resM : []
-      const arrC = Array.isArray(resC?.data) ? resC.data : Array.isArray(resC) ? resC : []
-      const arrW = Array.isArray(resW?.data) ? resW.data : Array.isArray(resW) ? resW : []
+      const arrC = (Array.isArray(resC?.data) ? resC.data : Array.isArray(resC) ? resC : [])
+        .filter(c => c.wilayah?.id_wilayah === wil.id_wilayah && c.status_aktif !== false)
       
       setMembers(arrM)
       setCitizens(arrC)
-      setWilayahs(arrW)
 
-      if (arrC.length > 0 && arrW.length > 0) {
-        setForm(f => ({ ...f, id_citizen: arrC[0].id_citizen, id_wilayah: arrW[0].id_wilayah }))
-      }
+      setForm(f => ({
+        ...f,
+        id_citizen: arrC.some(c => c.id_citizen === f.id_citizen)
+          ? f.id_citizen
+          : (arrC[0]?.id_citizen || ''),
+      }))
     } catch (err) {
       console.error(err)
       showToast('Gagal memuat data struktur organisasi: ' + err.message, 'error')
@@ -178,9 +161,14 @@ export default function RtOrganizationPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-neutral-700 mb-1">Pilih Warga</label>
-                <select required value={form.id_citizen} onChange={e => setForm({...form, id_citizen: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">
-                  {citizens.map(c => <option key={c.id_citizen} value={c.id_citizen}>{c.nama_lengkap}</option>)}
-                </select>
+                {citizens.length === 0 ? (
+                  <p className="w-full border rounded-lg px-3 py-2 text-sm bg-neutral-100 text-neutral-500">Tidak ada warga aktif di RT ini.</p>
+                ) : (
+                  <select required value={form.id_citizen} onChange={e => setForm({...form, id_citizen: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+                    <option value="">-- Pilih Warga --</option>
+                    {citizens.map(c => <option key={c.id_citizen} value={c.id_citizen}>{c.nama_lengkap}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-bold text-neutral-700 mb-1">Jabatan</label>
@@ -206,10 +194,14 @@ export default function RtOrganizationPage() {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">Wilayah</label>
-                <select required value={form.id_wilayah} onChange={e => setForm({...form, id_wilayah: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">
-                  {wilayahs.map(w => <option key={w.id_wilayah} value={w.id_wilayah}>{w.nama_wilayah}</option>)}
-                </select>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Wilayah (RT)</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={myWilayah ? `${myWilayah.nama_wilayah}` : ''}
+                  title="Struktur organisasi hanya dapat dikelola di RT Anda sendiri"
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-neutral-100 text-neutral-600 cursor-not-allowed"
+                />
               </div>
               <div>
                 <label className="block text-xs font-bold text-neutral-700 mb-1">Periode Mulai</label>

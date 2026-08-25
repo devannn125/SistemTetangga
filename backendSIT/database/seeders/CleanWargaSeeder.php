@@ -7,6 +7,7 @@ use App\Models\Family;
 use App\Models\House;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\UserRole;
 use App\Models\Wilayah;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -88,7 +89,6 @@ class CleanWargaSeeder extends Seeder
         $user = User::firstOrCreate(
             ['email' => 'eko@example.com'],
             [
-                'id_users' => 'USR-CLN',
                 'nama_users' => 'Eko Purnomo',
                 'no_hp' => '081234567099',
                 'password_hash' => Hash::make('password'),
@@ -98,7 +98,7 @@ class CleanWargaSeeder extends Seeder
             ]
         );
 
-        DB::table('user_role')->updateOrInsert(
+        UserRole::updateOrCreate(
             ['id_users' => $user->id_users, 'id_role' => $role->id_role, 'id_wilayah' => $rt->id_wilayah],
             ['status' => 'ACTIVE', 'assigned_at' => now()]
         );
@@ -107,7 +107,7 @@ class CleanWargaSeeder extends Seeder
         // tidak menumpang citizen milik akun lain (1 warga = 1 akun).
         $sekRole = Role::firstOrCreate(
             ['kode' => 'SEKRETARIS'],
-            ['id_role' => 'ROLE-SEKRETARIS', 'nama_role' => 'Sekretaris RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Sekretaris tingkat RT']
+            ['nama_role' => 'Sekretaris RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Sekretaris tingkat RT']
         );
         $sekCitizen = Citizen::firstOrCreate(
             ['nik' => '3471000000000022'],
@@ -132,7 +132,6 @@ class CleanWargaSeeder extends Seeder
         $sek = User::firstOrCreate(
             ['email' => 'sekretaris@example.com'],
             [
-                'id_users' => 'USR-SEK',
                 'nama_users' => 'Sari Wulandari',
                 'no_hp' => '081234567088',
                 'password_hash' => Hash::make('password'),
@@ -142,7 +141,7 @@ class CleanWargaSeeder extends Seeder
             ]
         );
         $sek->forceFill(['id_citizen' => $sekCitizen->id_citizen, 'nama_users' => 'Sari Wulandari'])->save();
-        DB::table('user_role')->updateOrInsert(
+        UserRole::updateOrCreate(
             ['id_users' => $sek->id_users, 'id_role' => $sekRole->id_role, 'id_wilayah' => $rt->id_wilayah],
             ['status' => 'ACTIVE', 'assigned_at' => now()]
         );
@@ -150,7 +149,7 @@ class CleanWargaSeeder extends Seeder
         // Akun demo Bendahara RT (kelola keuangan & iuran) — warga sendiri.
         $benRole = Role::firstOrCreate(
             ['kode' => 'BENDAHARA'],
-            ['id_role' => 'ROLE-BENDAHARA', 'nama_role' => 'Bendahara RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Bendahara tingkat RT']
+            ['nama_role' => 'Bendahara RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Bendahara tingkat RT']
         );
         $benCitizen = Citizen::firstOrCreate(
             ['nik' => '3471000000000023'],
@@ -175,7 +174,6 @@ class CleanWargaSeeder extends Seeder
         $ben = User::firstOrCreate(
             ['email' => 'bendahara@example.com'],
             [
-                'id_users' => 'USR-BEN',
                 'nama_users' => 'Dewi Lestari',
                 'no_hp' => '081234567077',
                 'password_hash' => Hash::make('password'),
@@ -185,7 +183,7 @@ class CleanWargaSeeder extends Seeder
             ]
         );
         $ben->forceFill(['id_citizen' => $benCitizen->id_citizen, 'nama_users' => 'Dewi Lestari'])->save();
-        DB::table('user_role')->updateOrInsert(
+        UserRole::updateOrCreate(
             ['id_users' => $ben->id_users, 'id_role' => $benRole->id_role, 'id_wilayah' => $rt->id_wilayah],
             ['status' => 'ACTIVE', 'assigned_at' => now()]
         );

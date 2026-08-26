@@ -97,7 +97,10 @@ class RbacService
 
     /**
      * Daftar id_wilayah yang masuk lingkup user untuk suatu module+action.
-     * `null` berarti tanpa filter (ALL).
+     * `null` berarti tanpa filter (ALL). Fail-closed (PRD 5.3 Zero Trust):
+     * scope selain ALL tanpa anchor wilayah mengembalikan array kosong
+     * (hasil query kosong), BUKAN null — akun tanpa penugasan aktif tidak
+     * boleh melihat data lintas RT.
      */
     public function wilayahScopeIds(User $user, string $moduleCode, string $action): ?array
     {
@@ -109,7 +112,7 @@ class RbacService
 
         $anchor = $this->anchorWilayahId($user);
         if (! $anchor) {
-            return null;
+            return [];
         }
 
         return $this->expandWilayah($anchor, $scope);

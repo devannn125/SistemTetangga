@@ -56,6 +56,8 @@ class FamilyController extends BaseApiController
         $this->authorizeModule('KELUARGA', 'UPDATE');
 
         $family = Family::findOrFail($id);
+        $this->assertInScope($family->id_wilayah, 'UPDATE');
+
         $old = $family->toArray();
         $family->update($request->validated());
 
@@ -69,10 +71,25 @@ class FamilyController extends BaseApiController
         $this->authorizeModule('KELUARGA', 'DELETE');
 
         $family = Family::findOrFail($id);
+        $this->assertInScope($family->id_wilayah, 'DELETE');
+
         $family->update(['status' => 'DIHAPUS']);
 
         $this->audit('KELUARGA', 'DELETE', 'family', $family->id_family);
 
         return response()->json(['message' => 'Keluarga ditandai dihapus.']);
+    }
+
+    /**
+     * Zero Trust (PRD 5.3): pastikan KK yang dimutasi berada dalam lingkup
+     * wilayah aktor. Null = scope ALL (tanpa batas).
+     */
+    private function assertInScope(string $idWilayah, string $action): void
+    {
+        $scopeIds = $this->rbac->wilayahScopeIds($this->requestUser(), 'KELUARGA', $action);
+
+        if ($scopeIds !== null && ! in_array($idWilayah, $scopeIds, true)) {
+            abort(403, 'Data KK berada di luar lingkup wilayah Anda.');
+        }
     }
 }

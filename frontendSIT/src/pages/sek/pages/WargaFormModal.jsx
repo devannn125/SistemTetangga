@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
-import { formatDate } from './utils'
 
 const Select = ({ value, onChange, options, placeholder, className = '', disabled = false }) => (
   <select value={value} onChange={onChange} disabled={disabled} className={`h-11 w-full rounded-xl border border-neutral-300 px-4 text-sm outline-none focus:border-sky-600 disabled:bg-neutral-100 disabled:text-neutral-400 disabled:cursor-not-allowed ${className}`}>
@@ -106,7 +105,9 @@ export default function WargaFormModal({
           kewarganegaraan: initialData.kewarganegaraan || 'WNI',
           status_ekonomi: initialData.status_ekonomi || 'MAMPU',
           penerima_bansos: initialData.penerima_bansos || false,
-          tanggal_masuk_rt: initialData.tanggal_masuk_rt ? formatDate(initialData.tanggal_masuk_rt).split(' ')[0] : new Date().toISOString().split('T')[0],
+          // API mengirim tanggal sebagai 'Y-m-d' — pakai apa adanya agar
+          // <input type="date"> terisi benar saat edit.
+          tanggal_masuk_rt: initialData.tanggal_masuk_rt || new Date().toISOString().split('T')[0],
           alamat_kk_luar_rt: initialData.alamat_kk_luar_rt || false,
           berdomisili_luar_rt: initialData.berdomisili_luar_rt || false,
           id_family: initialData.family?.id_family || '',

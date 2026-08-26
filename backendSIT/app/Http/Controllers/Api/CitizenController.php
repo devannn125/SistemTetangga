@@ -33,7 +33,9 @@ class CitizenController extends BaseApiController
 
         if ($scope === RbacService::SCOPE_OWN) {
             // Scope OWN (warga): hanya data warga milik akun ini.
-            $filters['id_citizen'] = $request->user()->id_citizen;
+            // Fail-closed: akun tanpa relasi citizen tidak boleh melihat data
+            // siapa pun — filter dipaksa tidak mungkin cocok.
+            $filters['id_citizen'] = $request->user()->id_citizen ?? '___none___';
         } else {
             // Scope RT/RW/KELURAHAN: batasi ke lingkup wilayah akun.
             $scopeIds = $this->rbac->wilayahScopeIds($request->user(), 'WARGA', 'VIEW');
@@ -66,6 +68,7 @@ class CitizenController extends BaseApiController
         $this->authorizeModule('WARGA', 'VIEW');
 
         $citizen = $this->service->find($id);
+        $this->assertInScope($citizen->id_wilayah, 'VIEW');
 
         return response()->json([
             'data' => new CitizenResource($citizen),
@@ -98,6 +101,7 @@ class CitizenController extends BaseApiController
         $this->authorizeModule('WARGA', 'UPDATE');
 
         $citizen = $this->service->find($id);
+        $this->assertInScope($citizen->id_wilayah, 'UPDATE');
 
         $old = $citizen->toArray();
         $citizen = $this->service->update($citizen, $request->validated(), $request->user());
@@ -119,6 +123,7 @@ class CitizenController extends BaseApiController
         $this->authorizeModule('WARGA', 'DELETE');
 
         $citizen = $this->service->find($id);
+        $this->assertInScope($citizen->id_wilayah, 'DELETE');
 
         $this->service->deactivate($citizen);
 
@@ -127,6 +132,20 @@ class CitizenController extends BaseApiController
         return response()->json([
             'message' => 'Data warga berhasil dinonaktifkan.',
         ]);
+    }
+
+    /**
+     * Zero Trust (PRD 5.3): pastikan warga yang diakses langsung via ID berada
+     * dalam lingkup wilayah aktor (pola sama dengan FamilyController).
+     * Null = scope ALL (tanpa batas).
+     */
+    private function assertInScope(string $idWilayah, string $action): void
+    {
+        $scopeIds = $this->rbac->wilayahScopeIds($this->requestUser(), 'WARGA', $action);
+
+        if ($scopeIds !== null && ! in_array($idWilayah, $scopeIds, true)) {
+            abort(403, 'Data warga berada di luar lingkup wilayah Anda.');
+        }
     }
 
     /**

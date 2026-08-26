@@ -65,3 +65,35 @@ export function getFamilyName(families, id) {
 export function getKepalaName(citizens, id) {
   return citizens?.find(c => c.id_citizen === id)?.nama_lengkap || '-'
 }
+
+// Label Indonesia untuk nilai enum dari API (PRD: bahasa Indonesia penuh).
+export const ENUM_LABELS = {
+  L: 'Laki-laki',
+  P: 'Perempuan',
+  BELUM_KAWIN: 'Belum Kawin',
+  KAWIN: 'Kawin',
+  CERAI_HIDUP: 'Cerai Hidup',
+  CERAI_MATI: 'Cerai Mati',
+  KEPALA_KELUARGA: 'Kepala Keluarga',
+  ISTRI: 'Istri',
+  ANAK: 'Anak',
+  LAINNYA: 'Lainnya',
+  TETAP: 'Tetap',
+  TIDAK_TETAP: 'Tidak Tetap',
+  WNI: 'WNI',
+  WNA: 'WNA',
+  MAMPU: 'Mampu',
+  KURANG_MAMPU: 'Kurang Mampu',
+  HIDUP: 'Hidup',
+  MENINGGAL: 'Meninggal',
+}
+
+export function enumLabel(value) {
+  if (value === undefined || value === null || value === '') return '-'
+  return ENUM_LABELS[value] ?? value
+}
+
+export function yaTidakLabel(value) {
+  if (value === undefined || value === null) return '-'
+  return value ? 'Ya' : 'Tidak'
+}

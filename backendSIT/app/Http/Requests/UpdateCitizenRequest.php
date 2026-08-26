@@ -37,7 +37,9 @@ class UpdateCitizenRequest extends FormRequest
             'penerima_bansos' => ['nullable', 'boolean'],
             'tanggal_masuk_rt' => ['nullable', 'date'],
             'tanggal_keluar_rt' => ['nullable', 'date', 'after_or_equal:tanggal_masuk_rt'],
-            'id_wilayah' => ['required', 'exists:wilayah,id_wilayah'],
+            // Wilayah tidak wajib dari client: CitizenService::update() selalu
+            // mempertahankan wilayah lama (perpindahan RT = workflow terpisah).
+            'id_wilayah' => ['nullable', 'exists:wilayah,id_wilayah'],
             'alamat_kk_luar_rt' => ['nullable', 'boolean'],
             'berdomisili_luar_rt' => ['nullable', 'boolean'],
             'status_hidup' => ['nullable', Rule::in(['HIDUP', 'MENINGGAL'])],

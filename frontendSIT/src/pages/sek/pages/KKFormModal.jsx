@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
@@ -9,9 +9,32 @@ export default function KKFormModal({
   onSubmit,
   initialData,
   citizens,
+  families,
   loading,
   mode = 'create',
 }) {
+  // Kandidat kepala keluarga (PRD 6.2.2: hanya satu kepala keluarga aktif
+  // per KK): warga ber-hubungan KEPALA_KELUARGA yang belum menjadi kepala
+  // KK berstatus ACTIVE lain. Pada mode edit, nilai terpilih saat ini tetap
+  // ditampilkan agar tidak ter-reset.
+  const eligibleKepala = useMemo(() => {
+    const list = (citizens || []).filter((c) => {
+      if (c.hubungan_keluarga !== 'KEPALA_KELUARGA') return false
+      const leadsOtherActiveKK = (families || []).some(
+        (f) =>
+          f.status === 'ACTIVE' &&
+          f.id_kepala_keluarga === c.id_citizen &&
+          f.id_family !== initialData?.id_family
+      )
+      return !leadsOtherActiveKK
+    })
+    const currentId = initialData?.id_kepala_keluarga
+    if (currentId && !list.some((c) => c.id_citizen === currentId)) {
+      const current = (citizens || []).find((c) => c.id_citizen === currentId)
+      if (current) list.unshift(current)
+    }
+    return list
+  }, [citizens, families, initialData])
   const [form, setForm] = useState({
     no_kk: '',
     id_kepala_keluarga: '',
@@ -88,8 +111,17 @@ export default function KKFormModal({
           Kepala Keluarga
           <select value={form.id_kepala_keluarga} onChange={(e) => updateForm('id_kepala_keluarga', e.target.value)} className="h-11 w-full rounded-xl border border-neutral-300 px-4 text-sm outline-none focus:border-sky-600">
             <option value="">-- Pilih --</option>
-            {citizens?.map((c) => <option key={c.id_citizen} value={c.id_citizen}>{c.nama_lengkap} (NIK: {c.nik})</option>)}
+            {eligibleKepala.map((c) => (
+              <option key={c.id_citizen} value={c.id_citizen}>
+                {c.nama_lengkap} (NIK: {c.nik})
+              </option>
+            ))}
           </select>
+          {eligibleKepala.length === 0 ? (
+            <span className="text-xs font-semibold text-neutral-500">
+              Tidak ada warga ber-status kepala keluarga yang tersedia. Tambahkan warga dengan hubungan &quot;Kepala Keluarga&quot; terlebih dahulu.
+            </span>
+          ) : null}
         </label>
         <label className="grid gap-2 text-sm font-bold text-black">
           Status

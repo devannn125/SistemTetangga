@@ -71,6 +71,12 @@ class CitizenService
     {
         $data = $this->stripSensitiveInputIfUnauthorized($data, $actor);
 
+        // Wilayah warga tidak pernah diubah lewat endpoint update — nilai dari
+        // client diabaikan (Zero Trust). Create men-pin wilayah aktor; update
+        // mempertahankan wilayah lama. Perpindahan RT = workflow riwayat
+        // terpisah (PRD 6.2.1), bukan sekadar edit field.
+        unset($data['id_wilayah']);
+
         DB::transaction(function () use ($citizen, $data) {
             $citizen->update($data);
         });

@@ -6,11 +6,23 @@ import { useToast } from '../../../components/ui/ToastContext'
 import WargaFormModal from './WargaFormModal'
 import KKFormModal from './KKFormModal'
 import {
-  formatDate,
-  getFamilyName,
-  getKepalaName,
+  enumLabel,
+  formatDateShort,
   toRows,
+  yaTidakLabel,
 } from './utils'
+
+// Sel tabel bertumpuk: baris utama tebal + sub-teks kecil di bawahnya.
+function CellStack({ main, subs = [] }) {
+  return (
+    <div className="space-y-0.5">
+      <div className="font-semibold text-neutral-900">{main}</div>
+      {subs.filter(Boolean).map((line, i) => (
+        <div key={i} className="text-xs text-neutral-500">{line}</div>
+      ))}
+    </div>
+  )
+}
 
 export default function WargaPage() {
   const [activeTab, setActiveTab] = useState('warga')
@@ -47,21 +59,22 @@ export default function WargaPage() {
     loadMasterData()
   }, [])
 
-  // Load citizens or families based on active tab
+  // Load citizens AND families together — kedua list dibutuhkan lintas tab:
+  // kolom/dropdown KK butuh daftar warga, dropdown KK pada WargaFormModal
+  // dan filter kepala keluarga pada KKFormModal butuh daftar KK.
   useEffect(() => {
     let alive = true
     async function loadData() {
       setIsLoading(true)
       setNotice('')
       try {
-        if (activeTab === 'warga') {
-          const response = await getCitizens({ per_page: 200 })
-          const rows = toRows(response)
-          if (alive) setCitizens(rows)
-        } else {
-          const response = await getFamilies({ per_page: 200 })
-          const rows = toRows(response)
-          if (alive) setFamilies(rows)
+        const [citizensRes, familiesRes] = await Promise.all([
+          getCitizens({ per_page: 200 }),
+          getFamilies({ per_page: 200 }),
+        ])
+        if (alive) {
+          setCitizens(toRows(citizensRes))
+          setFamilies(toRows(familiesRes))
         }
       } catch (error) {
         if (alive) setNotice(error.message || 'Gagal memuat data.')
@@ -71,7 +84,7 @@ export default function WargaPage() {
     }
     loadData()
     return () => { alive = false }
-  }, [activeTab])
+  }, [])
 
   function openCreateWarga() {
     setWargaModal({ open: true, mode: 'create', data: null })
@@ -91,8 +104,11 @@ export default function WargaPage() {
 
   async function handleWargaSubmit(payload) {
     if (wargaModal.mode === 'edit') {
-      await updateCitizen(wargaModal.data.id_citizen, payload)
-      setCitizens((prev) => prev.map(c => c.id_citizen === wargaModal.data.id_citizen ? { ...c, ...payload } : c))
+      // Pakai respons server (resource fresh + relasi ter-load) agar state
+      // tabel selalu sinkron — buka Edit berikutnya menampilkan nilai terbaru.
+      const response = await updateCitizen(wargaModal.data.id_citizen, payload)
+      const updated = response?.data || response
+      setCitizens((prev) => prev.map(c => c.id_citizen === wargaModal.data.id_citizen ? updated : c))
     } else {
       const response = await createCitizen(payload)
       const created = response?.data || response
@@ -102,8 +118,9 @@ export default function WargaPage() {
 
   async function handleKKSubmit(payload) {
     if (kkModal.mode === 'edit') {
-      await updateFamily(kkModal.data.id_family, payload)
-      setFamilies((prev) => prev.map(f => f.id_family === kkModal.data.id_family ? { ...f, ...payload } : f))
+      const response = await updateFamily(kkModal.data.id_family, payload)
+      const updated = response?.data || response
+      setFamilies((prev) => prev.map(f => f.id_family === kkModal.data.id_family ? { ...updated, members_count: f.members_count } : f))
     } else {
       const response = await createFamily(payload)
       const created = response?.data || response
@@ -133,20 +150,99 @@ export default function WargaPage() {
     }
   }
 
+  // Tabel ringkas: field pendukung menjadi sub-teks kecil di bawah nilai
+  // utama kolomnya (tanpa kolom terpisah). Sub-line yang datanya kosong atau
+  // tak berhak dilihat role (field sensitif difilter backend) dilewati.
   const wargaColumns = [
-    { key: 'nik', label: 'NIK' },
-    { key: 'nama_lengkap', label: 'Nama Lengkap' },
-    { key: 'jenis_kelamin', label: 'JK' },
-    { key: 'tanggal_lahir', label: 'Tgl Lahir', render: (v) => formatDate(v) },
-    { key: 'status_warga', label: 'Status' },
-    { key: 'id_family', label: 'KK', render: (v) => getFamilyName(families, v) },
-    { key: 'hubungan_keluarga', label: 'Hubungan' },
-    { key: 'status_aktif', label: 'Aktif', render: (v) => v ? 'Ya' : 'Tidak' },
+    {
+      key: 'nama_lengkap',
+      label: 'Warga',
+      render: (_, item) => (
+        <CellStack main={item.nama_lengkap || '-'} subs={[item.nik ? `NIK: ${item.nik}` : null]} />
+      ),
+    },
+    {
+      key: 'jenis_kelamin',
+      label: 'JK & Lahir',
+      render: (v, item) => (
+        <CellStack
+          main={enumLabel(v)}
+          subs={[item.tempat_lahir, formatDateShort(item.tanggal_lahir)]}
+        />
+      ),
+    },
+    {
+      key: 'no_hp',
+      label: 'Kontak',
+      render: (v, item) => (
+        <CellStack main={v || '-'} subs={[item.email]} />
+      ),
+    },
+    {
+      key: 'pendidikan',
+      label: 'Pendidikan & Profesi',
+      render: (v, item) => (
+        <CellStack main={v?.nama_master || '-'} subs={[item.profesi?.nama_master]} />
+      ),
+    },
+    {
+      key: 'agama',
+      label: 'Agama & Nikah',
+      render: (v, item) => (
+        <CellStack
+          main={v?.nama_master || '-'}
+          subs={[item.status_nikah ? enumLabel(item.status_nikah) : null]}
+        />
+      ),
+    },
+    {
+      key: 'status_warga',
+      label: 'Status & Sosial',
+      render: (v, item) => (
+        <CellStack
+          main={enumLabel(v)}
+          subs={[
+            item.kewarganegaraan ? enumLabel(item.kewarganegaraan) : null,
+            item.status_ekonomi ? enumLabel(item.status_ekonomi) : null,
+            item.penerima_bansos === undefined || item.penerima_bansos === null
+              ? null
+              : `Bansos: ${yaTidakLabel(item.penerima_bansos)}`,
+          ]}
+        />
+      ),
+    },
+    {
+      key: 'family',
+      label: 'KK & Hubungan',
+      // API mengirim relasi nested `family` (bukan id_family top-level).
+      render: (v, item) => (
+        <CellStack
+          main={v?.no_kk || '-'}
+          subs={[item.hubungan_keluarga ? enumLabel(item.hubungan_keluarga) : null]}
+        />
+      ),
+    },
+    {
+      key: 'tanggal_masuk_rt',
+      label: 'Domisili & Status',
+      render: (v, item) => (
+        <CellStack
+          main={v ? `Masuk RT: ${formatDateShort(v)}` : '-'}
+          subs={[
+            `KK Luar RT: ${yaTidakLabel(item.alamat_kk_luar_rt)}`,
+            `Domisili Luar: ${yaTidakLabel(item.berdomisili_luar_rt)}`,
+            item.status_hidup ? enumLabel(item.status_hidup) : null,
+            `Aktif: ${yaTidakLabel(item.status_aktif)}`,
+          ]}
+        />
+      ),
+    },
   ]
 
   const kkColumns = [
     { key: 'no_kk', label: 'No. KK' },
-    { key: 'id_kepala_keluarga', label: 'Kepala KK', render: (v) => getKepalaName(citizens, v) },
+    // API mengirim relasi nested `kepala_keluarga`.
+    { key: 'kepala_keluarga', label: 'Kepala KK', render: (v) => v?.nama_lengkap || '-' },
     { key: 'status', label: 'Status' },
   ]
 
@@ -211,7 +307,7 @@ export default function WargaPage() {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-neutral-300 bg-white">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[1280px] text-left text-sm">
               <thead>
                 <tr className="border-b border-neutral-300 text-xs uppercase text-neutral-500">
                   {columns.map((col) => (
@@ -224,11 +320,11 @@ export default function WargaPage() {
                 {data.map((item) => (
                   <tr key={item[idKey]} className="border-b border-neutral-100 last:border-0">
                     {columns.map((col) => (
-                      <td key={col.key} className="px-5 py-3">
-                        {col.render ? col.render(item[col.key]) : item[col.key] || '-'}
+                      <td key={col.key} className="px-5 py-3 align-top">
+                        {col.render ? col.render(item[col.key], item) : item[col.key] || '-'}
                       </td>
                     ))}
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3 align-top">
                       <div className="flex items-center gap-2">
                         <button
                           className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-bold text-neutral-700 hover:bg-neutral-100 transition"
@@ -269,6 +365,7 @@ export default function WargaPage() {
           onSubmit={handleKKSubmit}
           initialData={kkModal.data}
           citizens={citizens}
+          families={families}
           loading={isLoading}
           mode={kkModal.mode}
         />

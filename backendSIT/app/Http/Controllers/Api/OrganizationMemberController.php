@@ -91,8 +91,24 @@ class OrganizationMemberController extends BaseApiController
         $member = OrganizationMember::findOrFail($id);
         $oldJabatan = $member->jabatan;
 
-        if (OrganizationMember::hasInactiveHistory($member->jabatan, $member->id_wilayah, $member->periode_mulai, $member->id_organization_member)) {
-            abort(422, 'Sudah ada riwayat nonaktif dengan jabatan dan periode yang sama. Nonaktifkan/hapus riwayat tersebut terlebih dahulu.');
+        // Jika sudah nonaktif, hapus permanen
+        if (!$member->status_aktif) {
+            $member->delete();
+            $this->audit('ORGANISASI', 'DELETE', 'organization_member', $member->id_organization_member);
+            return response()->json(['message' => 'Riwayat berhasil dihapus permanen.']);
+        }
+
+        // Cari riwayat nonaktif yang bentrok (jabatan & periode mulai yang sama)
+        $collision = OrganizationMember::where('jabatan', $member->jabatan)
+            ->where('id_wilayah', $member->id_wilayah)
+            ->where('periode_mulai', $member->periode_mulai)
+            ->where('status_aktif', false)
+            ->where('id_organization_member', '!=', $member->id_organization_member)
+            ->first();
+
+        if ($collision) {
+            // Hapus riwayat lama agar tidak terjadi duplikasi unik saat menonaktifkan member saat ini
+            $collision->delete();
         }
 
         $member->update(['status_aktif' => false]);

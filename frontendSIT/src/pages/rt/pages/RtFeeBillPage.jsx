@@ -62,7 +62,7 @@ export default function RtFeeBillPage() {
   }, [bills, searchText])
 
   const summary = useMemo(() => {
-    return bills.reduce(
+    return filteredBills.reduce(
       (acc, bill) => {
         const amount = Number(bill.jumlah_tagihan || 0)
         acc.total += amount
@@ -75,7 +75,7 @@ export default function RtFeeBillPage() {
       },
       { total: 0, paid: 0, unpaid: 0 },
     )
-  }, [bills])
+  }, [filteredBills])
 
   return (
     <PageShell

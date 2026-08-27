@@ -13,9 +13,10 @@ export class ApiError extends Error {
 async function request(path, options = {}) {
   const token = getAccessToken()
 
+  const isFormData = options.body instanceof FormData;
   const headers = {
     Accept: 'application/json',
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   }
@@ -366,6 +367,9 @@ export function deleteHouse(id) {
 }
 
 export function createOrganizationMember(payload) {
+  if (payload instanceof FormData) {
+    return request('/organization-members', { method: 'POST', body: payload })
+  }
   return request('/organization-members', { method: 'POST', body: JSON.stringify(payload) })
 }
 

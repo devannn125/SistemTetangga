@@ -5,8 +5,8 @@ import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
 
 const STRATEGIC_POSITIONS = [
-  'Ketua RW',
-  'Ketua RT',
+  
+  
   'Sekretaris',
   'Bendahara',
 ]
@@ -65,12 +65,16 @@ export default function RtOrganizationPage() {
       setMembers(arrM)
       setCitizens(arrC)
 
-      setForm(f => ({
-        ...f,
-        id_citizen: arrC.some(c => c.id_citizen === f.id_citizen)
-          ? f.id_citizen
-          : (arrC[0]?.id_citizen || ''),
-      }))
+      setForm(f => {
+        const isActive = (cId) => arrM.some(m => m.status_aktif && (m.id_citizen === cId || m.citizen?.id_citizen === cId))
+        const availableCitizens = arrC.filter(c => !isActive(c.id_citizen))
+        const isCurrentValid = f.id_citizen && !isActive(f.id_citizen) && arrC.some(c => c.id_citizen === f.id_citizen)
+        
+        return {
+          ...f,
+          id_citizen: isCurrentValid ? f.id_citizen : (availableCitizens[0]?.id_citizen || ''),
+        }
+      })
     } catch (err) {
       console.error(err)
       showToast('Gagal memuat data struktur organisasi: ' + err.message, 'error')
@@ -81,16 +85,26 @@ export default function RtOrganizationPage() {
 
   useEffect(() => { loadData() }, [])
 
-  async function handleSubmit(e) {
+    async function handleSubmit(e) {
     e.preventDefault()
     const approved = await confirm({
       title: 'Konfirmasi Simpan',
-      message: `Yakin ingin menunjuk warga ini sebagai "${form.jabatan}"? Perubahan pengurus otomatis menyesuaikan hak aksesnya di sistem.`,
+      message: 'Yakin ingin menunjuk warga ini sebagai "' + form.jabatan + '"? Perubahan pengurus otomatis menyesuaikan hak aksesnya di sistem.',
       confirmLabel: 'Ya, Simpan',
     })
     if (!approved) return
     try {
-      await createOrganizationMember(form)
+      const payload = new FormData()
+      payload.append('id_citizen', form.id_citizen)
+      payload.append('jabatan', form.jabatan)
+      payload.append('id_wilayah', form.id_wilayah)
+      payload.append('periode_mulai', form.periode_mulai)
+      payload.append('status_aktif', form.status_aktif ? '1' : '0')
+      if (form.foto) {
+        payload.append('foto', form.foto)
+      }
+      
+      await createOrganizationMember(payload)
       showToast('Pengurus berhasil ditambahkan.')
       setIsModalOpen(false)
       loadData()
@@ -121,32 +135,37 @@ export default function RtOrganizationPage() {
       title="Struktur Organisasi & Pengurus"
       description="Kelola jabatan dan periode pengurus lingkungan (RT)."
     >
-      <section className="mt-6 space-y-6">
+            <section className="mt-6 space-y-6">
         <div className="flex justify-end">
           <button onClick={() => setIsModalOpen(true)} className="rounded-full bg-black px-4 py-2 text-xs font-extrabold uppercase text-white hover:bg-neutral-900">
             + Tambah Pengurus
           </button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {loading ? (
              <div className="col-span-full p-8 text-center text-sm text-neutral-500 bg-white border rounded-xl">Memuat data pengurus...</div>
           ) : members.length === 0 ? (
              <div className="col-span-full p-8 text-center text-sm text-neutral-500 bg-white border rounded-xl">Belum ada data struktur organisasi.</div>
-          ) : members.map(m => (
-            <div key={m.id_organization_member || m.id} className="relative rounded-2xl border border-neutral-300 bg-white p-5">
-              <span className={`absolute top-4 right-4 h-3 w-3 rounded-full ${m.status_aktif ? 'bg-emerald-500' : 'bg-neutral-300'}`} title={m.status_aktif ? 'Aktif' : 'Nonaktif'} />
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 font-extrabold text-black">
-                  {m.citizen?.nama_lengkap?.[0] || '?'}
-                </div>
-                <div>
-                  <h3 className="font-bold text-black">{m.citizen?.nama_lengkap || 'Warga Terhapus'}</h3>
-                  <p className="text-xs font-bold uppercase text-sky-700">{m.jabatan}</p>
-                </div>
+          ) : members.filter(m => m.status_aktif).map(m => (
+            <div key={m.id_organization_member || m.id} className="relative flex flex-col items-center rounded-2xl border border-neutral-300 bg-white p-6">
+              <span className={`absolute top-4 right-4 h-3 w-3 rounded-full ${m.status_aktif ? 'bg-emerald-500' : 'bg-neutral-300'} z-10`} title={m.status_aktif ? 'Aktif' : 'Nonaktif'} />
+              
+              <div className="mb-4 flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 text-4xl font-extrabold text-neutral-300 shadow-sm">
+                {m.foto_url ? (
+                  <img src={m.foto_url.startsWith('http') ? m.foto_url : (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://127.0.0.1:8000') + '/storage/' + m.foto_url} alt="Foto" className="h-full w-full object-cover" />
+                ) : (
+                  m.citizen?.nama_lengkap?.[0] || '?'
+                )}
               </div>
-              <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                <p className="text-xs text-neutral-500">Mulai: {m.periode_mulai}</p>
+              
+              <div className="text-center">
+                <h3 className="text-lg font-bold text-black">{m.citizen?.nama_lengkap || 'Warga Terhapus'}</h3>
+                <p className="mt-1 text-xs font-extrabold uppercase tracking-wide text-sky-600">{m.jabatan}</p>
+              </div>
+
+              <div className="mt-6 flex w-full items-center justify-between border-t border-neutral-100 pt-4">
+                <p className="text-[10px] font-medium text-neutral-400">Mulai: {m.periode_mulai}</p>
                 <button onClick={() => handleDelete(m.id_organization_member || m.id)} className="text-xs font-bold uppercase text-red-600 hover:text-red-700">Cabut</button>
               </div>
             </div>
@@ -166,7 +185,14 @@ export default function RtOrganizationPage() {
                 ) : (
                   <select required value={form.id_citizen} onChange={e => setForm({...form, id_citizen: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">
                     <option value="">-- Pilih Warga --</option>
-                    {citizens.map(c => <option key={c.id_citizen} value={c.id_citizen}>{c.nama_lengkap}</option>)}
+                    {citizens.map(c => {
+                      const isActive = members.some(m => m.status_aktif && (m.id_citizen === c.id_citizen || m.citizen?.id_citizen === c.id_citizen))
+                      return (
+                        <option key={c.id_citizen} value={c.id_citizen} disabled={isActive}>
+                          {c.nama_lengkap} {isActive ? '(Sudah Menjabat)' : ''}
+                        </option>
+                      )
+                    })}
                   </select>
                 )}
               </div>
@@ -206,8 +232,12 @@ export default function RtOrganizationPage() {
               <div>
                 <label className="block text-xs font-bold text-neutral-700 mb-1">Periode Mulai</label>
                 <input type="date" required value={form.periode_mulai} onChange={e => setForm({...form, periode_mulai: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <div className="flex items-center gap-2 mt-2">
+                          </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Foto Pengurus</label>
+              <input type="file" accept="image/*" onChange={e => setForm({...form, foto: e.target.files[0]})} className="w-full border rounded-lg px-3 py-2 text-sm bg-white" />
+            </div>
+            <div className="flex items-center gap-2 mt-2">
                 <input type="checkbox" id="status" checked={form.status_aktif} onChange={e => setForm({...form, status_aktif: e.target.checked})} />
                 <label htmlFor="status" className="text-sm text-black">Status Aktif Menjabat</label>
               </div>
@@ -224,3 +254,6 @@ export default function RtOrganizationPage() {
     </PageShell>
   )
 }
+
+
+

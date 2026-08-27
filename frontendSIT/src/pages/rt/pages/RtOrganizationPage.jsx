@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
-import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getCitizens, getCitizenMe } from '../../../services/api'
+import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getUsers, getCitizenMe } from '../../../services/api'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
 
 const STRATEGIC_POSITIONS = [
-  
-  
   'Sekretaris',
   'Bendahara',
 ]
@@ -53,14 +51,25 @@ export default function RtOrganizationPage() {
       setMyWilayah(wil)
       setForm(f => ({ ...f, id_wilayah: wil.id_wilayah }))
 
-      const [resM, resC] = await Promise.all([
+      const [resM, resUsers] = await Promise.all([
         getOrganizationMembers({ per_page: 100 }),
-        getCitizens({ id_wilayah: wil.id_wilayah, per_page: 100 }),
+        getUsers({ per_page: 100 }),
       ])
       
       const arrM = Array.isArray(resM?.data) ? resM.data : Array.isArray(resM) ? resM : []
-      const arrC = (Array.isArray(resC?.data) ? resC.data : Array.isArray(resC) ? resC : [])
-        .filter(c => c.wilayah?.id_wilayah === wil.id_wilayah && c.status_aktif !== false)
+      const allUsers = Array.isArray(resUsers?.data) ? resUsers.data : Array.isArray(resUsers) ? resUsers : []
+      
+      const filteredUsers = allUsers.filter(u => {
+        const roles = (u.user_roles || []).filter(r => r.status === 'ACTIVE').map(r => r.kode)
+        return !roles.includes('ADMIN') && !roles.includes('DUKUH') && !roles.includes('RW')
+      })
+
+      const arrC = filteredUsers
+        .filter(u => u.id_citizen && u.status === 'ACTIVE')
+        .map(u => ({
+          id_citizen: u.id_citizen,
+          nama_lengkap: u.nama_users
+        }))
       
       setMembers(arrM)
       setCitizens(arrC)
@@ -85,7 +94,7 @@ export default function RtOrganizationPage() {
 
   useEffect(() => { loadData() }, [])
 
-    async function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const approved = await confirm({
       title: 'Konfirmasi Simpan',
@@ -135,7 +144,7 @@ export default function RtOrganizationPage() {
       title="Struktur Organisasi & Pengurus"
       description="Kelola jabatan dan periode pengurus lingkungan (RT)."
     >
-            <section className="mt-6 space-y-6">
+      <section className="mt-6 space-y-6">
         <div className="flex justify-end">
           <button onClick={() => setIsModalOpen(true)} className="rounded-full bg-black px-4 py-2 text-xs font-extrabold uppercase text-white hover:bg-neutral-900">
             + Tambah Pengurus
@@ -181,7 +190,7 @@ export default function RtOrganizationPage() {
               <div>
                 <label className="block text-xs font-bold text-neutral-700 mb-1">Pilih Warga</label>
                 {citizens.length === 0 ? (
-                  <p className="w-full border rounded-lg px-3 py-2 text-sm bg-neutral-100 text-neutral-500">Tidak ada warga aktif di RT ini.</p>
+                  <p className="w-full border rounded-lg px-3 py-2 text-sm bg-neutral-100 text-neutral-500">Tidak ada warga aktif di RT ini yang dapat ditunjuk.</p>
                 ) : (
                   <select required value={form.id_citizen} onChange={e => setForm({...form, id_citizen: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">
                     <option value="">-- Pilih Warga --</option>
@@ -224,7 +233,7 @@ export default function RtOrganizationPage() {
                 <input
                   type="text"
                   readOnly
-                  value={myWilayah ? `${myWilayah.nama_wilayah}` : ''}
+                  value={myWilayah ? myWilayah.nama_wilayah : ''}
                   title="Struktur organisasi hanya dapat dikelola di RT Anda sendiri"
                   className="w-full border rounded-lg px-3 py-2 text-sm bg-neutral-100 text-neutral-600 cursor-not-allowed"
                 />
@@ -232,12 +241,12 @@ export default function RtOrganizationPage() {
               <div>
                 <label className="block text-xs font-bold text-neutral-700 mb-1">Periode Mulai</label>
                 <input type="date" required value={form.periode_mulai} onChange={e => setForm({...form, periode_mulai: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm" />
-                          </div>
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">Foto Pengurus</label>
-              <input type="file" accept="image/*" onChange={e => setForm({...form, foto: e.target.files[0]})} className="w-full border rounded-lg px-3 py-2 text-sm bg-white" />
-            </div>
-            <div className="flex items-center gap-2 mt-2">
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Foto Pengurus</label>
+                <input type="file" accept="image/*" onChange={e => setForm({...form, foto: e.target.files[0]})} className="w-full border rounded-lg px-3 py-2 text-sm bg-white" />
+              </div>
+              <div className="flex items-center gap-2 mt-2">
                 <input type="checkbox" id="status" checked={form.status_aktif} onChange={e => setForm({...form, status_aktif: e.target.checked})} />
                 <label htmlFor="status" className="text-sm text-black">Status Aktif Menjabat</label>
               </div>
@@ -254,6 +263,3 @@ export default function RtOrganizationPage() {
     </PageShell>
   )
 }
-
-
-

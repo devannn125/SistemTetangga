@@ -57,7 +57,13 @@ export default function RtUserManagementPage() {
       ])
 
       const arr = Array.isArray(resUsers?.data) ? resUsers.data : Array.isArray(resUsers) ? resUsers : []
-      setUsers(arr)
+      
+      const filteredUsers = arr.filter(u => {
+        const roles = (u.user_roles || []).filter(r => r.status === 'ACTIVE').map(r => r.kode)
+        return !roles.includes('ADMIN') && !roles.includes('DUKUH') && !roles.includes('RW')
+      })
+      
+      setUsers(filteredUsers)
       setMyWilayahName(resMe?.data?.wilayah?.nama_wilayah || '')
       setNotice('')
     } catch (err) {
@@ -197,11 +203,18 @@ export default function RtUserManagementPage() {
                       <div className="flex flex-wrap gap-1">
                         {actives.length === 0 ? (
                           <span className="text-xs italic text-neutral-400">Tanpa role</span>
-                        ) : actives.map((r) => (
-                          <span key={r.id_user_role} className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-900">
-                            {ROLE_OPTIONS.find((o) => o.kode === r.kode)?.label || r.nama_role || r.kode}
-                          </span>
-                        ))}
+                        ) : (
+                          (() => {
+                            const hasPengurus = actives.some((r) => r.kode !== 'WARGA')
+                            const displayRoles = hasPengurus ? actives.filter((r) => r.kode !== 'WARGA') : actives
+                            
+                            return displayRoles.map((r) => (
+                              <span key={r.id_user_role} className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-900">
+                                {ROLE_OPTIONS.find((o) => o.kode === r.kode)?.label || r.nama_role || r.kode}
+                              </span>
+                            ))
+                          })()
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -212,12 +225,19 @@ export default function RtUserManagementPage() {
                     <td className="px-4 py-3">
                       <select
                         value={currentRoleCode(u)}
-                        disabled={processingId === u.id_users}
+                        disabled={processingId === u.id_users || currentRoleCode(u) === 'SEKRETARIS' || currentRoleCode(u) === 'BENDAHARA'}
                         onChange={(e) => handleAssignRole(u, e.target.value)}
-                        className="border rounded px-2 py-1 text-xs font-bold bg-white"
+                        title={['SEKRETARIS', 'BENDAHARA'].includes(currentRoleCode(u)) ? "Jabatan struktural hanya dapat diubah melalui menu Struktur Organisasi" : ""}
+                        className="border rounded px-2 py-1 text-xs font-bold bg-white disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
                       >
                         {ROLE_OPTIONS.map((o) => (
-                          <option key={o.kode} value={o.kode}>{o.label}</option>
+                          <option 
+                            key={o.kode} 
+                            value={o.kode} 
+                            disabled={['SEKRETARIS', 'BENDAHARA'].includes(o.kode) && currentRoleCode(u) !== o.kode}
+                          >
+                            {o.label}
+                          </option>
                         ))}
                       </select>
                     </td>

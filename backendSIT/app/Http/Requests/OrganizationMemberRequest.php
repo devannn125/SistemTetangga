@@ -59,7 +59,8 @@ class OrganizationMemberRequest extends FormRequest
             'id_wilayah' => ['required', 'exists:wilayah,id_wilayah'],
             'periode_mulai' => ['required', 'date'],
             'periode_selesai' => ['nullable', 'date', 'after_or_equal:periode_mulai'],
-            'foto_url' => ['nullable', 'url', 'max:500'],
+            'foto_url' => ['nullable', 'string', 'max:500'],
+            'foto' => ['nullable', 'image', 'max:2048'],
             'status_aktif' => ['boolean'],
         ];
     }

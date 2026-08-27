@@ -34,12 +34,18 @@ class OrganizationMemberController extends BaseApiController
         return OrganizationMemberResource::collection($query->paginate($request->query('per_page', 50)));
     }
 
-    public function store(OrganizationMemberRequest $request)
+        public function store(OrganizationMemberRequest $request)
     {
         $this->authorizeModule('ORGANISASI', 'CREATE');
 
         $member = DB::transaction(function () use ($request) {
-            $member = OrganizationMember::create($request->validated());
+            $data = $request->validated();
+            if ($request->hasFile('foto')) {
+                $path = $request->file('foto')->store('pengurus', 'public');
+                $data['foto_url'] = $path;
+            }
+
+            $member = OrganizationMember::create($data);
 
             $this->syncUserRole($member, null);
 
@@ -198,3 +204,4 @@ class OrganizationMemberController extends BaseApiController
             ->update(['status' => $status, 'periode_selesai' => now()->toDateString()]);
     }
 }
+

@@ -197,7 +197,6 @@ function RwCitizenPage() {
     setProcessingId(citizen.id_citizen)
     try {
       await updateCitizen(citizen.id_citizen, {
-        ...citizen,
         status_verifikasi: status
       })
       showToast(`Data warga berhasil ${status === 'VERIFIED_RW' ? 'diverifikasi' : 'ditolak'}.`)

@@ -17,7 +17,7 @@ class UpdateCitizenRequest extends FormRequest
     {
         $id = $this->route('citizen');
 
-        return [
+        $rules = [
             'nik' => ['required', 'string', 'max:32', Rule::unique('citizen', 'nik')->ignore($id, 'id_citizen')],
             'id_family' => ['nullable', 'exists:family,id_family'],
             'nama_lengkap' => ['required', 'string', 'max:150'],
@@ -46,6 +46,14 @@ class UpdateCitizenRequest extends FormRequest
             'status_aktif' => ['nullable', 'boolean'],
             'status_verifikasi' => ['nullable', Rule::in(['PENDING', 'VERIFIED_RW', 'APPROVED_DUKUH', 'REJECTED'])],
         ];
+
+        if ($this->isMethod('PATCH')) {
+            foreach ($rules as $field => $rule) {
+                array_unshift($rules[$field], 'sometimes');
+            }
+        }
+
+        return $rules;
     }
 
     public function messages(): array

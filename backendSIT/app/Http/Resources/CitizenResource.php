@@ -31,6 +31,7 @@ class CitizenResource extends JsonResource
             'berdomisili_luar_rt' => (bool) $this->berdomisili_luar_rt,
             'status_hidup' => $this->status_hidup,
             'status_aktif' => (bool) $this->status_aktif,
+            'status_verifikasi' => $this->status_verifikasi,
 
             // agama/pendidikan/profesi berasal dari tabel master_data (tipe berbeda),
             // lihat App\Models\MasterData.

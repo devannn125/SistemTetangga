@@ -98,15 +98,34 @@ class CitizenController extends BaseApiController
      */
     public function update(UpdateCitizenRequest $request, string $id): JsonResponse
     {
-        $this->authorizeModule('WARGA', 'UPDATE');
+        $validated = $request->validated();
+        $isOnlyVerification = isset($validated['status_verifikasi']) && count($validated) === 1;
+
+        if ($isOnlyVerification) {
+            $hasUpdate = $this->rbac->can($request->user(), 'WARGA', 'UPDATE');
+            $hasVerify = $this->rbac->can($request->user(), 'WARGA', 'VERIFY');
+            
+            if (!$hasUpdate && !$hasVerify) {
+                abort(403, 'Anda tidak memiliki akses untuk memverifikasi warga.');
+            }
+        } else {
+            $this->authorizeModule('WARGA', 'UPDATE');
+        }
 
         $citizen = $this->service->find($id);
-        $this->assertInScope($citizen->id_wilayah, 'UPDATE');
+
+        if ($isOnlyVerification) {
+            $hasUpdateScope = $this->rbac->can($request->user(), 'WARGA', 'UPDATE');
+            $scopeAction = $hasUpdateScope ? 'UPDATE' : 'VERIFY';
+            $this->assertInScope($citizen->id_wilayah, $scopeAction);
+        } else {
+            $this->assertInScope($citizen->id_wilayah, 'UPDATE');
+        }
 
         $old = $citizen->toArray();
-        $citizen = $this->service->update($citizen, $request->validated(), $request->user());
+        $citizen = $this->service->update($citizen, $validated, $request->user());
 
-        $this->audit('WARGA', 'UPDATE', 'citizen', $citizen->id_citizen, $old, $request->validated());
+        $this->audit('WARGA', 'UPDATE', 'citizen', $citizen->id_citizen, $old, $validated);
 
         return response()->json([
             'message' => 'Data warga berhasil diperbarui.',

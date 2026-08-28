@@ -6,6 +6,7 @@ import { WargaPage } from './pages/warga/WargaPage'
 import { RtPage } from './pages/rt/RtPage'
 import { SekretarisPage } from './pages/sek/SekretarisPage'
 import { BendaharaPage } from './pages/ben/BendaharaPage'
+import { RwPage } from './pages/rw/RwPage'
 import { useDashboardData } from './hooks/useDashboardData'
 import { usePathname } from './services/router'
 
@@ -29,6 +30,10 @@ function App() {
     return <RtPage />
   }
 
+  if (pathname.startsWith('/rw')) {
+    return <RwPage />
+  }
+
   if (pathname.startsWith('/sek')) {
     return <SekretarisPage />
   }
@@ -44,6 +49,9 @@ function App() {
     }
     if (roleParam === 'rt') {
       return <RtPage />
+    }
+    if (roleParam === 'rw') {
+      return <RwPage />
     }
     return <RolePage roleParam={roleParam} />
   }

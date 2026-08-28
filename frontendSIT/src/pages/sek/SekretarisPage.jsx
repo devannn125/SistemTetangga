@@ -5,7 +5,13 @@ import LetterPage from './pages/LetterPage'
 import InventoryPage from './pages/InventoryPage'
 import PerumahanPage from './pages/PerumahanPage'
 import InformasiStatistikPage from './pages/InformasiStatistikPage'
-import PlaceholderPage from './pages/PlaceholderPage'
+import GuestPage from './pages/GuestPage'
+import FinancePage from './pages/FinancePage'
+import FeeBillPage from './pages/FeeBillPage'
+import SiskamlingPage from './pages/SiskamlingPage'
+import RegulationPage from './pages/RegulationPage'
+import OrganizationPage from './pages/OrganizationPage'
+import MessagePage from './pages/MessagePage'
 
 const sekMenus = [
   { label: 'Beranda', path: '/sek', icon: 'home' },
@@ -33,14 +39,14 @@ function renderPage(activePath) {
   if (activePath === '/sek/inventaris') return <InventoryPage />
   if (activePath === '/sek/warga') return <WargaPage />
   if (activePath === '/sek/perumahan') return <PerumahanPage />
-  if (activePath === '/sek/tamu') return <PlaceholderPage title="Tamu" desc="Daftar tamu warga (Read-only) - Segera hadir" />
-  if (activePath === '/sek/keuangan') return <PlaceholderPage title="Keuangan" desc="Pemasukan & pengeluaran kas RT (Read-only) - Segera hadir" />
-  if (activePath === '/sek/iuran') return <PlaceholderPage title="Iuran" desc="Tagihan iuran warga per KK (Read-only) - Segera hadir" />
-  if (activePath === '/sek/siskamling') return <PlaceholderPage title="Siskamling" desc="Jadwal ronda, kejadian, presensi (Read-only) - Segera hadir" />
+  if (activePath === '/sek/tamu') return <GuestPage />
+  if (activePath === '/sek/keuangan') return <FinancePage />
+  if (activePath === '/sek/iuran') return <FeeBillPage />
+  if (activePath === '/sek/siskamling') return <SiskamlingPage />
   if (activePath === '/sek/statistik') return <InformasiStatistikPage />
-  if (activePath === '/sek/peraturan') return <PlaceholderPage title="Peraturan" desc="Tata tertib warga tetap & tidak tetap (CRUD) - Segera hadir" />
-  if (activePath === '/sek/organisasi') return <PlaceholderPage title="Struktur Organisasi" desc="Daftar pengurus RT (Read-only) - Segera hadir" />
-  if (activePath === '/sek/pesan') return <PlaceholderPage title="Pesan & Kesan" desc="Pesan, keluhan, apresiasi warga (Read-only) - Segera hadir" />
+  if (activePath === '/sek/peraturan') return <RegulationPage />
+  if (activePath === '/sek/organisasi') return <OrganizationPage />
+  if (activePath === '/sek/pesan') return <MessagePage />
   return <HomePage />
 }
 

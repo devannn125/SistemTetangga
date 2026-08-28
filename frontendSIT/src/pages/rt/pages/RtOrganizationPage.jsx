@@ -4,9 +4,13 @@ import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMem
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
 
-const STRATEGIC_POSITIONS = [
+const ALL_POSITIONS = [
+  'Ketua RT',
   'Sekretaris',
   'Bendahara',
+  'Pengurus Siskamling',
+  'Ibu PKK',
+  'Karang Taruna',
 ]
 
 export default function RtOrganizationPage() {
@@ -214,7 +218,7 @@ export default function RtOrganizationPage() {
                   className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
                 >
                   <option value="">-- Pilih Jabatan --</option>
-                  {STRATEGIC_POSITIONS.map(pos => (
+                  {ALL_POSITIONS.map(pos => (
                     <option 
                       key={pos} 
                       value={pos}

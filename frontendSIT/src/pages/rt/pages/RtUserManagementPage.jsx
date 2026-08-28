@@ -9,8 +9,6 @@ const ROLE_OPTIONS = [
   { kode: 'SISKAMLING', label: 'Pengurus Siskamling' },
   { kode: 'PKK', label: 'Ibu PKK' },
   { kode: 'KARANG_TARUNA', label: 'Karang Taruna' },
-  { kode: 'SEKRETARIS', label: 'Sekretaris RT' },
-  { kode: 'BENDAHARA', label: 'Bendahara RT' },
 ]
 
 const STATUS_LABEL = {
@@ -33,8 +31,8 @@ function getRoleConfirmMessage(roleLabel) {
   if (roleLabel === 'Pengurus Siskamling') {
     return `Tunjuk warga ini sebagai Pengurus Siskamling? Ia mendapat wewenang tambahan: mengusulkan jadwal ronda, check-in presensi GPS, melaporkan kejadian, dan panic button. Pengesahan jadwal final tetap wewenang Anda.`
   }
-  if (roleLabel === 'Sekretaris RT' || roleLabel === 'Bendahara RT') {
-    return `Tunjuk warga ini sebagai ${roleLabel}? Jabatan strategis hanya boleh dipegang satu orang aktif per periode dan akan tercatat di Struktur Organisasi.`
+  if (roleLabel === 'Ibu PKK' || roleLabel === 'Karang Taruna') {
+    return `Tunjuk warga ini sebagai ${roleLabel}? Peran khusus ini akan tercatot di sistem dan hak aksesnya otomatis disesuaikan.`
   }
   return `Ubah peran warga ini menjadi "${roleLabel}"? Peran khusus lain yang aktif akan otomatis diakhiri.`
 }
@@ -165,7 +163,7 @@ export default function RtUserManagementPage() {
       eyebrow="Sistem"
       title="Manajemen User (Level RT)"
       description={myWilayahName
-        ? `Kelola akun warga ${myWilayahName}: suspen akun, reset password, dan tunjuk peran khusus (Pengurus Siskamling, Ibu PKK, Karang Taruna, Sekretaris, Bendahara).`
+        ? `Kelola akun warga ${myWilayahName}: suspen akun, reset password, dan tunjuk peran khusus (Pengurus Siskamling, Ibu PKK, Karang Taruna).`
         : 'Kelola akun warga di lingkup RT Anda: suspen akun, reset password, dan tunjuk peran khusus.'}
     >
       <section className="mt-8 space-y-6">
@@ -225,17 +223,13 @@ export default function RtUserManagementPage() {
                     <td className="px-4 py-3">
                       <select
                         value={currentRoleCode(u)}
-                        disabled={processingId === u.id_users || currentRoleCode(u) === 'SEKRETARIS' || currentRoleCode(u) === 'BENDAHARA'}
+                        disabled={processingId === u.id_users || ['SEKRETARIS', 'BENDAHARA'].includes(currentRoleCode(u))}
                         onChange={(e) => handleAssignRole(u, e.target.value)}
                         title={['SEKRETARIS', 'BENDAHARA'].includes(currentRoleCode(u)) ? "Jabatan struktural hanya dapat diubah melalui menu Struktur Organisasi" : ""}
                         className="border rounded px-2 py-1 text-xs font-bold bg-white disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
                       >
                         {ROLE_OPTIONS.map((o) => (
-                          <option 
-                            key={o.kode} 
-                            value={o.kode} 
-                            disabled={['SEKRETARIS', 'BENDAHARA'].includes(o.kode) && currentRoleCode(u) !== o.kode}
-                          >
+                          <option key={o.kode} value={o.kode}>
                             {o.label}
                           </option>
                         ))}
@@ -268,7 +262,7 @@ export default function RtUserManagementPage() {
 
         {!isLoading && !notice && users.length > 0 && (
           <p className="text-xs text-neutral-500">
-            Catatan: akun dengan role Ketua RT/RW/Kelurahan/Admin dikelola melalui Struktur Organisasi dan tidak dapat diubah dari halaman ini.
+            Catatan: Jabatan Sekretaris & Bendahara diatur melalui menu Struktur Organisasi. Akun dengan role Ketua RT/RW/Kelurahan/Admin juga dikelola di sana.
           </p>
         )}
       </section>

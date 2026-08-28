@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
 
 class UserManagementController extends BaseApiController
 {
-    private const ASSIGNABLE_ROLES = ['WARGA', 'SISKAMLING', 'PKK', 'KARANG_TARUNA', 'SEKRETARIS', 'BENDAHARA'];
+    private const ASSIGNABLE_ROLES = ['WARGA', 'SISKAMLING', 'PKK', 'KARANG_TARUNA'];
 
     private const CUSTOM_ROLES = ['WARGA', 'SISKAMLING', 'PKK', 'KARANG_TARUNA'];
 
@@ -26,8 +26,6 @@ class UserManagementController extends BaseApiController
         'SISKAMLING' => 'Pengurus Siskamling',
         'PKK' => 'Ibu PKK',
         'KARANG_TARUNA' => 'Karang Taruna',
-        'SEKRETARIS' => 'Sekretaris',
-        'BENDAHARA' => 'Bendahara',
     ];
 
     public function index(Request $request)

@@ -74,7 +74,7 @@ class OrganizationMemberController extends BaseApiController
             $oldStatusAktif = $member->status_aktif;
             $member->update($request->validated());
 
-            if ($oldStatusAktif && !$member->status_aktif && $member->isStrategic()) {
+            if ($oldStatusAktif && !$member->status_aktif && $member->shouldSyncUserRole()) {
                 $member->update(['periode_selesai' => now()->toDateString()]);
             }
 
@@ -121,7 +121,7 @@ class OrganizationMemberController extends BaseApiController
             'periode_selesai' => $today,
         ]);
 
-        if ($member->isStrategic()) {
+        if ($member->shouldSyncUserRole()) {
             $this->revokeUserRole($member, $oldJabatan);
         }
 
@@ -132,7 +132,7 @@ class OrganizationMemberController extends BaseApiController
 
     private function syncUserRole(OrganizationMember $member, ?string $oldJabatan): void
     {
-        if (!$member->isStrategic()) {
+        if (!$member->shouldSyncUserRole()) {
             return;
         }
 

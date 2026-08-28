@@ -25,6 +25,9 @@ class OrganizationMember extends Model
         'Ketua RT' => 'KETUA_RT',
         'Sekretaris' => 'SEKRETARIS',
         'Bendahara' => 'BENDAHARA',
+        'Pengurus Siskamling' => 'SISKAMLING',
+        'Ibu PKK' => 'PKK',
+        'Karang Taruna' => 'KARANG_TARUNA',
     ];
 
     public $timestamps = false;
@@ -64,8 +67,33 @@ class OrganizationMember extends Model
         return in_array($jabatan, self::STRATEGIC_POSITIONS);
     }
 
+    public const SYNC_USER_ROLE_POSITIONS = [
+        'Ketua RW',
+        'Ketua RT',
+        'Sekretaris',
+        'Bendahara',
+        'Pengurus Siskamling',
+        'Ibu PKK',
+        'Karang Taruna',
+    ];
+
+    public static function requiresUserRoleSync(string $jabatan): bool
+    {
+        return in_array($jabatan, self::SYNC_USER_ROLE_POSITIONS);
+    }
+
+    public function shouldSyncUserRole(): bool
+    {
+        return in_array($this->jabatan, self::SYNC_USER_ROLE_POSITIONS);
+    }
+
     public static function isPositionTaken(string $jabatan, string $idWilayah, string $periodeMulai, ?string $excludeId = null): bool
     {
+        // Only enforce uniqueness for strategic positions
+        if (!self::isStrategicPosition($jabatan)) {
+            return false;
+        }
+
         $query = self::where('jabatan', $jabatan)
             ->where('id_wilayah', $idWilayah)
             ->where('periode_mulai', $periodeMulai)
@@ -80,6 +108,11 @@ class OrganizationMember extends Model
 
     public static function hasInactiveHistory(string $jabatan, string $idWilayah, string $periodeMulai, ?string $excludeId = null): bool
     {
+        // Only enforce for strategic positions
+        if (!self::isStrategicPosition($jabatan)) {
+            return false;
+        }
+
         $query = self::where('jabatan', $jabatan)
             ->where('id_wilayah', $idWilayah)
             ->where('periode_mulai', $periodeMulai)

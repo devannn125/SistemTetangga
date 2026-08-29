@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { getCitizens, createCitizen, updateCitizen, getFamilies, createFamily, updateFamily, getMasterData } from '@/services/api'
 import { PageShell } from '@/components/layout/PageShell'
+import { DataTable } from '@/components/ui/DataTable'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 import WargaFormModal from '@/pages/sek/pages/WargaFormModal'
@@ -12,7 +15,6 @@ import {
   yaTidakLabel,
 } from '@/pages/sek/pages/utils'
 
-// Sel tabel bertumpuk: baris utama tebal + sub-teks kecil di bawahnya.
 function CellStack({ main, subs = [] }) {
   return (
     <div className="space-y-0.5">
@@ -24,6 +26,37 @@ function CellStack({ main, subs = [] }) {
   )
 }
 
+const WARGA_FILTERS = [
+  {
+    key: 'status_warga',
+    label: 'Status Warga',
+    options: [
+      { value: 'TETAP', label: 'Tetap' },
+      { value: 'TIDAK_TETAP', label: 'Tidak Tetap' },
+    ],
+  },
+  {
+    key: 'status_aktif',
+    label: 'Status Aktif',
+    options: [
+      { value: 'true', label: 'Aktif' },
+      { value: 'false', label: 'Nonaktif' },
+    ],
+  },
+]
+
+const KK_FILTERS = [
+  {
+    key: 'status',
+    label: 'Status KK',
+    options: [
+      { value: 'ACTIVE', label: 'Aktif' },
+      { value: 'PINDAH', label: 'Pindah' },
+      { value: 'DIHAPUS', label: 'Dihapus' },
+    ],
+  },
+]
+
 export default function WargaPage() {
   const [activeTab, setActiveTab] = useState('warga')
   const [citizens, setCitizens] = useState([])
@@ -32,13 +65,11 @@ export default function WargaPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [notice, setNotice] = useState('')
 
-  // Modals
   const [wargaModal, setWargaModal] = useState({ open: false, mode: 'create', data: null })
   const [kkModal, setKKModal] = useState({ open: false, mode: 'create', data: null })
   const confirm = useConfirm()
   const { showToast } = useToast()
 
-  // Load master data for dropdowns
   useEffect(() => {
     async function loadMasterData() {
       try {
@@ -59,9 +90,6 @@ export default function WargaPage() {
     loadMasterData()
   }, [])
 
-  // Load citizens AND families together — kedua list dibutuhkan lintas tab:
-  // kolom/dropdown KK butuh daftar warga, dropdown KK pada WargaFormModal
-  // dan filter kepala keluarga pada KKFormModal butuh daftar KK.
   useEffect(() => {
     let alive = true
     async function loadData() {
@@ -104,8 +132,6 @@ export default function WargaPage() {
 
   async function handleWargaSubmit(payload) {
     if (wargaModal.mode === 'edit') {
-      // Pakai respons server (resource fresh + relasi ter-load) agar state
-      // tabel selalu sinkron — buka Edit berikutnya menampilkan nilai terbaru.
       const response = await updateCitizen(wargaModal.data.id_citizen, payload)
       const updated = response?.data || response
       setCitizens((prev) => prev.map(c => c.id_citizen === wargaModal.data.id_citizen ? updated : c))
@@ -150,9 +176,6 @@ export default function WargaPage() {
     }
   }
 
-  // Tabel ringkas: field pendukung menjadi sub-teks kecil di bawah nilai
-  // utama kolomnya (tanpa kolom terpisah). Sub-line yang datanya kosong atau
-  // tak berhak dilihat role (field sensitif difilter backend) dilewati.
   const wargaColumns = [
     {
       key: 'nama_lengkap',
@@ -214,7 +237,6 @@ export default function WargaPage() {
     {
       key: 'family',
       label: 'KK & Hubungan',
-      // API mengirim relasi nested `family` (bukan id_family top-level).
       render: (v, item) => (
         <CellStack
           main={v?.no_kk || '-'}
@@ -237,18 +259,75 @@ export default function WargaPage() {
         />
       ),
     },
+    {
+      key: 'actions',
+      label: 'Aksi',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openEditWarga(row)}
+            type="button"
+          >
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-600 border-red-300 hover:bg-red-50"
+            onClick={() => handleDelete(row.id_citizen, 'warga')}
+            type="button"
+          >
+            Hapus
+          </Button>
+        </div>
+      ),
+    },
   ]
 
   const kkColumns = [
     { key: 'no_kk', label: 'No. KK' },
-    // API mengirim relasi nested `kepala_keluarga`.
     { key: 'kepala_keluarga', label: 'Kepala KK', render: (v) => v?.nama_lengkap || '-' },
-    { key: 'status', label: 'Status' },
+    { key: 'status', label: 'Status', render: (v) => (
+      <Badge variant={
+        v === 'ACTIVE' ? 'success' : v === 'PINDAH' ? 'warning' : 'destructive'
+      }>{v}</Badge>
+    ) },
+    {
+      key: 'actions',
+      label: 'Aksi',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openEditKK(row)}
+            type="button"
+          >
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-600 border-red-300 hover:bg-red-50"
+            onClick={() => handleDelete(row.id_family, 'kk')}
+            type="button"
+          >
+            Hapus
+          </Button>
+        </div>
+      ),
+    },
   ]
 
   const columns = activeTab === 'warga' ? wargaColumns : kkColumns
   const data = activeTab === 'warga' ? citizens : families
-  const idKey = activeTab === 'warga' ? 'id_citizen' : 'id_family'
+  const filters = activeTab === 'warga' ? WARGA_FILTERS : KK_FILTERS
+  const searchKeys = activeTab === 'warga'
+    ? ['nama_lengkap', 'nik', 'no_hp', 'email']
+    : ['no_kk']
+  const rowKey = activeTab === 'warga' ? 'id_citizen' : 'id_family'
 
   return (
     <PageShell
@@ -288,66 +367,25 @@ export default function WargaPage() {
               Kartu Keluarga (KK)
             </button>
           </div>
-          <button
+          <Button
             className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-neutral-900"
             onClick={activeTab === 'warga' ? openCreateWarga : openCreateKK}
             type="button"
           >
             + Tambah {activeTab === 'warga' ? 'Warga' : 'KK'}
-          </button>
+          </Button>
         </div>
 
-        {isLoading ? (
-          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-            Memuat data...
-          </div>
-        ) : data.length === 0 ? (
-          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-            Belum ada data {activeTab === 'warga' ? 'warga' : 'KK'}.
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-neutral-300 bg-white">
-            <table className="w-full min-w-[1280px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-neutral-300 text-xs uppercase text-neutral-500">
-                  {columns.map((col) => (
-                    <th key={col.key} className="px-5 py-3">{col.label}</th>
-                  ))}
-                  <th className="px-5 py-3">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((item) => (
-                  <tr key={item[idKey]} className="border-b border-neutral-100 last:border-0">
-                    {columns.map((col) => (
-                      <td key={col.key} className="px-5 py-3 align-top">
-                        {col.render ? col.render(item[col.key], item) : item[col.key] || '-'}
-                      </td>
-                    ))}
-                    <td className="px-5 py-3 align-top">
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-bold text-neutral-700 hover:bg-neutral-100 transition"
-                          onClick={() => activeTab === 'warga' ? openEditWarga(item) : openEditKK(item)}
-                          type="button"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 transition"
-                          onClick={() => handleDelete(item[idKey], activeTab)}
-                          type="button"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable
+          data={data}
+          columns={columns}
+          searchKeys={searchKeys}
+          searchPlaceholder={activeTab === 'warga' ? 'Cari nama, NIK, HP, email...' : 'Cari No. KK...'}
+          filters={filters}
+          loading={isLoading}
+          emptyMessage={activeTab === 'warga' ? 'Belum ada data warga.' : 'Belum ada data KK.'}
+          rowKey={rowKey}
+        />
 
         <WargaFormModal
           open={wargaModal.open}

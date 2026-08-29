@@ -1,12 +1,23 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { PageShell } from '../../../components/layout/PageShell'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
-import { Badge } from '../../../components/ui/Badge'
-import { Button } from '../../../components/ui/Button'
-import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
-import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getUsers, getCitizenMe } from '../../../services/api'
-import { useConfirm } from '../../../components/ui/ConfirmContext'
-import { useToast } from '../../../components/ui/ToastContext'
+import { PageShell } from '@/components/layout/PageShell'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getUsers, getCitizenMe } from '@/services/api'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 
 const ALL_POSITIONS = [
   'Ketua RT',
@@ -231,113 +242,113 @@ export default function RtOrganizationPage() {
       </div>
 
       {/* Modal Assign Pengurus */}
-      <ConfirmDialog
-        open={isModalOpen}
-        title="Assign Pengurus Baru"
-        onCancel={() => setIsModalOpen(false)}
-      >
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Pilih Warga</label>
-            {citizens.length === 0 ? (
-              <p className="w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-400">
-                Tidak ada warga aktif di RT ini yang dapat ditunjuk.
-              </p>
-            ) : (
-              <select
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Pengurus Baru</DialogTitle>
+            <DialogDescription>Pilih warga dan jabatan untuk ditunjuk sebagai pengurus.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="id_citizen" className="text-sm font-bold text-black">Pilih Warga <span className="text-red-500">*</span></Label>
+              {citizens.length === 0 ? (
+                <p className="w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-400">
+                  Tidak ada warga aktif di RT ini yang dapat ditunjuk.
+                </p>
+              ) : (
+                <Select value={form.id_citizen} onValueChange={(value) => setForm({ ...form, id_citizen: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="-- Pilih Warga --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {citizens.map((c) => {
+                      const isActive = members.some((m) => m.status_aktif && (m.id_citizen === c.id_citizen || m.citizen?.id_citizen === c.id_citizen))
+                      return (
+                        <SelectItem key={c.id_citizen} value={c.id_citizen} disabled={isActive}>
+                          {c.nama_lengkap} {isActive ? '(Sudah Menjabat)' : ''}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="jabatan" className="text-sm font-bold text-black">Jabatan <span className="text-red-500">*</span></Label>
+              <Select value={form.jabatan} onValueChange={(value) => setForm({ ...form, jabatan: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="-- Pilih Jabatan --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_POSITIONS.map((pos) => (
+                    <SelectItem
+                      key={pos}
+                      value={pos}
+                      disabled={isPositionOccupied(pos, form.id_wilayah, form.periode_mulai)}
+                    >
+                      {pos} {isPositionOccupied(pos, form.id_wilayah, form.periode_mulai) ? '(Sudah diisi)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.jabatan && isPositionOccupied(form.jabatan, form.id_wilayah, form.periode_mulai) && (
+                <p className="mt-1 text-xs text-red-500">Jabatan ini sudah dipegang oleh pengurus lain pada periode ini.</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="id_wilayah" className="text-sm font-bold text-black">Wilayah (RT) <span className="text-red-500">*</span></Label>
+              <Input
+                id="id_wilayah"
+                type="text"
+                readOnly
+                value={myWilayah ? myWilayah.nama_wilayah : ''}
+                title="Struktur organisasi hanya dapat dikelola di RT Anda sendiri"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="periode_mulai" className="text-sm font-bold text-black">Periode Mulai <span className="text-red-500">*</span></Label>
+              <Input
+                id="periode_mulai"
+                type="date"
                 required
-                value={form.id_citizen}
-                onChange={(e) => setForm({ ...form, id_citizen: e.target.value })}
-                className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-              >
-                <option value="">-- Pilih Warga --</option>
-                {citizens.map((c) => {
-                  const isActive = members.some((m) => m.status_aktif && (m.id_citizen === c.id_citizen || m.citizen?.id_citizen === c.id_citizen))
-                  return (
-                    <option key={c.id_citizen} value={c.id_citizen} disabled={isActive}>
-                      {c.nama_lengkap} {isActive ? '(Sudah Menjabat)' : ''}
-                    </option>
-                  )
-                })}
-              </select>
-            )}
-          </div>
+                value={form.periode_mulai}
+                onChange={(e) => setForm({ ...form, periode_mulai: e.target.value })}
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Jabatan</label>
-            <select
-              required
-              value={form.jabatan}
-              onChange={(e) => setForm({ ...form, jabatan: e.target.value })}
-              className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-            >
-              <option value="">-- Pilih Jabatan --</option>
-              {ALL_POSITIONS.map((pos) => (
-                <option
-                  key={pos}
-                  value={pos}
-                  disabled={isPositionOccupied(pos, form.id_wilayah, form.periode_mulai)}
-                >
-                  {pos} {isPositionOccupied(pos, form.id_wilayah, form.periode_mulai) ? '(Sudah diisi)' : ''}
-                </option>
-              ))}
-            </select>
-            {form.jabatan && isPositionOccupied(form.jabatan, form.id_wilayah, form.periode_mulai) && (
-              <p className="mt-1 text-xs text-red-500">Jabatan ini sudah dipegang oleh pengurus lain pada periode ini.</p>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="foto" className="text-sm font-bold text-black">Foto Pengurus</Label>
+              <Input
+                id="foto"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setForm({ ...form, foto: e.target.files[0] })}
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Wilayah (RT)</label>
-            <input
-              type="text"
-              readOnly
-              value={myWilayah ? myWilayah.nama_wilayah : ''}
-              title="Struktur organisasi hanya dapat dikelola di RT Anda sendiri"
-              className="h-9 w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 text-sm text-neutral-500 cursor-not-allowed outline-none"
-            />
-          </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="status_aktif"
+                checked={form.status_aktif}
+                onCheckedChange={(checked) => setForm({ ...form, status_aktif: checked })}
+              />
+              <Label htmlFor="status_aktif" className="text-sm text-neutral-700 cursor-pointer">Status Aktif Menjabat</Label>
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Periode Mulai</label>
-            <input
-              type="date"
-              required
-              value={form.periode_mulai}
-              onChange={(e) => setForm({ ...form, periode_mulai: e.target.value })}
-              className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Foto Pengurus</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setForm({ ...form, foto: e.target.files[0] })}
-              className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-            />
-          </div>
-
-          <label className="flex items-center gap-2 cursor-pointer pt-1">
-            <input
-              type="checkbox"
-              id="status"
-              checked={form.status_aktif}
-              onChange={(e) => setForm({ ...form, status_aktif: e.target.checked })}
-              className="accent-sky-600"
-            />
-            <span className="text-sm text-neutral-700">Status Aktif Menjabat</span>
-          </label>
-
-          <div className="flex justify-end gap-2 border-t border-neutral-100 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={form.jabatan && isPositionOccupied(form.jabatan, form.id_wilayah, form.periode_mulai)}>
-              Simpan
-            </Button>
-          </div>
-        </form>
-      </ConfirmDialog>
+            <DialogFooter className="flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                Batal
+              </Button>
+              <Button type="submit" disabled={form.jabatan && isPositionOccupied(form.jabatan, form.id_wilayah, form.periode_mulai)}>
+                Simpan
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   )
 }

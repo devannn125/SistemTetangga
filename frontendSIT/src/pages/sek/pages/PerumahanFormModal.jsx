@@ -5,9 +5,20 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import 'leaflet/dist/leaflet.css'
-import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
-import { useConfirm } from '../../../components/ui/ConfirmContext'
-import { useToast } from '../../../components/ui/ToastContext'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
 
 const DEFAULT_CENTER = [-7.7956, 110.3695]
 
@@ -17,50 +28,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 })
-
-function Select({ value, onChange, options, placeholder, className = '' }) {
-  return (
-    <select value={value} onChange={onChange} className={`h-11 w-full rounded-xl border border-neutral-300 px-4 text-sm outline-none focus:border-sky-600 ${className}`}>
-      {placeholder && <option value="">{placeholder}</option>}
-      {options?.map((o) => <option key={o.id_master || o.id_citizen || o.id_wilayah} value={o.id_master || o.id_citizen || o.id_wilayah}>{o.nama_master || o.nama_lengkap || o.nama_wilayah}</option>)}
-    </select>
-  )
-}
-
-function Input({ value, onChange, type = 'text', placeholder, required, maxLength, className = '' }) {
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      className={`h-11 w-full rounded-xl border border-neutral-300 px-4 text-sm outline-none focus:border-sky-600 ${className}`}
-      placeholder={placeholder}
-      required={required}
-      maxLength={maxLength}
-    />
-  )
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="space-y-4 pt-4 border-t border-neutral-200">
-      <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">{title}</h4>
-      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
-    </div>
-  )
-}
-
-function Field({ label, required, children, className = '' }) {
-  return (
-    <label className={`grid gap-2 text-sm font-bold text-black ${className}`}>
-      <div className="flex items-start justify-between">
-        <span>{label}</span>
-        {required && <span className="text-red-500 text-xs leading-none mt-0.5">*</span>}
-      </div>
-      {children}
-    </label>
-  )
-}
 
 function MapClickHandler({ onPick }) {
   useMapEvents({
@@ -196,133 +163,195 @@ export default function PerumahanFormModal({
     && Number.isFinite(latitude) && Number.isFinite(longitude)
 
   return (
-    <ConfirmDialog
-      open={open}
-      title={mode === 'edit' ? 'Edit Data Perumahan' : 'Tambah Perumahan Baru'}
-      message={null}
-      confirmLabel={isSubmitting ? 'Menyimpan...' : 'Simpan'}
-      onConfirm={() => document.getElementById('perumahan-form')?.requestSubmit()}
-      onCancel={onClose}
-    >
-      <form id="perumahan-form" onSubmit={handleSubmit} className="space-y-4 pr-2">
-        <Section title="Jenis & Alamat">
-          <Field label="Tipe" required>
-            <Select
-              value={form.tipe}
-              onChange={(e) => handleTipeChange(e.target.value)}
-              options={[
-                { id_master: 'NON_KOS', nama_master: 'Rumah Warga' },
-                { id_master: 'KOS', nama_master: 'Kos/Kost' },
-              ]}
-            />
-          </Field>
-          <Field label="Alamat" required>
-            <Input value={form.alamat} onChange={(e) => updateForm('alamat', e.target.value)} required placeholder="Jl. Contoh No. 123" />
-          </Field>
-        </Section>
-
-        <Section title="Koordinat (Opsional)">
-          <div className="sm:col-span-2 space-y-3">
-            <p className="text-xs font-normal text-neutral-500">
-              Klik peta untuk menandai lokasi rumah, lalu geser pin bila perlu penyesuaian.
-            </p>
-            <div className="relative z-0 h-72 w-full overflow-hidden rounded-xl border border-neutral-300">
-              <MapContainer
-                center={hasCoordinate ? [latitude, longitude] : DEFAULT_CENTER}
-                zoom={16}
-                className="h-full w-full"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <MapClickHandler onPick={handlePickCoordinate} />
-                {hasCoordinate && (
-                  <Marker
-                    draggable
-                    position={[latitude, longitude]}
-                    eventHandlers={{
-                      dragend: (e) => {
-                        const { lat, lng } = e.target.getLatLng()
-                        handlePickCoordinate(lat, lng)
-                      },
-                    }}
-                  />
-                )}
-              </MapContainer>
-            </div>
-            {hasCoordinate ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neutral-100 px-4 py-2.5 text-xs font-semibold text-neutral-700">
-                <span>Latitude: {form.latitude} &middot; Longitude: {form.longitude}</span>
-                <button
-                  type="button"
-                  onClick={handleClearCoordinate}
-                  className="rounded-lg border border-red-300 px-3 py-1 font-bold text-red-600 transition hover:bg-red-50"
-                >
-                  Hapus Koordinat
-                </button>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>{mode === 'edit' ? 'Edit Data Perumahan' : 'Tambah Perumahan Baru'}</DialogTitle>
+          <DialogDescription>
+            {mode === 'edit'
+              ? `Memperbarui data perumahan: ${initialData?.alamat || ''}`
+              : 'Isi formulir di bawah untuk menambahkan data perumahan baru.'}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pr-2" id="perumahan-form">
+          <div className="pt-4 border-t border-neutral-200">
+            <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">Jenis & Alamat</h4>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="tipe" className="text-sm font-bold text-black">Tipe <span className="text-red-500">*</span></Label>
+                <Select value={form.tipe} onValueChange={(value) => handleTipeChange(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NON_KOS">Rumah Warga</SelectItem>
+                    <SelectItem value="KOS">Kos/Kost</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            ) : (
-              <p className="text-xs font-normal text-neutral-400">Belum ada koordinat yang dipilih.</p>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor="alamat" className="text-sm font-bold text-black">Alamat <span className="text-red-500">*</span></Label>
+                <Input
+                  id="alamat"
+                  value={form.alamat}
+                  onChange={(e) => updateForm('alamat', e.target.value)}
+                  required
+                  placeholder="Jl. Contoh No. 123"
+                />
+              </div>
+            </div>
           </div>
-        </Section>
 
-        <Section title="Pemilik">
-          <Field label="Pemilik" required>
-            <Select
-              value={form.id_pemilik_citizen}
-              onChange={(e) => updateForm('id_pemilik_citizen', e.target.value)}
-              options={citizens}
-              placeholder="-- Pilih Pemilik --"
-            />
-          </Field>
-        </Section>
+          <div className="pt-4 border-t border-neutral-200">
+            <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">Koordinat (Opsional)</h4>
+            <div className="mt-4 sm:col-span-2 space-y-3">
+              <p className="text-xs font-normal text-neutral-500">
+                Klik peta untuk menandai lokasi rumah, lalu geser pin bila perlu penyesuaian.
+              </p>
+              <div className="relative z-0 h-72 w-full overflow-hidden rounded-xl border border-neutral-300">
+                <MapContainer
+                  center={hasCoordinate ? [latitude, longitude] : DEFAULT_CENTER}
+                  zoom={16}
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <MapClickHandler onPick={handlePickCoordinate} />
+                  {hasCoordinate && (
+                    <Marker
+                      draggable
+                      position={[latitude, longitude]}
+                      eventHandlers={{
+                        dragend: (e) => {
+                          const { lat, lng } = e.target.getLatLng()
+                          handlePickCoordinate(lat, lng)
+                        },
+                      }}
+                    />
+                  )}
+                </MapContainer>
+              </div>
+              {hasCoordinate ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neutral-100 px-4 py-2.5 text-xs font-semibold text-neutral-700">
+                  <span>Latitude: {form.latitude} &middot; Longitude: {form.longitude}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 border-red-300 hover:bg-red-50"
+                    onClick={handleClearCoordinate}
+                  >
+                    Hapus Koordinat
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs font-normal text-neutral-400">Belum ada koordinat yang dipilih.</p>
+              )}
+            </div>
+          </div>
 
-        {form.tipe === 'NON_KOS' && (
-          <Section title="Detail Rumah Warga">
-            <Field label="Status Kepemilikan" required>
-              <Select
-                value={form.status_kepemilikan}
-                onChange={(e) => updateForm('status_kepemilikan', e.target.value)}
-                options={[
-                  { id_master: 'MILIK_SENDIRI', nama_master: 'Milik Sendiri' },
-                  { id_master: 'KONTRAK', nama_master: 'Kontrak' },
-                ]}
-              />
-            </Field>
-          </Section>
-        )}
+          <div className="pt-4 border-t border-neutral-200">
+            <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">Pemilik</h4>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="id_pemilik_citizen" className="text-sm font-bold text-black">Pemilik <span className="text-red-500">*</span></Label>
+                <Select value={form.id_pemilik_citizen} onValueChange={(value) => updateForm('id_pemilik_citizen', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="-- Pilih Pemilik --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {citizens?.map((c) => (
+                      <SelectItem key={c.id_citizen} value={c.id_citizen}>{c.nama_lengkap}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
 
-        {form.tipe === 'KOS' && (
-          <Section title="Detail Kos/Kost">
-            <Field label="Kategori Kos" required>
-              <Select
-                value={form.id_kategori_kos}
-                onChange={(e) => updateForm('id_kategori_kos', e.target.value)}
-                options={masterData.kategori_kos}
-                placeholder="-- Pilih Kategori --"
-              />
-            </Field>
-            <Field label="Jumlah Kamar" required>
-              <Input type="number" min="1" value={form.jumlah_kamar} onChange={(e) => updateForm('jumlah_kamar', e.target.value)} required placeholder="4" />
-            </Field>
-          </Section>
-        )}
+          {form.tipe === 'NON_KOS' && (
+            <div className="pt-4 border-t border-neutral-200">
+              <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">Detail Rumah Warga</h4>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="status_kepemilikan" className="text-sm font-bold text-black">Status Kepemilikan <span className="text-red-500">*</span></Label>
+                  <Select value={form.status_kepemilikan} onValueChange={(value) => updateForm('status_kepemilikan', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MILIK_SENDIRI">Milik Sendiri</SelectItem>
+                      <SelectItem value="KONTRAK">Kontrak</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
 
-        <Section title="Status Pajak">
-          <Field label="Status Pajak" required>
-            <Select
-              value={form.status_pajak}
-              onChange={(e) => updateForm('status_pajak', e.target.value)}
-              options={[
-                { id_master: 'LUNAS', nama_master: 'Lunas' },
-                { id_master: 'BELUM_LUNAS', nama_master: 'Belum Lunas' },
-              ]}
-            />
-          </Field>
-        </Section>
-      </form>
-    </ConfirmDialog>
+          {form.tipe === 'KOS' && (
+            <div className="pt-4 border-t border-neutral-200">
+              <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">Detail Kos/Kost</h4>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="id_kategori_kos" className="text-sm font-bold text-black">Kategori Kos <span className="text-red-500">*</span></Label>
+                  <Select value={form.id_kategori_kos} onValueChange={(value) => updateForm('id_kategori_kos', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="-- Pilih Kategori --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {masterData.kategori_kos?.map((o) => (
+                        <SelectItem key={o.id_master} value={o.id_master}>{o.nama_master}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="jumlah_kamar" className="text-sm font-bold text-black">Jumlah Kamar <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="jumlah_kamar"
+                    type="number"
+                    min="1"
+                    value={form.jumlah_kamar}
+                    onChange={(e) => updateForm('jumlah_kamar', e.target.value)}
+                    required
+                    placeholder="4"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4 border-t border-neutral-200">
+            <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">Status Pajak</h4>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="status_pajak" className="text-sm font-bold text-black">Status Pajak <span className="text-red-500">*</span></Label>
+                <Select value={form.status_pajak} onValueChange={(value) => updateForm('status_pajak', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LUNAS">Lunas</SelectItem>
+                    <SelectItem value="BELUM_LUNAS">Belum Lunas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-3">
+            <Button variant="outline" onClick={onClose}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

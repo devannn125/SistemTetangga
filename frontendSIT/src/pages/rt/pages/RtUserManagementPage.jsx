@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
-import { PageShell } from '../../../components/layout/PageShell'
-import { DataTable } from '../../../components/ui/DataTable'
-import { Badge } from '../../../components/ui/Badge'
-import { Button } from '../../../components/ui/Button'
-import { Alert } from '../../../components/ui/Alert'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
-import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
-import { getUsers, updateUser, assignUserRole, getCitizenMe } from '../../../services/api'
-import { useConfirm } from '../../../components/ui/ConfirmContext'
-import { useToast } from '../../../components/ui/ToastContext'
+import { PageShell } from '@/components/layout/PageShell'
+import { DataTable } from '@/components/ui/DataTable'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Alert } from '@/components/ui/alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getUsers, updateUser, assignUserRole, getCitizenMe } from '@/services/api'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 
 const ROLE_OPTIONS = [
   { kode: 'WARGA', label: 'Warga' },

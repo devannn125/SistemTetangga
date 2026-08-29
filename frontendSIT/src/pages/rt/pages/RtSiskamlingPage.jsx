@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react'
-import { PageShell } from '../../../components/layout/PageShell'
-import { DataTable } from '../../../components/ui/DataTable'
-import { Button } from '../../../components/ui/Button'
-import { Badge } from '../../../components/ui/Badge'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
-import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
-import { getSiskamlingSchedules, createSiskamlingSchedule, deleteSiskamlingSchedule, getCitizens, getWilayah } from '../../../services/api'
-import { useConfirm } from '../../../components/ui/ConfirmContext'
-import { useToast } from '../../../components/ui/ToastContext'
+import { PageShell } from '@/components/layout/PageShell'
+import { DataTable } from '@/components/ui/DataTable'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { getSiskamlingSchedules, createSiskamlingSchedule, deleteSiskamlingSchedule, getCitizens, getWilayah } from '@/services/api'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 
 const initialAlerts = [
   { id: 101, tanggal: '2026-08-20', laporan: 'Mati lampu di blok A, patroli diperketat.', eskalasi: false },
@@ -147,7 +157,7 @@ export default function RtSiskamlingPage() {
       label: 'Aksi',
       render: (row) => (
         <Button
-          variant="danger"
+          variant="destructive"
           size="sm"
           onClick={(e) => { e.stopPropagation(); handleDelete(row.id_siskamling_schedule) }}
         >
@@ -203,10 +213,10 @@ export default function RtSiskamlingPage() {
                     <p className="mt-1 text-sm text-neutral-900">{alert.laporan}</p>
                   </div>
                   {alert.eskalasi ? (
-                    <Badge variant="danger" className="shrink-0">Diteruskan ke RW</Badge>
+                    <Badge variant="destructive" className="shrink-0">Diteruskan ke RW</Badge>
                   ) : (
                     <Button
-                      variant="danger"
+                      variant="destructive"
                       size="sm"
                       className="shrink-0"
                       onClick={() => handleEscalateAlert(alert.id)}
@@ -225,65 +235,71 @@ export default function RtSiskamlingPage() {
       </div>
 
       {/* Modal Tambah Jadwal */}
-      <ConfirmDialog
-        open={isModalOpen}
-        title="Tambah Jadwal Ronda"
-        onCancel={() => setIsModalOpen(false)}
-      >
-        <form onSubmit={handleAddSchedule} className="mt-4 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Wilayah</label>
-            <select
-              required
-              value={form.id_wilayah}
-              onChange={(e) => setForm({ ...form, id_wilayah: e.target.value })}
-              className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-            >
-              {wilayahs.map((w) => (
-                <option key={w.id_wilayah} value={w.id_wilayah}>{w.nama_wilayah}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Tanggal</label>
-            <input
-              type="date"
-              required
-              value={form.tanggal_jadwal}
-              onChange={(e) => setForm({ ...form, tanggal_jadwal: e.target.value })}
-              className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Shift</label>
-            <select
-              required
-              value={form.shift}
-              onChange={(e) => setForm({ ...form, shift: e.target.value })}
-              className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-            >
-              {SHIFT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Petugas (Warga)</label>
-            <select
-              required
-              value={form.id_petugas_citizen}
-              onChange={(e) => setForm({ ...form, id_petugas_citizen: e.target.value })}
-              className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-            >
-              {citizens.map((c) => (
-                <option key={c.id_citizen} value={c.id_citizen}>{c.nama_lengkap}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex justify-end gap-2 border-t border-neutral-100 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Batal</Button>
-            <Button type="submit">Simpan Jadwal</Button>
-          </div>
-        </form>
-      </ConfirmDialog>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tambah Jadwal Ronda</DialogTitle>
+            <DialogDescription>Isi formulir di bawah untuk menambahkan jadwal ronda baru.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddSchedule} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="id_wilayah" className="text-sm font-bold text-black">Wilayah <span className="text-red-500">*</span></Label>
+              <Select value={form.id_wilayah} onValueChange={(value) => setForm({ ...form, id_wilayah: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih wilayah" />
+                </SelectTrigger>
+                <SelectContent>
+                  {wilayahs.map((w) => (
+                    <SelectItem key={w.id_wilayah} value={w.id_wilayah}>{w.nama_wilayah}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tanggal_jadwal" className="text-sm font-bold text-black">Tanggal <span className="text-red-500">*</span></Label>
+              <Input
+                id="tanggal_jadwal"
+                type="date"
+                required
+                value={form.tanggal_jadwal}
+                onChange={(e) => setForm({ ...form, tanggal_jadwal: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shift" className="text-sm font-bold text-black">Shift <span className="text-red-500">*</span></Label>
+              <Select value={form.shift} onValueChange={(value) => setForm({ ...form, shift: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih shift" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SHIFT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="id_petugas_citizen" className="text-sm font-bold text-black">Petugas (Warga) <span className="text-red-500">*</span></Label>
+              <Select value={form.id_petugas_citizen} onValueChange={(value) => setForm({ ...form, id_petugas_citizen: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih petugas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {citizens.map((c) => (
+                    <SelectItem key={c.id_citizen} value={c.id_citizen}>{c.nama_lengkap}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter className="flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                Batal
+              </Button>
+              <Button type="submit">Simpan Jadwal</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   )
 }

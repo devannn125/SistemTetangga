@@ -1,6 +1,14 @@
 import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { clearAuthData, getAuthData, getAuthRole } from '@/services/authService'
 
 export function RolePage({ roleParam }) {
@@ -32,7 +40,7 @@ export function RolePage({ roleParam }) {
   return (
     <main className="flex min-h-screen flex-col bg-neutral-100 text-neutral-900">
       {/* Header */}
-      <header className="border-b border-neutral-900 bg-neutral-50">
+      <header className="border-b border-neutral-200 bg-neutral-50">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-8 px-6 max-md:h-auto max-md:flex-wrap max-md:py-4">
           <a className="flex items-center gap-2 text-2xl font-extrabold text-black no-underline" href="/">
             <Icon name="building" className="h-6 w-6" />
@@ -40,33 +48,42 @@ export function RolePage({ roleParam }) {
           </a>
 
           <div className="flex items-center gap-3">
-            <a
-              className="inline-flex h-10 items-center gap-2 border border-black bg-white px-4 text-xs font-extrabold text-black transition hover:bg-neutral-200"
-              href="/"
-            >
-              <Icon name="home" className="h-4 w-4" />
-              Beranda
-            </a>
-            <button
-              className="inline-flex h-10 items-center gap-2 border border-black bg-black px-4 text-xs font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
+            <Button variant="outline" size="sm" asChild>
+              <a href="/">
+                <Icon name="home" className="h-4 w-4 mr-2" />
+                Beranda
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-600 border-red-300 hover:bg-red-50"
               onClick={() => setConfirmLogout(true)}
               type="button"
             >
-              <Icon name="logout" className="h-4 w-4" />
+              <Icon name="logout" className="h-4 w-4 mr-2" />
               Keluar
-            </button>
+            </Button>
           </div>
         </div>
       </header>
 
-      <ConfirmDialog
-        open={confirmLogout}
-        title="Konfirmasi Keluar"
-        message="Apakah Anda yakin ingin keluar dari akun ini?"
-        confirmLabel="Keluar"
-        onConfirm={handleLogout}
-        onCancel={() => setConfirmLogout(false)}
-      />
+      <Dialog open={confirmLogout} onOpenChange={setConfirmLogout}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Keluar</DialogTitle>
+            <DialogDescription>Apakah Anda yakin ingin keluar dari akun ini?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-3">
+            <Button variant="outline" onClick={() => setConfirmLogout(false)}>
+              Batal
+            </Button>
+            <Button variant="destructive" onClick={handleLogout}>
+              Keluar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Main Content */}
       <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-6 py-12">
@@ -135,21 +152,19 @@ export function RolePage({ roleParam }) {
 
             {/* Quick Actions */}
             <div className="mt-8 flex flex-wrap gap-4">
-              <a
-                className="flex h-12 items-center gap-2 border border-black bg-black px-6 text-sm font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
-                href="/warga"
-              >
-                <Icon name="home" className="h-4 w-4" />
-                Masuk ke Portal Warga
-              </a>
+              <Button asChild>
+                <a href="/warga">
+                  <Icon name="home" className="h-4 w-4 mr-2" />
+                  Masuk ke Portal Warga
+                </a>
+              </Button>
 
-              <a
-                className="flex h-12 items-center gap-2 border border-neutral-900 bg-white px-6 text-sm font-extrabold text-black transition hover:bg-neutral-200"
-                href="/login"
-              >
-                <Icon name="key" className="h-4 w-4" />
-                Ganti Akun / Login Ulang
-              </a>
+              <Button variant="outline" asChild>
+                <a href="/login">
+                  <Icon name="key" className="h-4 w-4 mr-2" />
+                  Ganti Akun / Login Ulang
+                </a>
+              </Button>
             </div>
           </div>
         </div>

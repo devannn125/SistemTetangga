@@ -1,14 +1,26 @@
 import { useState, useEffect } from 'react'
-import { PageShell } from '../../../components/layout/PageShell'
-import { DataTable } from '../../../components/ui/DataTable'
-import { Badge } from '../../../components/ui/Badge'
-import { Button } from '../../../components/ui/Button'
-import { Alert } from '../../../components/ui/Alert'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
-import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
-import { getAnnouncements, createAnnouncement, getWilayah } from '../../../services/api'
-import { useConfirm } from '../../../components/ui/ConfirmContext'
-import { useToast } from '../../../components/ui/ToastContext'
+import { PageShell } from '@/components/layout/PageShell'
+import { DataTable } from '@/components/ui/DataTable'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Alert } from '@/components/ui/alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { getAnnouncements, createAnnouncement, getWilayah } from '@/services/api'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 
 const KATEGORI_OPTIONS = [
   { value: 'KESEHATAN', label: 'Kesehatan' },
@@ -173,77 +185,85 @@ export default function RtAnnouncementPage() {
       </div>
 
       {/* Modal Buat Pengumuman */}
-      <ConfirmDialog
-        open={isModalOpen}
-        title="Buat Pengumuman Baru"
-        onCancel={() => setIsModalOpen(false)}
-      >
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Judul Pengumuman</label>
-            <input
-              required
-              value={formData.judul}
-              onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
-              className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">Kategori</label>
-              <select
-                value={formData.kategori}
-                onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-              >
-                {KATEGORI_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">Wilayah RT</label>
-              <select
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Buat Pengumuman Baru</DialogTitle>
+            <DialogDescription>Isi formulir di bawah untuk membuat pengumuman baru.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="judul" className="text-sm font-bold text-black">Judul Pengumuman <span className="text-red-500">*</span></Label>
+              <Input
+                id="judul"
                 required
-                value={formData.id_wilayah}
-                onChange={(e) => setFormData({ ...formData, id_wilayah: e.target.value })}
-                className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus:border-sky-500 focus:outline-none"
-              >
-                {wilayahOptions.map((w) => (
-                  <option key={w.id_wilayah} value={w.id_wilayah}>{w.nama_wilayah}</option>
-                ))}
-              </select>
+                value={formData.judul}
+                onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
+              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">Isi Pesan</label>
-            <textarea
-              required
-              rows="3"
-              value={formData.isi}
-              onChange={(e) => setFormData({ ...formData, isi: e.target.value })}
-              className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none resize-none"
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="kategori" className="text-sm font-bold text-black">Kategori</Label>
+                <Select value={formData.kategori} onValueChange={(value) => setFormData({ ...formData, kategori: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kategori" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KATEGORI_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="id_wilayah" className="text-sm font-bold text-black">Wilayah RT <span className="text-red-500">*</span></Label>
+                <Select value={formData.id_wilayah} onValueChange={(value) => setFormData({ ...formData, id_wilayah: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih wilayah" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {wilayahOptions.map((w) => (
+                      <SelectItem key={w.id_wilayah} value={w.id_wilayah}>{w.nama_wilayah}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.krusial}
-              onChange={(e) => setFormData({ ...formData, krusial: e.target.checked })}
-              className="accent-sky-600"
-            />
-            <span className="text-sm text-neutral-700">Tandai sebagai <strong>Krusial</strong> (Butuh Persetujuan RW)</span>
-          </label>
+            <div className="space-y-2">
+              <Label htmlFor="isi" className="text-sm font-bold text-black">Isi Pesan <span className="text-red-500">*</span></Label>
+              <Textarea
+                id="isi"
+                required
+                rows="3"
+                value={formData.isi}
+                onChange={(e) => setFormData({ ...formData, isi: e.target.value })}
+              />
+            </div>
 
-          <div className="flex justify-end gap-2 border-t border-neutral-100 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Batal</Button>
-            <Button type="submit">
-              {formData.krusial ? 'Ajukan ke RW' : 'Terbitkan'}
-            </Button>
-          </div>
-        </form>
-      </ConfirmDialog>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={formData.krusial}
+                onCheckedChange={(checked) => setFormData({ ...formData, krusial: checked })}
+                id="krusial"
+              />
+              <Label htmlFor="krusial" className="text-sm text-neutral-700 cursor-pointer">
+                Tandai sebagai <strong>Krusial</strong> (Butuh Persetujuan RW)
+              </Label>
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                Batal
+              </Button>
+              <Button type="submit">
+                {formData.krusial ? 'Ajukan ke RW' : 'Terbitkan'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   )
 }

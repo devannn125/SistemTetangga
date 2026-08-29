@@ -2,16 +2,7 @@ import { useEffect, useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableCaption,
-} from '@/components/ui/table'
+import { DataTable } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -104,7 +95,7 @@ export function WargaDataPage({ activeTab = 'semua' }) {
 
   const isHouseTab = activeTab === 'rumah'
   const isGuestTab = activeTab === 'tamu'
-  const columns = isHouseTab ? HOUSE_COLUMNS : isGuestTab ? GUEST_COLUMNS : ALL_COLUMNS
+  const baseColumns = isHouseTab ? HOUSE_COLUMNS : isGuestTab ? GUEST_COLUMNS : ALL_COLUMNS
 
   useEffect(() => {
     let isMounted = true
@@ -182,18 +173,6 @@ export function WargaDataPage({ activeTab = 'semua' }) {
     },
   ]
 
-  const filteredRows = rows.filter((row) => {
-    const haystack = String(row.nama_lengkap || row.nama || row.alamat || row.asal || '')
-      .toLowerCase()
-      .includes(search.toLowerCase())
-    const matchesStatus = !statusFilter || row.status_warga === statusFilter
-    return haystack && matchesStatus
-  })
-
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PER_PAGE))
-  const safePage = Math.min(page, totalPages)
-  const pageRows = filteredRows.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
-
   function toggleColumn(key) {
     setVisibleColumns((current) =>
       current.includes(key) ? current.filter((k) => k !== key) : [...current, key],
@@ -222,7 +201,15 @@ export function WargaDataPage({ activeTab = 'semua' }) {
   }
 
   function exportCsv() {
-    const header = columns.filter((c) => visibleColumns.includes(c.key)).map((c) => c.label)
+    const filteredRows = rows.filter((row) => {
+      const haystack = String(row.nama_lengkap || row.nama || row.alamat || row.asal || '')
+        .toLowerCase()
+        .includes(search.toLowerCase())
+      const matchesStatus = !statusFilter || row.status_warga === statusFilter
+      return haystack && matchesStatus
+    })
+    const columns = baseColumns.filter((c) => visibleColumns.includes(c.key))
+    const header = columns.map((c) => c.label)
     const lines = filteredRows.map((row) =>
       header
         .map((label) => {
@@ -246,8 +233,58 @@ export function WargaDataPage({ activeTab = 'semua' }) {
   const toolButtonDisabledClass =
     'flex h-9 cursor-not-allowed items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-100 px-3.5 text-sm font-semibold text-neutral-400'
 
+  const columnsWithRender = baseColumns.map((col) => ({
+    ...col,
+    render: (row) => renderCell(col, row),
+  }))
+
+  const filters = isHouseTab
+    ? [{
+        key: 'status_pajak',
+        label: 'Status Pajak',
+        options: [
+          { value: 'LUNAS', label: 'Lunas' },
+          { value: 'BELUM_LUNAS', label: 'Belum Lunas' },
+        ],
+      }]
+    : isGuestTab
+    ? [{
+        key: 'status',
+        label: 'Status',
+        options: [
+          { value: 'MENUNGGU', label: 'Menunggu' },
+          { value: 'DISETUJUI', label: 'Disetujui' },
+          { value: 'DITOLAK', label: 'Ditolak' },
+          { value: 'CHECK_OUT', label: 'Check Out' },
+        ],
+      }]
+    : [{
+        key: 'status_warga',
+        label: 'Status Warga',
+        options: [
+          { value: 'TETAP', label: 'Tetap' },
+          { value: 'TIDAK_TETAP', label: 'Tidak Tetap' },
+        ],
+      },
+      {
+        key: 'status_aktif',
+        label: 'Status Aktif',
+        options: [
+          { value: 'true', label: 'Aktif' },
+          { value: 'false', label: 'Nonaktif' },
+        ],
+      }]
+
+  const searchKeys = isHouseTab
+    ? ['alamat']
+    : isGuestTab
+    ? ['nama', 'nik', 'asal']
+    : ['nama_lengkap', 'nik', 'no_hp', 'email']
+
+  const rowKey = isHouseTab ? 'id_house' : isGuestTab ? 'id_guest' : 'id_citizen'
+
   let emptyStateMessage = null
-  if (!loading && !error && pageRows.length === 0) {
+  if (!loading && !error && rows.length === 0) {
     emptyStateMessage = isGuestTab && error
       ? null
       : EMPTY_MESSAGES[activeTab] || 'Belum ada data.'
@@ -315,83 +352,10 @@ export function WargaDataPage({ activeTab = 'semua' }) {
               }}
             />
           </div>
-
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => setOpenDropdown(openDropdown === 'filter' ? null : 'filter')}
-            >
-              <Icon name="filter" className="h-4 w-4" />
-              Filter
-            </Button>
-            {openDropdown === 'filter' && !isHouseTab && !isGuestTab ? (
-              <div className="absolute left-0 top-11 z-10 w-48 rounded-lg border border-neutral-200 bg-white p-3 shadow-lg">
-                <p className="text-xs font-semibold uppercase text-neutral-500">Status Warga</p>
-                {['TETAP', 'TIDAK_TETAP', 'TAMU'].map((option) => (
-                  <label className="mt-2 flex items-center gap-2 text-sm text-neutral-700" key={option}>
-                    <input
-                      checked={statusFilter === option}
-                      className="accent-sky-600"
-                      name="statusFilter"
-                      onChange={() => {
-                        setStatusFilter(option)
-                        setOpenDropdown(null)
-                        setPage(1)
-                      }}
-                      type="radio"
-                    />
-                    {option}
-                  </label>
-                ))}
-                {statusFilter ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 w-full"
-                    onClick={() => {
-                      setStatusFilter('')
-                      setOpenDropdown(null)
-                      setPage(1)
-                    }}
-                  >
-                    Reset
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => setOpenDropdown(openDropdown === 'columns' ? null : 'columns')}
-            >
-              <Icon name="settings" className="h-4 w-4" />
-              Columns
-            </Button>
-            {openDropdown === 'columns' ? (
-              <div className="absolute right-0 top-11 z-10 w-56 rounded-lg border border-neutral-200 bg-white p-3 shadow-lg">
-                <p className="text-xs font-semibold uppercase text-neutral-500">Tampilkan Kolom</p>
-                {columns.map((column) => (
-                  <label className="mt-2 flex items-center gap-2 text-sm text-neutral-700" key={column.key}>
-                    <Checkbox
-                      checked={visibleColumns.includes(column.key)}
-                      onCheckedChange={() => toggleColumn(column.key)}
-                    />
-                    {column.label}
-                  </label>
-                ))}
-              </div>
-            ) : null}
-          </div>
         </div>
 
         <span className="text-xs font-medium text-neutral-500">
-          {loading ? 'Memuat...' : `${filteredRows.length} data`}
+          {loading ? 'Memuat...' : `${rows.length} data`}
           {!isHouseTab && !isGuestTab ? ` · Tamu ${guestCount ?? '-'}` : ''}
         </span>
       </section>
@@ -416,60 +380,18 @@ export function WargaDataPage({ activeTab = 'semua' }) {
           <p className="mt-2 text-sm font-semibold text-neutral-600">{emptyStateMessage}</p>
         </div>
       ) : (
-        <Table>
-          <TableCaption>Data kependudukan</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>No</TableHead>
-              {columns
-                .filter((c) => visibleColumns.includes(c.key))
-                .map((column) => (
-                  <TableHead key={column.key}>{column.label}</TableHead>
-                ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pageRows.map((row, index) => (
-              <TableRow key={row.id_citizen || row.id_house || row.id_guest || index}>
-                <TableCell className="text-sm text-neutral-500">
-                  {(safePage - 1) * PER_PAGE + index + 1}
-                </TableCell>
-                {columns
-                  .filter((c) => visibleColumns.includes(c.key))
-                  .map((column) => (
-                    <TableCell key={column.key}>{renderCell(column, row)}</TableCell>
-                  ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {/* Pagination */}
-      {!loading && !error && !emptyStateMessage && (
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <span className="text-xs font-medium text-neutral-500">
-            Hal {safePage} dari {totalPages}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={safePage <= 1}
-              onClick={() => setPage(safePage - 1)}
-            >
-              Sebelumnya
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={safePage >= totalPages}
-              onClick={() => setPage(safePage + 1)}
-            >
-              Berikutnya
-            </Button>
-          </div>
-        </div>
+        <DataTable
+          data={rows}
+          columns={columnsWithRender}
+          searchKeys={searchKeys}
+          searchPlaceholder={isHouseTab ? 'Cari alamat...' : isGuestTab ? 'Cari nama, NIK, atau asal...' : 'Cari nama, NIK, HP, email...'}
+          filters={filters}
+          loading={loading}
+          error={error}
+          emptyMessage={EMPTY_MESSAGES[activeTab] || 'Belum ada data.'}
+          rowKey={rowKey}
+          perPage={PER_PAGE}
+        />
       )}
     </div>
   )

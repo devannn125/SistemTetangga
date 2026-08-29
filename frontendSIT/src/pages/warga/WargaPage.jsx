@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 import { clearAuthData } from '@/services/authService'
@@ -54,7 +62,9 @@ function getCurrentMenu() {
 function handleLogout() {
   clearAuthData()
   window.location.assign('/login')
-}function WargaSidebar({ activePath }) {
+}
+
+function WargaSidebar({ activePath }) {
   return (
     <aside className="sticky top-0 flex h-screen w-[250px] shrink-0 flex-col border-r border-neutral-900 bg-white max-md:static max-md:h-auto max-md:w-full max-md:flex-none max-md:border-r-0 max-md:border-b">
       <div className="flex h-15 shrink-0 border-b border-neutral-900 px-4 py-5">
@@ -101,22 +111,32 @@ function WargaTopbar() {
 
   return (
     <header className="flex h-15 items-center justify-end border-b border-neutral-900 bg-white px-6 ">
-      <button
-        className="flex h-9 items-center gap-2 border border-black bg-black px-4 text-xs font-extrabold text-white transition hover:border-sky-600 hover:bg-sky-600"
+      <Button
+        variant="outline"
+        size="sm"
+        className="text-red-600 border-red-300 hover:bg-red-50"
         onClick={() => setConfirmLogout(true)}
         type="button"
       >
-        <Icon name="logout" className="h-4 w-4" />
+        <Icon name="logout" className="h-4 w-4 mr-2" />
         Keluar
-      </button>
-      <ConfirmDialog
-        open={confirmLogout}
-        title="Konfirmasi Keluar"
-        message="Apakah Anda yakin ingin keluar dari akun ini?"
-        confirmLabel="Keluar"
-        onConfirm={confirmAndLogout}
-        onCancel={() => setConfirmLogout(false)}
-      />
+      </Button>
+      <Dialog open={confirmLogout} onOpenChange={setConfirmLogout}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Keluar</DialogTitle>
+            <DialogDescription>Apakah Anda yakin ingin keluar dari akun ini?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-3">
+            <Button variant="outline" onClick={() => setConfirmLogout(false)}>
+              Batal
+            </Button>
+            <Button variant="destructive" onClick={confirmAndLogout}>
+              Keluar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }
@@ -183,19 +203,15 @@ function HomePage() {
   )
 }
 
-
-
 function AnnouncementPage() {
   const [items, setItems] = React.useState([])
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    // Gunakan modul api yang sama dengan RT agar token autentikasi terkirim
     import('../../services/api').then(({ getAnnouncements }) => {
       getAnnouncements({ per_page: 100 })
         .then(res => {
           const arr = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
-          // Hanya tampilkan pengumuman yang sudah disetujui (aktif) atau dari RT langsung
           setItems(arr.filter(a => ['RT', 'DUKUH_DISETUJUI'].includes(a.status_approval) || !a.status_approval))
           setLoading(false)
         })
@@ -230,8 +246,6 @@ function AnnouncementPage() {
     </PageShell>
   )
 }
-
-
 
 function NotificationPage() {
   return (
@@ -289,12 +303,11 @@ function FeedbackPage() {
         kategori: form.kategori,
         deskripsi: form.deskripsi,
         isi_feedback: form.deskripsi,
-        isi_pesan: form.deskripsi // Menambahkan ini agar lolos validasi backend
+        isi_pesan: form.deskripsi
       })
       showToast('Pesan berhasil dikirim.')
       setForm({ kategori: 'MASUKAN', judul: '', deskripsi: '' })
 
-      // Refresh list
       const res = await api.getFeedback({ per_page: 5 })
       setFeedbacks(Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [])
     } catch (err) {
@@ -350,13 +363,13 @@ function FeedbackPage() {
                 onChange={e => setForm({ ...form, deskripsi: e.target.value })}
               />
             </label>
-            <button 
-              className="mt-5 h-10 border border-black bg-black px-5 text-xs font-extrabold text-white disabled:opacity-50" 
+            <Button 
+              className="mt-5 h-10" 
               type="submit"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Mengirim...' : 'Kirim Pesan'}
-            </button>
+            </Button>
           </form>
         </div>
 

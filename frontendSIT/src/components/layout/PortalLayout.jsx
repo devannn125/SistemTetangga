@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Icon } from '../ui/Icon'
-import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { clearAuthData, getAuthData } from '../../services/authService'
-import { cn } from '../../lib/utils'
+import { Icon } from '@/components/ui/Icon'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { clearAuthData, getAuthData } from '@/services/authService'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 /**
  * PortalSidebar — sidebar navigasi portal dengan item aktif + hover.
@@ -91,6 +92,7 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
  */
 function PortalTopbar() {
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const confirm = useConfirm()
 
   function handleLogout() {
     setConfirmLogout(false)
@@ -100,22 +102,21 @@ function PortalTopbar() {
 
   return (
     <header className="flex h-14 items-center justify-end border-b border-neutral-100 bg-white px-6">
-      <button
-        className="inline-flex h-9 items-center gap-2 rounded-md border border-neutral-200 px-3 text-sm font-medium text-neutral-600 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600"
-        onClick={() => setConfirmLogout(true)}
+      <Button
+        variant="outline"
+        size="sm"
+        className="text-red-600 border-red-300 hover:bg-red-50"
+        onClick={() => confirm({
+          title: 'Konfirmasi Keluar',
+          message: 'Apakah Anda yakin ingin keluar dari akun ini?',
+          confirmLabel: 'Keluar',
+          onConfirm: handleLogout,
+        })}
         type="button"
       >
-        <Icon name="logout" className="h-4 w-4" />
+        <Icon name="logout" className="h-4 w-4 mr-2" />
         Keluar
-      </button>
-      <ConfirmDialog
-        open={confirmLogout}
-        title="Konfirmasi Keluar"
-        message="Apakah Anda yakin ingin keluar dari akun ini?"
-        confirmLabel="Keluar"
-        onConfirm={handleLogout}
-        onCancel={() => setConfirmLogout(false)}
-      />
+      </Button>
     </header>
   )
 }

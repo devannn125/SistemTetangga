@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
-import { getCitizens, createCitizen, updateCitizen, getFamilies, createFamily, updateFamily, getMasterData } from '../../../services/api'
-import { PageShell } from '../../../components/layout/PageShell'
-import { useConfirm } from '../../../components/ui/ConfirmContext'
-import { useToast } from '../../../components/ui/ToastContext'
-import WargaFormModal from './WargaFormModal'
-import KKFormModal from './KKFormModal'
+import { getCitizens, createCitizen, updateCitizen, getFamilies, createFamily, updateFamily, getMasterData } from '@/services/api'
+import { PageShell } from '@/components/layout/PageShell'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
+import WargaFormModal from '@/pages/sek/pages/WargaFormModal'
+import KKFormModal from '@/pages/sek/pages/KKFormModal'
 import {
   enumLabel,
   formatDateShort,
   toRows,
   yaTidakLabel,
-} from './utils'
+} from '@/pages/sek/pages/utils'
 
 // Sel tabel bertumpuk: baris utama tebal + sub-teks kecil di bawahnya.
 function CellStack({ main, subs = [] }) {

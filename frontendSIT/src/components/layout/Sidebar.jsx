@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Icon } from '../ui/Icon'
-import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { clearAuthData, getAuthData } from '../../services/authService'
-import { navigate } from '../../services/router'
+import { Icon } from '@/components/ui/Icon'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { clearAuthData, getAuthData } from '@/services/authService'
+import { navigate } from '@/services/router'
+import { Button } from '@/components/ui/button'
 
 export function Sidebar({ items, user }) {
   const [openMenus, setOpenMenus] = useState(['warga'])
-  const [confirmLogout, setConfirmLogout] = useState(false)
+  const { confirm } = useConfirm()
   const authUser = getAuthData()
 
   const displayName = authUser?.nama_users || user?.name || 'Administrator'
@@ -14,9 +15,7 @@ export function Sidebar({ items, user }) {
   const displayInitial = (displayName || 'A').charAt(0).toUpperCase()
 
   function toggleMenu(item) {
-    if (!item.children) {
-      return
-    }
+    if (!item.children) return
 
     setOpenMenus((currentMenus) =>
       currentMenus.includes(item.id)
@@ -26,9 +25,15 @@ export function Sidebar({ items, user }) {
   }
 
   function handleLogout() {
-    setConfirmLogout(false)
-    clearAuthData()
-    window.location.assign('/login')
+    confirm({
+      title: 'Konfirmasi Keluar',
+      message: 'Apakah Anda yakin ingin keluar dari akun ini?',
+      confirmLabel: 'Keluar',
+      onConfirm: () => {
+        clearAuthData()
+        window.location.assign('/login')
+      },
+    })
   }
 
   return (
@@ -45,65 +50,62 @@ export function Sidebar({ items, user }) {
           const isOpen = openMenus.includes(item.id)
 
           return (
-          <div key={item.id}>
-            <button
-              aria-expanded={item.children ? isOpen : undefined}
-              className={`flex min-h-9 w-full items-center justify-between gap-2 rounded-lg px-3 text-left text-sm transition ${
-                item.id === 'dashboard'
-                  ? 'bg-neutral-900 text-white'
-                  : 'bg-transparent text-neutral-700 hover:bg-neutral-900 hover:text-white'
-              }`}
-              onClick={() => toggleMenu(item)}
-              type="button"
-            >
-              <span className="flex min-w-0 items-center gap-3">
-                <Icon name={item.icon} className="h-4 w-4" />
-                <span className="truncate">{item.label}</span>
-              </span>
-              {item.children && (
-                <Icon
-                  name="chevron"
-                  className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-90' : 'rotate-0'}`}
-                />
-              )}
-            </button>
-
-            {item.children && (
-              <div
-                className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out max-md:hidden ${
-                  isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-                }`}
+            <div key={item.id}>
+              <Button
+                variant={item.id === 'dashboard' ? 'default' : 'ghost'}
+                className="w-full justify-start gap-2"
+                onClick={() => toggleMenu(item)}
+                aria-expanded={item.children ? isOpen : undefined}
               >
-                <div className="overflow-hidden">
-                  <div className="mb-2 mt-1 flex flex-col gap-1 pl-[52px]">
-                    {item.children.map((child) =>
-                      typeof child === 'string' ? (
-                        <button
-                          className="min-h-8 rounded-md text-left text-sm text-neutral-500 transition hover:text-neutral-950"
-                          key={child}
-                          type="button"
-                        >
-                          {child}
-                        </button>
-                      ) : (
-                        <a
-                          className="min-h-8 rounded-md text-left text-sm text-neutral-500 no-underline transition hover:text-neutral-950"
-                          href={child.path}
-                          key={child.path}
-                          onClick={(event) => {
-                            event.preventDefault()
-                            navigate(child.path)
-                          }}
-                        >
-                          {child.label}
-                        </a>
-                      ),
-                    )}
+                <span className="flex min-w-0 items-center gap-3">
+                  <Icon name={item.icon} className="h-4 w-4" />
+                  <span className="truncate">{item.label}</span>
+                </span>
+                {item.children && (
+                  <Icon
+                    name="chevron"
+                    className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-90' : 'rotate-0'}`}
+                  />
+                )}
+              </Button>
+
+              {item.children && (
+                <div
+                  className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out max-md:hidden ${
+                    isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="mb-2 mt-1 flex flex-col gap-1 pl-[52px]">
+                      {item.children.map((child) =>
+                        typeof child === 'string' ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start text-neutral-500 hover:text-neutral-950"
+                            key={child}
+                          >
+                            {child}
+                          </Button>
+                        ) : (
+                          <a
+                            className="min-h-8 rounded-md text-left text-sm text-neutral-500 no-underline transition hover:text-neutral-950"
+                            href={child.path}
+                            key={child.path}
+                            onClick={(event) => {
+                              event.preventDefault()
+                              navigate(child.path)
+                            }}
+                          >
+                            {child.label}
+                          </a>
+                        ),
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
           )
         })}
       </nav>
@@ -116,24 +118,16 @@ export function Sidebar({ items, user }) {
           <strong className="block truncate text-sm leading-tight text-black">{displayName}</strong>
           <small className="mt-0.5 block text-xs text-neutral-500">{displayRole}</small>
         </div>
-        <button
-          className="grid h-7 w-7 place-items-center text-neutral-500 transition hover:text-red-600"
-          onClick={() => setConfirmLogout(true)}
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-neutral-500 hover:text-red-600"
+          onClick={handleLogout}
           aria-label="Keluar"
         >
           <Icon name="logout" className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
-
-      <ConfirmDialog
-        open={confirmLogout}
-        title="Konfirmasi Keluar"
-        message="Apakah Anda yakin ingin keluar dari akun ini?"
-        confirmLabel="Keluar"
-        onConfirm={handleLogout}
-        onCancel={() => setConfirmLogout(false)}
-      />
     </aside>
   )
 }

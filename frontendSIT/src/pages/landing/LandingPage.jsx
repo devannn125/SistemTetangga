@@ -1,18 +1,19 @@
-import { Icon } from '../../components/ui/Icon'
+import { Icon } from '@/components/ui/Icon'
+import { Button } from '@/components/ui/button'
 import { landingData } from './landingData'
 
 const heroImage =
   'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1400&q=80'
 
-function LandingButton({ children, href, variant = 'dark' }) {
-  const styles =
-    variant === 'dark'
-      ? 'border-neutral-950 bg-neutral-950 text-white hover:border-sky-600 hover:bg-sky-600'
-      : 'border-neutral-950 bg-transparent text-neutral-950 hover:border-sky-600 hover:bg-sky-50 hover:text-sky-700'
+function LandingButton({ children, href, variant = 'default', className = '' }) {
+  const variants = {
+    default: 'bg-neutral-900 text-white hover:bg-neutral-700',
+    outline: 'border border-neutral-900 bg-transparent text-neutral-900 hover:bg-neutral-100 hover:text-sky-700',
+  }
 
   return (
     <a
-      className={`inline-flex min-h-11 items-center justify-center border px-7 text-sm font-bold no-underline transition duration-200 ${styles}`}
+      className={`inline-flex min-h-11 items-center justify-center border px-7 text-sm font-bold no-underline transition duration-200 ${variants[variant]} ${className}`}
       href={href}
     >
       {children}
@@ -22,7 +23,7 @@ function LandingButton({ children, href, variant = 'dark' }) {
 
 function SectionLabel({ children }) {
   return (
-    <div className="inline-flex bg-neutral-950 px-6 py-4 text-xl font-extrabold leading-none text-white">
+    <div className="inline-flex bg-neutral-900 px-6 py-4 text-xl font-extrabold leading-none text-white">
       {children}
     </div>
   )

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Icon } from '../../components/ui/Icon'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { clearAuthData, getAuthData, getAuthRole } from '../../services/authService'
+import { Icon } from '@/components/ui/Icon'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { clearAuthData, getAuthData, getAuthRole } from '@/services/authService'
 
 export function RolePage({ roleParam }) {
   const authUser = getAuthData()

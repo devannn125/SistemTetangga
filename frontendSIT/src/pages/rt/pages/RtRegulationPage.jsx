@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
+import { Badge } from '../../../components/ui/Badge'
+import { Button } from '../../../components/ui/Button'
+import { Alert } from '../../../components/ui/Alert'
+import { Input } from '../../../components/ui/Input'
+import { Select } from '../../../components/ui/Select'
+import { SkeletonCard } from '../../../components/ui/Skeleton'
 import { createRegulation, deleteRegulation, getRegulations, getWilayah, updateRegulation } from '../../../services/api'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
@@ -69,10 +76,7 @@ export default function RtRegulationPage() {
     }
 
     loadData()
-
-    return () => {
-      alive = false
-    }
+    return () => { alive = false }
   }, [])
 
   const activeRegulations = useMemo(() => regulations.filter((item) => item.status !== 'NONAKTIF'), [regulations])
@@ -143,147 +147,137 @@ export default function RtRegulationPage() {
     }
   }
 
+  const selectWilayahOptions = wilayahOptions.map((w) => ({
+    value: w.id_wilayah,
+    label: w.nama_wilayah || w.kode_wilayah || `Wilayah ${w.id_wilayah}`,
+  }))
+
+  const selectCategoryOptions = allowedCategories.map((c) => ({
+    value: c.id,
+    label: c.label,
+  }))
+
   return (
     <PageShell
       eyebrow="Peraturan"
       title="Tata Tertib RT"
       description="RT hanya dapat mengelola Tata Tertib Warga Tetap dan Peraturan Tamu. Aturan penghuni tidak tetap atau kos dikelola oleh RW."
     >
-      <section className="mt-8 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <form className="space-y-4 rounded-2xl border border-neutral-300 bg-white p-6" onSubmit={handleSubmit}>
-          <h2 className="text-lg font-extrabold text-black">{editingId ? 'Edit Peraturan' : 'Buat Peraturan'}</h2>
+      <div className="mt-8 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        {/* Form Peraturan */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingId ? 'Edit Peraturan' : 'Buat Peraturan'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Select
+                label="Kategori"
+                value={form.kategori}
+                onChange={(e) => updateForm('kategori', e.target.value)}
+                options={selectCategoryOptions}
+              />
 
-          <label className="grid gap-2 text-sm font-bold text-black">
-            Kategori
-            <select
-              className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none focus:border-sky-600"
-              value={form.kategori}
-              onChange={(event) => updateForm('kategori', event.target.value)}
-            >
-              {allowedCategories.map((category) => (
-                <option key={category.id} value={category.id}>{category.label}</option>
-              ))}
-            </select>
-          </label>
+              <Select
+                label="Wilayah"
+                value={form.id_wilayah}
+                onChange={(e) => updateForm('id_wilayah', e.target.value)}
+                options={selectWilayahOptions}
+                placeholder="Pilih wilayah"
+                required
+              />
 
-          <label className="grid gap-2 text-sm font-bold text-black">
-            Wilayah
-            <select
-              className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none focus:border-sky-600"
-              value={form.id_wilayah}
-              onChange={(event) => updateForm('id_wilayah', event.target.value)}
-              required
-            >
-              <option value="">Pilih wilayah</option>
-              {wilayahOptions.map((wilayah) => (
-                <option key={wilayah.id_wilayah} value={wilayah.id_wilayah}>
-                  {wilayah.nama_wilayah || wilayah.kode_wilayah || `Wilayah ${wilayah.id_wilayah}`}
-                </option>
-              ))}
-            </select>
-          </label>
+              <Input
+                label="Judul"
+                value={form.judul}
+                onChange={(e) => updateForm('judul', e.target.value)}
+                required
+              />
 
-          <label className="grid gap-2 text-sm font-bold text-black">
-            Judul
-            <input
-              className="rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-sky-600"
-              value={form.judul}
-              onChange={(event) => updateForm('judul', event.target.value)}
-              required
-            />
-          </label>
+              <div className="flex flex-col gap-1.5 w-full">
+                <label className="text-sm font-medium text-neutral-700">Isi</label>
+                <textarea
+                  className="min-h-36 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  value={form.isi}
+                  onChange={(e) => updateForm('isi', e.target.value)}
+                  required
+                />
+              </div>
 
-          <label className="grid gap-2 text-sm font-bold text-black">
-            Isi
-            <textarea
-              className="min-h-40 rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-sky-600"
-              value={form.isi}
-              onChange={(event) => updateForm('isi', event.target.value)}
-              required
-            />
-          </label>
+              <Input
+                label="Tanggal Berlaku"
+                type="date"
+                value={form.tanggal_berlaku}
+                onChange={(e) => updateForm('tanggal_berlaku', e.target.value)}
+                required
+              />
 
-          <label className="grid gap-2 text-sm font-bold text-black">
-            Tanggal Berlaku
-            <input
-              className="rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-sky-600"
-              type="date"
-              value={form.tanggal_berlaku}
-              onChange={(event) => updateForm('tanggal_berlaku', event.target.value)}
-              required
-            />
-          </label>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  type="submit"
+                  disabled={isSaving || !form.id_wilayah}
+                >
+                  {editingId ? 'Simpan Perubahan' : 'Terbitkan'}
+                </Button>
+                {editingId && (
+                  <Button variant="ghost" type="button" onClick={resetForm}>
+                    Batal
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              className="rounded-full bg-black px-5 py-3 text-xs font-extrabold uppercase text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={isSaving || !form.id_wilayah}
-              type="submit"
-            >
-              {editingId ? 'Simpan Perubahan' : 'Terbitkan'}
-            </button>
-            {editingId ? (
-              <button
-                className="rounded-full border border-black px-5 py-3 text-xs font-extrabold uppercase text-black transition hover:bg-neutral-100"
-                onClick={resetForm}
-                type="button"
-              >
-                Batal
-              </button>
-            ) : null}
-          </div>
-        </form>
-
+        {/* List Peraturan */}
         <div className="space-y-4">
-          {notice ? (
-            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
-              {notice}
-            </div>
-          ) : null}
+          {notice && <Alert variant="info">{notice}</Alert>}
 
           {isLoading ? (
-            <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-              Memuat peraturan...
-            </div>
+            Array.from({ length: 2 }).map((_, i) => <SkeletonCard key={i} />)
           ) : activeRegulations.length === 0 ? (
-            <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
+            <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center text-sm font-medium text-neutral-500">
               Belum ada peraturan RT.
             </div>
           ) : (
             activeRegulations.map((regulation) => (
-              <article key={regulation.id_regulation} className="border border-neutral-300 bg-white p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-neutral-500">
-                      {categoryLabel(regulation.kategori)} · Versi {regulation.versi || 1}
-                    </p>
-                    <h2 className="mt-3 text-xl font-extrabold text-black">{regulation.judul}</h2>
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-neutral-600">{regulation.isi}</p>
+              <Card key={regulation.id_regulation}>
+                <CardHeader className="border-b border-neutral-100">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-sky-600">
+                        {categoryLabel(regulation.kategori)} · Versi {regulation.versi || 1}
+                      </p>
+                      <CardTitle className="mt-2 text-lg">{regulation.judul}</CardTitle>
+                    </div>
+                    <Badge variant="success">{regulation.status}</Badge>
                   </div>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900">{regulation.status}</span>
-                </div>
-                <p className="mt-4 text-sm text-neutral-500">Berlaku: {formatDate(regulation.tanggal_berlaku)}</p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <button
-                    className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-neutral-900"
-                    onClick={() => startEdit(regulation)}
-                    type="button"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="rounded-full border border-black px-5 py-2 text-xs font-extrabold uppercase text-black transition hover:bg-neutral-100"
-                    onClick={() => handleDeactivate(regulation.id_regulation)}
-                    type="button"
-                  >
-                    Nonaktifkan
-                  </button>
-                </div>
-              </article>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <p className="text-sm leading-relaxed text-neutral-600 whitespace-pre-wrap">{regulation.isi}</p>
+                  <p className="mt-4 text-xs text-neutral-400">Berlaku: {formatDate(regulation.tanggal_berlaku)}</p>
+                  <div className="mt-5 flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => startEdit(regulation)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeactivate(regulation.id_regulation)}
+                    >
+                      Nonaktifkan
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ))
           )}
         </div>
-      </section>
+      </div>
     </PageShell>
   )
 }

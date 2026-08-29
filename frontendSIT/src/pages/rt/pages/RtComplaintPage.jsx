@@ -1,30 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
+import { DataTable } from '../../../components/ui/DataTable'
+import { StatusBadge } from '../../../components/ui/Badge'
+import { Button } from '../../../components/ui/Button'
+import { Alert } from '../../../components/ui/Alert'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
 import { getComplaints, updateComplaint } from '../../../services/api'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
 
-const statusTabs = [
-  { id: 'PENDING', label: 'Perlu Ditugaskan' },
-  { id: 'DIPROSES', label: 'Diproses' },
-  { id: 'ESKALASI', label: 'Eskalasi' },
-  { id: 'SELESAI', label: 'Selesai' },
-  { id: 'all', label: 'Semua' },
-]
-
 function formatDate(value) {
   if (!value) return '-'
   return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
-}
-
-function getStatusClass(status) {
-  return {
-    PENDING: 'bg-amber-100 text-amber-900',
-    DIPROSES: 'bg-sky-100 text-sky-900',
-    ESKALASI: 'bg-orange-100 text-orange-900',
-    SELESAI: 'bg-emerald-100 text-emerald-900',
-    DITOLAK: 'bg-red-100 text-red-900',
-  }[status] || 'bg-neutral-100 text-neutral-900'
 }
 
 function isPastSla(complaint) {
@@ -35,12 +22,45 @@ function isPastSla(complaint) {
   return Date.now() - createdAt.getTime() > threeDays
 }
 
+const FILTERS = [
+  {
+    key: 'status',
+    label: 'Status',
+    options: [
+      { value: 'PENDING', label: 'Perlu Ditugaskan' },
+      { value: 'DIPROSES', label: 'Diproses' },
+      { value: 'ESKALASI', label: 'Eskalasi' },
+      { value: 'SELESAI', label: 'Selesai' },
+    ],
+  },
+  {
+    key: 'kategori',
+    label: 'Kategori',
+    options: [
+      { value: 'Infrastruktur', label: 'Infrastruktur' },
+      { value: 'Keamanan', label: 'Keamanan' },
+      { value: 'Kebersihan', label: 'Kebersihan' },
+      { value: 'Sosial', label: 'Sosial' },
+      { value: 'Lainnya', label: 'Lainnya' },
+    ],
+  },
+  {
+    key: 'urgensi',
+    label: 'Urgensi',
+    options: [
+      { value: 'Rendah', label: 'Rendah' },
+      { value: 'Sedang', label: 'Sedang' },
+      { value: 'Tinggi', label: 'Tinggi' },
+      { value: 'Darurat', label: 'Darurat' },
+    ],
+  },
+]
+
 export default function RtComplaintPage() {
-  const [activeStatus, setActiveStatus] = useState('PENDING')
   const [complaints, setComplaints] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [processingId, setProcessingId] = useState('')
-  const [notice, setNotice] = useState('')
   const confirm = useConfirm()
   const { showToast } = useToast()
 
@@ -49,28 +69,21 @@ export default function RtComplaintPage() {
 
     async function loadComplaints() {
       setIsLoading(true)
+      setError(null)
       try {
         const response = await getComplaints({ per_page: 100 })
         const rows = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
         if (alive) setComplaints(rows)
-      } catch (error) {
-        if (alive) setNotice(error.message || 'Backend belum dapat dihubungi.')
+      } catch (err) {
+        if (alive) setError(err.message || 'Backend belum dapat dihubungi.')
       } finally {
         if (alive) setIsLoading(false)
       }
     }
 
     loadComplaints()
-
-    return () => {
-      alive = false
-    }
+    return () => { alive = false }
   }, [])
-
-  const filteredComplaints = useMemo(
-    () => complaints.filter((complaint) => activeStatus === 'all' || complaint.status === activeStatus),
-    [activeStatus, complaints],
-  )
 
   async function handleAssign(complaint) {
     const approved = await confirm({
@@ -92,9 +105,9 @@ export default function RtComplaintPage() {
       setComplaints((current) =>
         current.map((item) => (item.id_complaint === complaint.id_complaint ? { ...item, status: 'DIPROSES' } : item)),
       )
-      showToast('Pengaduan berhasil ditugaskan dan status berubah menjadi Diproses.')
-    } catch (error) {
-      showToast(error.message || 'Gagal menugaskan pengaduan.', 'error')
+      showToast('Pengaduan berhasil ditugaskan.')
+    } catch (err) {
+      showToast(err.message || 'Gagal menugaskan pengaduan.', 'error')
     } finally {
       setProcessingId('')
     }
@@ -121,12 +134,83 @@ export default function RtComplaintPage() {
         current.map((item) => (item.id_complaint === complaint.id_complaint ? { ...item, status: 'ESKALASI' } : item)),
       )
       showToast('Pengaduan ditandai Eskalasi dan perlu diteruskan ke RW.')
-    } catch (error) {
-      showToast(error.message || 'Gagal menandai eskalasi.', 'error')
+    } catch (err) {
+      showToast(err.message || 'Gagal menandai eskalasi.', 'error')
     } finally {
       setProcessingId('')
     }
   }
+
+  // SLA overdue count untuk info
+  const slaOverdueCount = useMemo(
+    () => complaints.filter((c) => isPastSla(c)).length,
+    [complaints],
+  )
+
+  const COLUMNS = [
+    {
+      key: 'nomor_tiket',
+      label: 'Tiket',
+      render: (row) => (
+        <span className="font-mono text-xs text-neutral-500">
+          {row.nomor_tiket || `#${row.id_complaint}`}
+        </span>
+      ),
+    },
+    {
+      key: 'judul',
+      label: 'Judul',
+      render: (row) => (
+        <div>
+          <p className="font-medium text-neutral-900">{row.judul}</p>
+          <p className="mt-0.5 text-xs text-neutral-400 line-clamp-1">{row.deskripsi}</p>
+        </div>
+      ),
+    },
+    { key: 'kategori', label: 'Kategori' },
+    { key: 'urgensi', label: 'Urgensi' },
+    { key: 'created_at', label: 'Tanggal', render: (row) => formatDate(row.created_at) },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => {
+        const lockedBySla = isPastSla(row)
+        return <StatusBadge status={lockedBySla ? 'ESKALASI' : row.status} />
+      },
+    },
+    {
+      key: 'actions',
+      label: 'Aksi',
+      render: (row) => {
+        const lockedBySla = isPastSla(row)
+        if (lockedBySla) {
+          return (
+            <Button
+              variant="warning"
+              size="sm"
+              disabled={processingId === row.id_complaint}
+              onClick={(e) => { e.stopPropagation(); handleEscalate(row) }}
+            >
+              Eskalasi ke RW
+            </Button>
+          )
+        }
+        if (row.status === 'PENDING') {
+          return (
+            <Button
+              variant="default"
+              size="sm"
+              disabled={processingId === row.id_complaint}
+              onClick={(e) => { e.stopPropagation(); handleAssign(row) }}
+            >
+              Tugaskan
+            </Button>
+          )
+        }
+        return null
+      },
+    },
+  ]
 
   return (
     <PageShell
@@ -134,96 +218,32 @@ export default function RtComplaintPage() {
       title="Assign Pengaduan Warga"
       description="RT menugaskan tiket pending ke petugas. Tiket pending lebih dari 3 hari dikunci dari proses assign RT dan diarahkan untuk eskalasi ke RW."
     >
-      <section className="mt-8 space-y-6">
-        {notice ? (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
-            {notice}
-          </div>
-        ) : null}
-
-        <div className="flex flex-wrap gap-3">
-          {statusTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`rounded-full border px-4 py-2 text-xs font-extrabold transition ${
-                activeStatus === tab.id
-                  ? 'border-black bg-black text-white'
-                  : 'border-neutral-300 bg-white text-neutral-700 hover:border-black hover:bg-neutral-100'
-              }`}
-              onClick={() => setActiveStatus(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {isLoading ? (
-          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-            Memuat data pengaduan...
-          </div>
-        ) : filteredComplaints.length === 0 ? (
-          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-            Tidak ada pengaduan pada status ini.
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {filteredComplaints.map((complaint) => {
-              const lockedBySla = isPastSla(complaint)
-              return (
-                <article key={complaint.id_complaint} className="border border-neutral-300 bg-white p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-neutral-500">
-                        {complaint.nomor_tiket || `#${complaint.id_complaint}`} · {complaint.kategori}
-                      </p>
-                      <h2 className="mt-3 text-xl font-extrabold text-black">{complaint.judul}</h2>
-                      <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">{complaint.deskripsi}</p>
-                    </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${lockedBySla ? getStatusClass('ESKALASI') : getStatusClass(complaint.status)}`}>
-                      {lockedBySla ? 'ESKALASI' : complaint.status}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 grid gap-2 text-sm text-neutral-500 sm:grid-cols-2 lg:grid-cols-4">
-                    <p><span className="font-bold text-neutral-900">Lokasi:</span> {complaint.lokasi || '-'}</p>
-                    <p><span className="font-bold text-neutral-900">Urgensi:</span> {complaint.urgensi}</p>
-                    <p><span className="font-bold text-neutral-900">Tanggal:</span> {formatDate(complaint.created_at)}</p>
-                    <p><span className="font-bold text-neutral-900">Pelapor:</span> {complaint.pengirim?.nama_users || '-'}</p>
-                  </div>
-
-                  {lockedBySla ? (
-                    <div className="mt-5 flex flex-wrap items-center gap-3">
-                      <p className="text-sm font-semibold text-orange-900">
-                        SLA 3 hari terlewati. Akses assign RT diblokir dan tiket harus dieskalasi ke RW.
-                      </p>
-                      <button
-                        className="rounded-full bg-orange-600 px-5 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={processingId === complaint.id_complaint}
-                        onClick={() => handleEscalate(complaint)}
-                        type="button"
-                      >
-                        Tandai Eskalasi
-                      </button>
-                    </div>
-                  ) : complaint.status === 'PENDING' ? (
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      <button
-                        className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={processingId === complaint.id_complaint}
-                        onClick={() => handleAssign(complaint)}
-                        type="button"
-                      >
-                        Tugaskan
-                      </button>
-                    </div>
-                  ) : null}
-                </article>
-              )
-            })}
-          </div>
+      <div className="space-y-4">
+        {slaOverdueCount > 0 && (
+          <Alert variant="warning" title={`${slaOverdueCount} pengaduan melewati SLA 3 hari`}>
+            Segera eskalasikan pengaduan tersebut ke RW.
+          </Alert>
         )}
-      </section>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Daftar Pengaduan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DataTable
+              data={complaints}
+              columns={COLUMNS}
+              searchKeys={['judul', 'deskripsi', 'nomor_tiket', 'lokasi']}
+              searchPlaceholder="Cari judul, nomor tiket, atau lokasi..."
+              filters={FILTERS}
+              loading={isLoading}
+              error={error}
+              emptyMessage="Tidak ada pengaduan."
+              rowKey="id_complaint"
+            />
+          </CardContent>
+        </Card>
+      </div>
     </PageShell>
   )
 }

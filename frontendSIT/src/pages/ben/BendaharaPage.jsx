@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { PortalLayout } from '../../components/layout/PortalLayout'
-import { PageShell } from '../../components/layout/PageShell'
-import { getAuthData } from '../../services/authService'
-import { useConfirm } from '../../components/ui/ConfirmContext'
-import { useToast } from '../../components/ui/ToastContext'
+import { PortalLayout } from '@/components/layout/PortalLayout'
+import { PageShell } from '@/components/layout/PageShell'
+import { getAuthData } from '@/services/authService'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 import {
   createFeeBill,
   createFinanceTransaction,
@@ -17,7 +17,7 @@ import {
   getInventoryPurchases,
   updateFeeBill,
   updateHouse,
-} from '../../services/api'
+} from '@/services/api'
 
 const benMenus = [
   { label: 'Beranda', path: '/ben', icon: 'home' },

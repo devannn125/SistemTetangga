@@ -1,42 +1,67 @@
+/**
+ * ConfirmDialog — dialog konfirmasi reusable.
+ * Diupgrade menggunakan desain yang lebih clean, tetap mempertahankan
+ * semua props dan perilaku yang sudah ada agar tidak ada perubahan fungsi.
+ */
 export function ConfirmDialog({ open, title, message, confirmLabel = 'Ya, Lanjutkan', cancelLabel = 'Batal', onConfirm, onCancel, children }) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
-      <div className="w-full max-w-2xl border-2 border-neutral-900 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-h-[80vh] flex flex-col">
-        <div className="border-b-2 border-neutral-900 bg-black px-5 py-3 flex justify-between items-center">
-          <h2 id="confirm-dialog-title" className="text-sm font-extrabold uppercase tracking-widest text-white">{title}</h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel?.() }}
+    >
+      <div className="w-full max-w-md rounded-xl border border-neutral-200 bg-white shadow-xl max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between rounded-t-xl border-b border-neutral-100 px-5 py-4">
+          <h2
+            id="confirm-dialog-title"
+            className="text-sm font-bold text-neutral-900"
+          >
+            {title}
+          </h2>
           <button
             onClick={onCancel}
             type="button"
-            className="text-white hover:text-sky-300 text-xl leading-none"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
             aria-label="Tutup"
           >
-            ✕
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
           </button>
         </div>
-        <div className="p-6 overflow-y-auto flex-1">
-          {message ? <p className="text-sm leading-6 text-neutral-700">{message}</p> : null}
-          {children}
-          {(message || children) && (
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                className="h-10 border border-neutral-900 px-5 text-xs font-extrabold text-black transition hover:bg-neutral-100"
-                onClick={onCancel}
-                type="button"
-              >
-                {cancelLabel}
-              </button>
-              <button
-                className="h-10 border border-black bg-black px-5 text-xs font-extrabold text-white transition hover:border-red-600 hover:bg-red-600"
-                onClick={onConfirm}
-                type="button"
-              >
-                {confirmLabel}
-              </button>
-            </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 px-5 py-5">
+          {message && (
+            <p className="text-sm leading-relaxed text-neutral-600">{message}</p>
           )}
+          {children}
         </div>
+
+        {/* Footer */}
+        {(message || children) && (
+          <div className="flex justify-end gap-2 rounded-b-xl border-t border-neutral-100 px-5 py-4">
+            <button
+              className="inline-flex h-9 items-center rounded-md border border-neutral-300 px-4 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+              onClick={onCancel}
+              type="button"
+            >
+              {cancelLabel}
+            </button>
+            <button
+              className="inline-flex h-9 items-center rounded-md bg-neutral-900 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-700"
+              onClick={onConfirm}
+              type="button"
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

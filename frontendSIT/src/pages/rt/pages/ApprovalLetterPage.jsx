@@ -1,37 +1,44 @@
 import { useEffect, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
+import { DataTable } from '../../../components/ui/DataTable'
+import { StatusBadge } from '../../../components/ui/Badge'
+import { Button } from '../../../components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card'
 import { getLetterRequests, updateLetterRequest } from '../../../services/api'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
-
-const statusTabs = [
-  { id: 'DIVERIFIKASI', label: 'Perlu Persetujuan' },
-  { id: 'all', label: 'Semua' },
-  { id: 'DIAJUKAN', label: 'Diajukan' },
-  { id: 'DISETUJUI', label: 'Disetujui' },
-  { id: 'DITOLAK', label: 'Ditolak' },
-]
 
 function formatDate(value) {
   if (!value) return '-'
   return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
 }
 
-function getStatusClass(status) {
-  return {
-    DIAJUKAN: 'bg-amber-100 text-amber-900',
-    DIVERIFIKASI: 'bg-sky-100 text-sky-900',
-    DISETUJUI: 'bg-emerald-100 text-emerald-900',
-    DITOLAK: 'bg-red-100 text-red-900',
-  }[status] || 'bg-neutral-100 text-neutral-900'
-}
+const FILTERS = [
+  {
+    key: 'status',
+    label: 'Status',
+    options: [
+      { value: 'DIAJUKAN', label: 'Diajukan' },
+      { value: 'DIVERIFIKASI', label: 'Perlu Persetujuan' },
+      { value: 'DISETUJUI', label: 'Disetujui' },
+      { value: 'DITOLAK', label: 'Ditolak' },
+    ],
+  },
+  {
+    key: 'jenis_surat',
+    label: 'Jenis Surat',
+    options: [
+      { value: 'DOMISILI', label: 'Domisili' },
+      { value: 'USAHA', label: 'Usaha' },
+    ],
+  },
+]
 
 export default function ApprovalLetterPage() {
-  const [activeStatus, setActiveStatus] = useState('DIVERIFIKASI')
   const [letters, setLetters] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [processingId, setProcessingId] = useState('')
-  const [notice, setNotice] = useState('')
   const confirm = useConfirm()
   const { showToast } = useToast()
 
@@ -40,25 +47,21 @@ export default function ApprovalLetterPage() {
 
     async function loadLetters() {
       setIsLoading(true)
+      setError(null)
       try {
         const response = await getLetterRequests({ per_page: 100 })
         const rows = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
         if (alive) setLetters(rows)
-      } catch (error) {
-        if (alive) setNotice(error.message || 'Backend belum dapat dihubungi.')
+      } catch (err) {
+        if (alive) setError(err.message || 'Backend belum dapat dihubungi.')
       } finally {
         if (alive) setIsLoading(false)
       }
     }
 
     loadLetters()
-
-    return () => {
-      alive = false
-    }
+    return () => { alive = false }
   }, [])
-
-  const filteredLetters = letters.filter((letter) => activeStatus === 'all' || letter.status === activeStatus)
 
   async function handleDecision(id, status) {
     const approved = await confirm({
@@ -73,100 +76,89 @@ export default function ApprovalLetterPage() {
     setProcessingId(id)
     try {
       await updateLetterRequest(id, { status })
-      setLetters((current) => current.map((letter) => (letter.id_letter_request === id ? { ...letter, status } : letter)))
+      setLetters((current) =>
+        current.map((letter) => (letter.id_letter_request === id ? { ...letter, status } : letter)),
+      )
       showToast(`Permohonan surat berhasil ${status === 'DISETUJUI' ? 'disetujui' : 'ditolak'}.`)
-    } catch (error) {
-      showToast(error.message || 'Gagal memperbarui status surat.', 'error')
+    } catch (err) {
+      showToast(err.message || 'Gagal memperbarui status surat.', 'error')
     } finally {
       setProcessingId('')
     }
   }
 
+  const COLUMNS = [
+    {
+      key: 'jenis_surat',
+      label: 'Jenis Surat',
+      render: (row) => (
+        <span className="font-medium text-neutral-900">
+          {row.jenis_surat === 'DOMISILI' ? 'Surat Ket. Domisili' : 'Surat Ket. Usaha'}
+        </span>
+      ),
+    },
+    {
+      key: 'pemohon',
+      label: 'Pemohon',
+      render: (row) => row.pemohon?.nama_lengkap || '-',
+    },
+    {
+      key: 'keperluan',
+      label: 'Keperluan / Usaha',
+      render: (row) => row.jenis_surat === 'DOMISILI' ? (row.keperluan || '-') : (row.nama_usaha || '-'),
+    },
+    { key: 'created_at', label: 'Diajukan', render: (row) => formatDate(row.created_at) },
+    { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'actions',
+      label: 'Aksi',
+      render: (row) => row.status === 'DIVERIFIKASI' ? (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            disabled={processingId === row.id_letter_request}
+            onClick={(e) => { e.stopPropagation(); handleDecision(row.id_letter_request, 'DISETUJUI') }}
+          >
+            Setujui
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={processingId === row.id_letter_request}
+            onClick={(e) => { e.stopPropagation(); handleDecision(row.id_letter_request, 'DITOLAK') }}
+          >
+            Tolak
+          </Button>
+        </div>
+      ) : null,
+    },
+  ]
+
   return (
     <PageShell
-      description="Berikan persetujuan (tanda tangan digital RT) pada permohonan surat warga. Surat pengantar akan selesai di sini, sedangkan surat tertentu seperti Domisili akan diteruskan ke RW/Dukuh."
+      description="Berikan persetujuan (tanda tangan digital RT) pada permohonan surat warga."
       eyebrow="Surat Keterangan"
       title="Approval Permohonan Surat"
     >
-      <section className="mt-8 space-y-6">
-        {notice ? (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
-            {notice}
-          </div>
-        ) : null}
-
-        <div className="flex flex-wrap gap-3">
-          {statusTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`rounded-full border px-4 py-2 text-xs font-extrabold transition ${
-                activeStatus === tab.id
-                  ? 'border-black bg-black text-white'
-                  : 'border-neutral-300 bg-white text-neutral-700 hover:border-black hover:bg-neutral-100'
-              }`}
-              onClick={() => setActiveStatus(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {isLoading ? (
-          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-            Memuat data surat...
-          </div>
-        ) : filteredLetters.length === 0 ? (
-          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-            Tidak ada permohonan surat pada status ini.
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {filteredLetters.map((letter) => (
-              <article key={letter.id_letter_request} className="border border-neutral-300 bg-white p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-extrabold text-black">
-                      {letter.jenis_surat === 'DOMISILI' ? 'Surat Keterangan Domisili' : 'Surat Keterangan Usaha'}
-                    </h2>
-                    <p className="mt-1 text-sm text-neutral-600">
-                      Pemohon: {letter.pemohon?.nama_lengkap || '-'} · {letter.jenis_surat === 'DOMISILI' ? letter.keperluan : letter.nama_usaha || '-'}
-                    </p>
-                  </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(letter.status)}`}>{letter.status}</span>
-                </div>
-
-                <div className="mt-4 grid gap-2 text-sm text-neutral-500 sm:grid-cols-2 lg:grid-cols-3">
-                  <p><span className="font-bold text-neutral-900">Diajukan:</span> {formatDate(letter.created_at)}</p>
-                  {letter.verified_at ? <p><span className="font-bold text-neutral-900">Diverifikasi:</span> {formatDate(letter.verified_at)}</p> : null}
-                  {letter.approved_at ? <p><span className="font-bold text-neutral-900">Disetujui:</span> {formatDate(letter.approved_at)}</p> : null}
-                </div>
-
-                {letter.status === 'DIVERIFIKASI' ? (
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() => handleDecision(letter.id_letter_request, 'DISETUJUI')}
-                      disabled={processingId === letter.id_letter_request}
-                      type="button"
-                    >
-                      Setujui
-                    </button>
-                    <button
-                      className="rounded-full border border-black px-5 py-2 text-xs font-extrabold uppercase text-black transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() => handleDecision(letter.id_letter_request, 'DITOLAK')}
-                      disabled={processingId === letter.id_letter_request}
-                      type="button"
-                    >
-                      Tolak
-                    </button>
-                  </div>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Daftar Permohonan Surat</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            data={letters}
+            columns={COLUMNS}
+            searchKeys={['jenis_surat', 'keperluan', 'nama_usaha']}
+            searchPlaceholder="Cari nama pemohon atau jenis surat..."
+            filters={FILTERS}
+            loading={isLoading}
+            error={error}
+            emptyMessage="Tidak ada permohonan surat."
+            rowKey="id_letter_request"
+          />
+        </CardContent>
+      </Card>
     </PageShell>
   )
 }

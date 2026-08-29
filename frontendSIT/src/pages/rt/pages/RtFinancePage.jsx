@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '../../../components/layout/PageShell'
+import { DataTable } from '../../../components/ui/DataTable'
+import { Button } from '../../../components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle, CardDesc } from '../../../components/ui/Card'
 import { getFinanceTransactions } from '../../../services/api'
 
 function formatCurrency(value) {
@@ -21,7 +24,6 @@ function normalizeTransactions(response) {
 
 function buildMonthlyData(transactions) {
   const groups = new Map()
-
   transactions.forEach((transaction) => {
     const date = transaction.tanggal || transaction.created_at
     if (!date) return
@@ -31,31 +33,29 @@ function buildMonthlyData(transactions) {
     if (transaction.tipe === 'PENGELUARAN') current.expense += Number(transaction.jumlah || 0)
     groups.set(key, current)
   })
-
   return [...groups.values()].sort((a, b) => a.key.localeCompare(b.key)).slice(-6)
 }
 
 function CashflowBars({ data }) {
   const maxValue = Math.max(...data.flatMap((item) => [item.income, item.expense]), 1)
-
   return (
-    <div className="mt-5 h-64 rounded-xl bg-neutral-50 px-4 py-5">
+    <div className="h-56 rounded-lg bg-neutral-50 px-4 py-4">
       <div className="flex h-full items-end justify-between gap-3">
         {data.map((item) => (
-          <div className="flex h-full min-w-0 flex-1 flex-col justify-end gap-2" key={item.key}>
-            <div className="flex flex-1 items-end justify-center gap-1.5">
+          <div className="flex h-full min-w-0 flex-1 flex-col justify-end gap-1.5" key={item.key}>
+            <div className="flex flex-1 items-end justify-center gap-1">
               <div
-                className="w-full max-w-8 rounded-t-lg bg-emerald-600"
-                style={{ height: `${Math.max((item.income / maxValue) * 100, item.income ? 6 : 0)}%` }}
+                className="w-full max-w-6 rounded-t-md bg-emerald-500"
+                style={{ height: `${Math.max((item.income / maxValue) * 100, item.income ? 4 : 0)}%` }}
                 title={`Pemasukan ${formatCurrency(item.income)}`}
               />
               <div
-                className="w-full max-w-8 rounded-t-lg bg-red-500"
-                style={{ height: `${Math.max((item.expense / maxValue) * 100, item.expense ? 6 : 0)}%` }}
+                className="w-full max-w-6 rounded-t-md bg-red-400"
+                style={{ height: `${Math.max((item.expense / maxValue) * 100, item.expense ? 4 : 0)}%` }}
                 title={`Pengeluaran ${formatCurrency(item.expense)}`}
               />
             </div>
-            <span className="truncate text-center text-xs font-bold text-neutral-500">{item.label}</span>
+            <span className="truncate text-center text-[10px] font-semibold text-neutral-400">{item.label}</span>
           </div>
         ))}
       </div>
@@ -84,10 +84,48 @@ function downloadCsv(rows) {
   URL.revokeObjectURL(url)
 }
 
+const COLUMNS = [
+  {
+    key: 'tanggal',
+    label: 'Tanggal',
+    render: (row) => formatDate(row.tanggal || row.created_at),
+  },
+  {
+    key: 'tipe',
+    label: 'Tipe',
+    render: (row) => (
+      <span className={`text-xs font-semibold ${row.tipe === 'PEMASUKAN' ? 'text-emerald-700' : 'text-red-600'}`}>
+        {row.tipe}
+      </span>
+    ),
+  },
+  { key: 'kategori', label: 'Kategori', render: (row) => row.kategori || '-' },
+  { key: 'deskripsi', label: 'Deskripsi', render: (row) => row.deskripsi || '-' },
+  {
+    key: 'jumlah',
+    label: 'Jumlah',
+    render: (row) => (
+      <span className={`font-semibold ${row.tipe === 'PEMASUKAN' ? 'text-emerald-700' : 'text-red-600'}`}>
+        {row.tipe === 'PEMASUKAN' ? '+' : '-'}{formatCurrency(row.jumlah)}
+      </span>
+    ),
+  },
+]
+
+const FILTERS = [
+  {
+    key: 'tipe',
+    label: 'Tipe',
+    options: [
+      { value: 'PEMASUKAN', label: 'Pemasukan' },
+      { value: 'PENGELUARAN', label: 'Pengeluaran' },
+    ],
+  },
+]
+
 export default function RtFinancePage() {
   const [transactions, setTransactions] = useState([])
-  const [searchText, setSearchText] = useState('')
-  const [notice, setNotice] = useState('')
+  const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -95,41 +133,32 @@ export default function RtFinancePage() {
 
     async function loadTransactions() {
       setIsLoading(true)
+      setError(null)
       try {
         const response = await getFinanceTransactions({ per_page: 100 })
         if (alive) setTransactions(normalizeTransactions(response))
-      } catch (error) {
-        if (alive) setNotice(error.message || 'Backend belum dapat dihubungi.')
+      } catch (err) {
+        if (alive) setError(err.message || 'Backend belum dapat dihubungi.')
       } finally {
         if (alive) setIsLoading(false)
       }
     }
 
     loadTransactions()
-
-    return () => {
-      alive = false
-    }
+    return () => { alive = false }
   }, [])
 
   const summary = useMemo(() => {
     const income = transactions
-      .filter((transaction) => transaction.tipe === 'PEMASUKAN')
-      .reduce((sum, transaction) => sum + Number(transaction.jumlah || 0), 0)
+      .filter((t) => t.tipe === 'PEMASUKAN')
+      .reduce((sum, t) => sum + Number(t.jumlah || 0), 0)
     const expense = transactions
-      .filter((transaction) => transaction.tipe === 'PENGELUARAN')
-      .reduce((sum, transaction) => sum + Number(transaction.jumlah || 0), 0)
-
+      .filter((t) => t.tipe === 'PENGELUARAN')
+      .reduce((sum, t) => sum + Number(t.jumlah || 0), 0)
     return { income, expense, balance: income - expense }
   }, [transactions])
 
   const monthlyData = useMemo(() => buildMonthlyData(transactions), [transactions])
-  const filteredTransactions = transactions.filter((transaction) =>
-    [transaction.deskripsi, transaction.kategori, transaction.tipe, transaction.tanggal]
-      .join(' ')
-      .toLowerCase()
-      .includes(searchText.toLowerCase()),
-  )
 
   return (
     <PageShell
@@ -137,77 +166,78 @@ export default function RtFinancePage() {
       title="Dashboard Keuangan RT"
       description="Akses Ketua RT bersifat baca saja: memantau arus kas, memeriksa transaksi, dan mengunduh rekap tanpa mencatat pemasukan, pengeluaran, atau konfirmasi pembayaran."
     >
-      <section className="mt-8 space-y-6">
-        {notice ? (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">
-            {notice}
-          </div>
-        ) : null}
-
+      <div className="space-y-6">
+        {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <article className="rounded-xl border border-neutral-300 bg-white p-6">
-            <p className="text-xs font-bold uppercase text-neutral-500">Saldo</p>
-            <div className="mt-3 text-2xl font-extrabold text-black">{formatCurrency(summary.balance)}</div>
-            <p className="mt-2 text-sm text-neutral-600">{isLoading ? 'Memuat data...' : 'Baca saja untuk Ketua RT'}</p>
-          </article>
-          <article className="rounded-xl border border-neutral-300 bg-white p-6">
-            <p className="text-xs font-bold uppercase text-neutral-500">Pemasukan</p>
-            <div className="mt-3 text-2xl font-extrabold text-emerald-700">{formatCurrency(summary.income)}</div>
-          </article>
-          <article className="rounded-xl border border-neutral-300 bg-white p-6">
-            <p className="text-xs font-bold uppercase text-neutral-500">Pengeluaran</p>
-            <div className="mt-3 text-2xl font-extrabold text-red-600">{formatCurrency(summary.expense)}</div>
-          </article>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Saldo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-neutral-900">{formatCurrency(summary.balance)}</p>
+              <p className="mt-1 text-sm text-neutral-400">{isLoading ? 'Memuat...' : 'Baca saja untuk Ketua RT'}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Pemasukan</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-emerald-600">{formatCurrency(summary.income)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Pengeluaran</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(summary.expense)}</p>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="rounded-2xl border border-neutral-300 bg-white p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold text-neutral-700">Arus Kas Bulanan</p>
-              <p className="mt-1 text-xs text-neutral-500">Hijau pemasukan, merah pengeluaran.</p>
+        {/* Cashflow chart */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Arus Kas Bulanan</CardTitle>
+                <CardDesc className="mt-1">Hijau = pemasukan · Merah = pengeluaran (6 bulan terakhir)</CardDesc>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => downloadCsv(transactions)}>
+                Unduh CSV
+              </Button>
             </div>
-            <button
-              className="rounded-full border border-black px-4 py-2 text-xs font-extrabold uppercase text-black transition hover:bg-neutral-100"
-              onClick={() => downloadCsv(filteredTransactions)}
-              type="button"
-            >
-              Unduh CSV
-            </button>
-          </div>
-          {monthlyData.length ? (
-            <CashflowBars data={monthlyData} />
-          ) : (
-            <div className="mt-5 rounded-xl bg-neutral-50 p-8 text-center text-sm font-semibold text-neutral-600">
-              Belum ada transaksi untuk ditampilkan.
-            </div>
-          )}
-        </div>
+          </CardHeader>
+          <CardContent>
+            {monthlyData.length ? (
+              <CashflowBars data={monthlyData} />
+            ) : (
+              <p className="py-8 text-center text-sm text-neutral-400">Belum ada transaksi.</p>
+            )}
+          </CardContent>
+        </Card>
 
-        <div className="rounded-2xl border border-neutral-300 bg-white p-6">
-          <div className="flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
-            <h3 className="text-lg font-extrabold text-black">Transaksi Bendahara</h3>
-            <input
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              className="rounded-full border border-neutral-300 px-4 py-2 text-sm outline-none focus:border-sky-600"
-              placeholder="Cari transaksi..."
+        {/* DataTable transaksi */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Riwayat Transaksi</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DataTable
+              data={transactions}
+              columns={COLUMNS}
+              searchKeys={['deskripsi', 'kategori', 'tipe']}
+              searchPlaceholder="Cari deskripsi, kategori, atau tipe..."
+              filters={FILTERS}
+              loading={isLoading}
+              error={error}
+              emptyMessage="Belum ada transaksi keuangan."
+              getRowKey={(row) => row.id_keuangan_transaksi || `${row.tanggal}-${row.deskripsi}`}
             />
-          </div>
-          <ul className="mt-4 divide-y divide-neutral-200">
-            {filteredTransactions.map((transaction) => (
-              <li key={transaction.id_keuangan_transaksi || `${transaction.tanggal}-${transaction.deskripsi}`} className="flex items-center justify-between gap-4 py-4">
-                <div>
-                  <div className="text-sm font-bold text-black">{transaction.deskripsi || transaction.kategori || 'Transaksi'}</div>
-                  <div className="text-xs text-neutral-500">{formatDate(transaction.tanggal || transaction.created_at)}</div>
-                </div>
-                <div className={`text-right text-sm font-extrabold ${transaction.tipe === 'PEMASUKAN' ? 'text-emerald-700' : 'text-red-600'}`}>
-                  {transaction.tipe === 'PEMASUKAN' ? '+' : '-'}{formatCurrency(transaction.jumlah)}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+          </CardContent>
+        </Card>
+      </div>
     </PageShell>
   )
 }

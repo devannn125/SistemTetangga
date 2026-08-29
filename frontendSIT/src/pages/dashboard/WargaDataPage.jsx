@@ -1,8 +1,22 @@
 import { useEffect, useState } from 'react'
-import { Icon } from '../../components/ui/Icon'
-import { StatCard } from '../../components/dashboard/StatCard'
-import { getCitizens, getGuests, getHouses } from '../../services/api'
-import { navigate } from '../../services/router'
+import { Icon } from '@/components/ui/Icon'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableCaption,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { getCitizens, getGuests, getHouses } from '@/services/api'
+import { navigate } from '@/services/router'
 
 const ALL_COLUMNS = [
   { key: 'nama_lengkap', label: 'Nama' },
@@ -53,24 +67,20 @@ const EMPTY_MESSAGES = {
 
 function StatusBadge({ active }) {
   return active ? (
-    <span className="inline-block rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">Aktif</span>
+    <Badge variant="success">Aktif</Badge>
   ) : (
-    <span className="inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-semibold text-neutral-500">Nonaktif</span>
+    <Badge variant="secondary">Nonaktif</Badge>
   )
 }
 
 function GuestStatusBadge({ status }) {
-  const styles = {
-    MENUNGGU: 'bg-amber-100 text-amber-900',
-    DISETUJUI: 'bg-green-100 text-green-900',
-    DITOLAK: 'bg-red-100 text-red-900',
-    CHECK_OUT: 'bg-neutral-200 text-neutral-700',
+  const variants = {
+    MENUNGGU: 'warning',
+    DISETUJUI: 'success',
+    DITOLAK: 'destructive',
+    CHECK_OUT: 'secondary',
   }
-  return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${styles[status] || 'bg-neutral-200 text-neutral-700'}`}>
-      {status}
-    </span>
-  )
+  return <Badge variant={variants[status] || 'secondary'}>{status}</Badge>
 }
 
 function formatDate(value) {
@@ -105,7 +115,6 @@ export function WargaDataPage({ activeTab = 'semua' }) {
       setRows([])
 
       try {
-        // Ambil jumlah tamu untuk label (disediakan bila role punya akses).
         if (!isGuestTab) {
           try {
             const guests = await getGuests({ per_page: 1 })
@@ -253,41 +262,37 @@ export function WargaDataPage({ activeTab = 'semua' }) {
           <p className="mt-1 text-sm text-neutral-700">Kelola data warga dan kependudukan</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <button className={toolButtonClass} onClick={exportCsv} type="button">
+          <Button variant="outline" size="sm" onClick={exportCsv}>
             <Icon name="download" className="h-4 w-4" />
             Export
-          </button>
-          <button className={toolButtonDisabledClass} disabled title="Hanya pengurus RT" type="button">
+          </Button>
+          <Button variant="outline" size="sm" disabled title="Hanya pengurus RT">
             <Icon name="upload" className="h-4 w-4" />
             Import
-          </button>
-          <button className={toolButtonDisabledClass} disabled title="Hanya pengurus RT" type="button">
+          </Button>
+          <Button variant="outline" size="sm" disabled title="Hanya pengurus RT">
             <Icon name="userPlus" className="h-4 w-4" />
             Tambah Warga
-          </button>
+          </Button>
         </div>
       </section>
 
       {/* Tabs */}
       <div className="mb-5 flex flex-wrap gap-1.5">
         {TABS.map((tab) => (
-          <button
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              activeTab === tab.id
-                ? 'bg-sky-600 text-white'
-                : 'text-neutral-600 hover:bg-sky-50 hover:text-sky-700'
-            }`}
+          <Button
+            variant={activeTab === tab.id ? 'default' : 'outline'}
+            size="sm"
             key={tab.id}
             onClick={() => switchTab(tab)}
-            type="button"
           >
             {tab.label}
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* Stats */}
-      {isHouseTab || isGuestTab || stats.length === 0 ? null : (
+      {(!isHouseTab && !isGuestTab && stats.length > 0) && (
         <section className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1" aria-label="Ringkasan kependudukan">
           {stats.map((item) => (
             <StatCard item={item} key={item.title} />
@@ -300,7 +305,7 @@ export function WargaDataPage({ activeTab = 'semua' }) {
         <div className="flex flex-1 items-center gap-2.5 max-sm:w-full">
           <div className="relative flex-1 max-w-md">
             <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-            <input
+            <Input
               className="h-9 w-full rounded-lg border border-neutral-300 pl-9 pr-3 text-sm text-neutral-800 outline-0 transition placeholder:text-neutral-400 focus:border-sky-500"
               placeholder="Cari nama, NIK, atau alamat..."
               value={search}
@@ -312,14 +317,15 @@ export function WargaDataPage({ activeTab = 'semua' }) {
           </div>
 
           <div className="relative">
-            <button
-              className="flex h-9 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-700 transition hover:border-sky-500 hover:text-sky-700"
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
               onClick={() => setOpenDropdown(openDropdown === 'filter' ? null : 'filter')}
-              type="button"
             >
               <Icon name="filter" className="h-4 w-4" />
               Filter
-            </button>
+            </Button>
             {openDropdown === 'filter' && !isHouseTab && !isGuestTab ? (
               <div className="absolute left-0 top-11 z-10 w-48 rounded-lg border border-neutral-200 bg-white p-3 shadow-lg">
                 <p className="text-xs font-semibold uppercase text-neutral-500">Status Warga</p>
@@ -340,41 +346,41 @@ export function WargaDataPage({ activeTab = 'semua' }) {
                   </label>
                 ))}
                 {statusFilter ? (
-                  <button
-                    className="mt-3 h-8 rounded-lg border border-neutral-300 px-3 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
                     onClick={() => {
                       setStatusFilter('')
                       setOpenDropdown(null)
                       setPage(1)
                     }}
-                    type="button"
                   >
                     Reset
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             ) : null}
           </div>
 
           <div className="relative">
-            <button
-              className="flex h-9 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-700 transition hover:border-sky-500 hover:text-sky-700"
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
               onClick={() => setOpenDropdown(openDropdown === 'columns' ? null : 'columns')}
-              type="button"
             >
               <Icon name="settings" className="h-4 w-4" />
               Columns
-            </button>
+            </Button>
             {openDropdown === 'columns' ? (
               <div className="absolute right-0 top-11 z-10 w-56 rounded-lg border border-neutral-200 bg-white p-3 shadow-lg">
                 <p className="text-xs font-semibold uppercase text-neutral-500">Tampilkan Kolom</p>
                 {columns.map((column) => (
                   <label className="mt-2 flex items-center gap-2 text-sm text-neutral-700" key={column.key}>
-                    <input
+                    <Checkbox
                       checked={visibleColumns.includes(column.key)}
-                      className="accent-sky-600"
-                      onChange={() => toggleColumn(column.key)}
-                      type="checkbox"
+                      onCheckedChange={() => toggleColumn(column.key)}
                     />
                     {column.label}
                   </label>
@@ -410,36 +416,33 @@ export function WargaDataPage({ activeTab = 'semua' }) {
           <p className="mt-2 text-sm font-semibold text-neutral-600">{emptyStateMessage}</p>
         </div>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-neutral-300 bg-white">
-          <table className="w-full min-w-[760px] border-collapse">
-            <thead>
-              <tr className="border-b border-neutral-200 bg-neutral-50 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                <th className="px-4 py-3">No</th>
+        <Table>
+          <TableCaption>Data kependudukan</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>No</TableHead>
+              {columns
+                .filter((c) => visibleColumns.includes(c.key))
+                .map((column) => (
+                  <TableHead key={column.key}>{column.label}</TableHead>
+                ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageRows.map((row, index) => (
+              <TableRow key={row.id_citizen || row.id_house || row.id_guest || index}>
+                <TableCell className="text-sm text-neutral-500">
+                  {(safePage - 1) * PER_PAGE + index + 1}
+                </TableCell>
                 {columns
                   .filter((c) => visibleColumns.includes(c.key))
                   .map((column) => (
-                    <th className="px-4 py-3" key={column.key}>
-                      {column.label}
-                    </th>
+                    <TableCell key={column.key}>{renderCell(column, row)}</TableCell>
                   ))}
-              </tr>
-            </thead>
-            <tbody>
-              {pageRows.map((row, index) => (
-                <tr className="border-b border-neutral-100 last:border-b-0 hover:bg-sky-50/50" key={row.id_citizen || row.id_house || row.id_guest || index}>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{(safePage - 1) * PER_PAGE + index + 1}</td>
-                  {columns
-                    .filter((c) => visibleColumns.includes(c.key))
-                    .map((column) => (
-                      <td className="px-4 py-3" key={column.key}>
-                        {renderCell(column, row)}
-                      </td>
-                    ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       {/* Pagination */}
@@ -449,22 +452,22 @@ export function WargaDataPage({ activeTab = 'semua' }) {
             Hal {safePage} dari {totalPages}
           </span>
           <div className="flex items-center gap-2">
-            <button
-              className="h-9 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-700 transition hover:border-sky-500 hover:text-sky-700 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:text-neutral-400"
+            <Button
+              variant="outline"
+              size="sm"
               disabled={safePage <= 1}
               onClick={() => setPage(safePage - 1)}
-              type="button"
             >
               Sebelumnya
-            </button>
-            <button
-              className="h-9 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-700 transition hover:border-sky-500 hover:text-sky-700 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:text-neutral-400"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               disabled={safePage >= totalPages}
               onClick={() => setPage(safePage + 1)}
-              type="button"
             >
               Berikutnya
-            </button>
+            </Button>
           </div>
         </div>
       )}

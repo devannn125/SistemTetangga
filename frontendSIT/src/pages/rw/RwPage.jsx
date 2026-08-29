@@ -1,10 +1,10 @@
 import { useEffect, useState, useMemo } from 'react'
-import { PortalLayout } from '../../components/layout/PortalLayout'
-import { PageShell } from '../../components/layout/PageShell'
-import { getAuthData } from '../../services/authService'
-import { useConfirm } from '../../components/ui/ConfirmContext'
-import { useToast } from '../../components/ui/ToastContext'
-import { Icon } from '../../components/ui/Icon'
+import { PortalLayout } from '@/components/layout/PortalLayout'
+import { PageShell } from '@/components/layout/PageShell'
+import { getAuthData } from '@/services/authService'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
+import { Icon } from '@/components/ui/Icon'
 import {
   getCitizens,
   updateCitizen,
@@ -20,7 +20,7 @@ import {
   getStatistikSummary,
   getDashboardStatistics,
   getFamilies
-} from '../../services/api'
+} from '@/services/api'
 import { BarChart, Bar as RechartsBar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RW

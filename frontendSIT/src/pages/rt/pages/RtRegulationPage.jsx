@@ -5,7 +5,7 @@ import { Badge } from '../../../components/ui/Badge'
 import { Button } from '../../../components/ui/Button'
 import { Alert } from '../../../components/ui/Alert'
 import { Input } from '../../../components/ui/Input'
-import { Select } from '../../../components/ui/Select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/Select'
 import { SkeletonCard } from '../../../components/ui/Skeleton'
 import { createRegulation, deleteRegulation, getRegulations, getWilayah, updateRegulation } from '../../../services/api'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
@@ -27,7 +27,9 @@ const initialForm = {
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
 }
 
 function categoryLabel(value) {
@@ -171,28 +173,48 @@ export default function RtRegulationPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-sm font-medium text-neutral-700">Kategori</label>
               <Select
-                label="Kategori"
-                value={form.kategori}
-                onChange={(e) => updateForm('kategori', e.target.value)}
-                options={selectCategoryOptions}
-              />
+                value={form.kategori || undefined}
+                onValueChange={(v) => updateForm('kategori', v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectCategoryOptions.map((o) => (
+                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-sm font-medium text-neutral-700">Wilayah</label>
               <Select
-                label="Wilayah"
-                value={form.id_wilayah}
-                onChange={(e) => updateForm('id_wilayah', e.target.value)}
-                options={selectWilayahOptions}
-                placeholder="Pilih wilayah"
-                required
-              />
+                value={form.id_wilayah || undefined}
+                onValueChange={(v) => updateForm('id_wilayah', v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih wilayah" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectWilayahOptions.map((o) => (
+                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-sm font-medium text-neutral-700">Judul</label>
               <Input
-                label="Judul"
                 value={form.judul}
                 onChange={(e) => updateForm('judul', e.target.value)}
                 required
               />
+            </div>
 
               <div className="flex flex-col gap-1.5 w-full">
                 <label className="text-sm font-medium text-neutral-700">Isi</label>
@@ -204,13 +226,15 @@ export default function RtRegulationPage() {
                 />
               </div>
 
-              <Input
-                label="Tanggal Berlaku"
-                type="date"
-                value={form.tanggal_berlaku}
-                onChange={(e) => updateForm('tanggal_berlaku', e.target.value)}
-                required
-              />
+              <div className="flex flex-col gap-1.5 w-full">
+                <label className="text-sm font-medium text-neutral-700">Tanggal Berlaku</label>
+                <Input
+                  type="date"
+                  value={form.tanggal_berlaku}
+                  onChange={(e) => updateForm('tanggal_berlaku', e.target.value)}
+                  required
+                />
+              </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button

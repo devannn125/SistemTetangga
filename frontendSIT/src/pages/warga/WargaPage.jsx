@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/Button'
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/Dialog'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 import { clearAuthData } from '@/services/authService'

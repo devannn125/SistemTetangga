@@ -1,9 +1,9 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { clearAuthData, getAuthData } from '@/services/authService'
 import { navigate } from '@/services/router'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/Button'
 
 export function Sidebar({ items, user }) {
   const [openMenus, setOpenMenus] = useState(['warga'])
@@ -53,7 +53,7 @@ export function Sidebar({ items, user }) {
             <div key={item.id}>
               <Button
                 variant={item.id === 'dashboard' ? 'default' : 'ghost'}
-                className="w-full justify-start gap-2"
+                className="w-full justify-start gap-2 hover:!bg-black hover:!text-white"
                 onClick={() => toggleMenu(item)}
                 aria-expanded={item.children ? isOpen : undefined}
               >
@@ -82,14 +82,14 @@ export function Sidebar({ items, user }) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="w-full justify-start text-neutral-500 hover:text-neutral-950"
+                            className="w-full justify-start text-neutral-500 hover:!bg-black hover:!text-white"
                             key={child}
                           >
                             {child}
                           </Button>
                         ) : (
                           <a
-                            className="min-h-8 rounded-md text-left text-sm text-neutral-500 no-underline transition hover:text-neutral-950"
+                            className="min-h-8 rounded-md text-left text-sm text-neutral-500 no-underline transition hover:bg-black hover:text-white hover:no-underline"
                             href={child.path}
                             key={child.path}
                             onClick={(event) => {

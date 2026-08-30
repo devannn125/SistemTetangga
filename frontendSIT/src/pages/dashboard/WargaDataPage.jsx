@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { DataTable } from '@/components/ui/DataTable'
-import { Badge } from '@/components/ui/badge'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/Badge'
+import { Label } from '@/components/ui/Label'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { getCitizens, getGuests, getHouses } from '@/services/api'
 import { navigate } from '@/services/router'
 
@@ -75,7 +75,7 @@ function GuestStatusBadge({ status }) {
 }
 
 function formatDate(value) {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -188,10 +188,10 @@ export function WargaDataPage({ activeTab = 'semua' }) {
   }
 
   function getCellValue(column, row) {
-    if (column.key === 'agama') return row.agama?.nama_master ?? '—'
-    if (column.key === 'alamat') return row.alamat ?? row.wilayah?.nama_wilayah ?? '—'
+    if (column.key === 'agama') return row.agama?.nama_master ?? 'â€”'
+    if (column.key === 'alamat') return row.alamat ?? row.wilayah?.nama_wilayah ?? 'â€”'
     if (column.key === 'jam_masuk') return formatDate(row.jam_masuk)
-    return row[column.key] ?? '—'
+    return row[column.key] ?? 'â€”'
   }
 
   function renderCell(column, row) {
@@ -235,7 +235,7 @@ export function WargaDataPage({ activeTab = 'semua' }) {
 
   const columnsWithRender = baseColumns.map((col) => ({
     ...col,
-    render: (row) => renderCell(col, row),
+    render: (value, row) => renderCell(col, row),
   }))
 
   const filters = isHouseTab
@@ -356,7 +356,7 @@ export function WargaDataPage({ activeTab = 'semua' }) {
 
         <span className="text-xs font-medium text-neutral-500">
           {loading ? 'Memuat...' : `${rows.length} data`}
-          {!isHouseTab && !isGuestTab ? ` · Tamu ${guestCount ?? '-'}` : ''}
+          {!isHouseTab && !isGuestTab ? ` Â· Tamu ${guestCount ?? '-'}` : ''}
         </span>
       </section>
 

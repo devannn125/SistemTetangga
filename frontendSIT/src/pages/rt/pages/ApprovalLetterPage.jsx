@@ -10,7 +10,9 @@ import { useToast } from '../../../components/ui/ToastContext'
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d)
 }
 
 const FILTERS = [
@@ -91,28 +93,28 @@ export default function ApprovalLetterPage() {
     {
       key: 'jenis_surat',
       label: 'Jenis Surat',
-      render: (row) => (
+      render: (value, row) => (
         <span className="font-medium text-neutral-900">
-          {row.jenis_surat === 'DOMISILI' ? 'Surat Ket. Domisili' : 'Surat Ket. Usaha'}
+          {value === 'DOMISILI' ? 'Surat Ket. Domisili' : 'Surat Ket. Usaha'}
         </span>
       ),
     },
     {
       key: 'pemohon',
       label: 'Pemohon',
-      render: (row) => row.pemohon?.nama_lengkap || '-',
+      render: (value, row) => value?.nama_lengkap || '-',
     },
     {
       key: 'keperluan',
       label: 'Keperluan / Usaha',
-      render: (row) => row.jenis_surat === 'DOMISILI' ? (row.keperluan || '-') : (row.nama_usaha || '-'),
+      render: (value, row) => row.jenis_surat === 'DOMISILI' ? (value || '-') : (row.nama_usaha || '-'),
     },
-    { key: 'created_at', label: 'Diajukan', render: (row) => formatDate(row.created_at) },
-    { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
+    { key: 'created_at', label: 'Diajukan', render: (value, row) => formatDate(value) },
+    { key: 'status', label: 'Status', render: (value, row) => <StatusBadge status={value} /> },
     {
       key: 'actions',
       label: 'Aksi',
-      render: (row) => row.status === 'DIVERIFIKASI' ? (
+      render: (value, row) => row.status === 'DIVERIFIKASI' ? (
         <div className="flex items-center gap-2">
           <Button
             variant="default"

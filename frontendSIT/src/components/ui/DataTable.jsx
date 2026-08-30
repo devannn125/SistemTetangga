@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { Input } from './Input'
-import { Select } from './Select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select'
 import { Button } from './Button'
 import { Table, THead, TBody, Tr, Th, Td } from './Table'
 import { SkeletonTable } from './Skeleton'
@@ -22,7 +22,7 @@ const DEFAULT_PER_PAGE = 10
  * Props:
  *   data              — array data yang akan ditampilkan
  *   columns           — array kolom: { key, label, render?, className? }
- *                       render(row, value) → ReactNode (opsional, untuk cell custom)
+ *                       render(value, row) → ReactNode (opsional, untuk cell custom)
  *   searchKeys        — array key field untuk dicari (default: semua kolom)
  *   searchPlaceholder — placeholder input search
  *   filters           — array filter: { key, label, options: [{ value, label }] }
@@ -44,8 +44,8 @@ const DEFAULT_PER_PAGE = 10
  *   data={bills}
  *   columns={[
  *     { key: 'periode', label: 'Periode' },
- *     { key: 'jumlah_tagihan', label: 'Jumlah', render: (row, val) => formatCurrency(val) },
- *     { key: 'status', label: 'Status', render: (row, val) => <StatusBadge status={val} /> },
+ *     { key: 'jumlah_tagihan', label: 'Jumlah', render: (val, row) => formatCurrency(val) },
+ *     { key: 'status', label: 'Status', render: (val, row) => <StatusBadge status={val} /> },
  *   ]}
  *   searchKeys={['periode', 'jumlah_tagihan']}
  *   searchPlaceholder="Cari tagihan..."
@@ -157,11 +157,19 @@ export function DataTable({
         {filters.map((filter) => (
           <div key={filter.key} className="min-w-[140px]">
             <Select
-              placeholder={`Filter ${filter.label}`}
-              value={filterValues[filter.key] ?? ''}
-              onChange={(e) => handleFilter(filter.key, e.target.value)}
-              options={filter.options}
-            />
+              value={filterValues[filter.key] || undefined}
+              onValueChange={(v) => handleFilter(filter.key, v === '__all' ? '' : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={`Filter ${filter.label}`} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua</SelectItem>
+                {filter.options.map((o) => (
+                  <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         ))}
 
@@ -244,7 +252,7 @@ export function DataTable({
                 {columns.map((col) => (
                   <Td key={col.key} className={col.className}>
                     {col.render
-                      ? col.render(row, row[col.key])
+                      ? col.render(row[col.key], row)
                       : (row[col.key] ?? '—')}
                   </Td>
                 ))}

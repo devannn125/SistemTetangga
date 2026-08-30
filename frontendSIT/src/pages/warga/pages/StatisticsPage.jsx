@@ -187,7 +187,7 @@ export default function StatisticsPage() {
                 <div className="mt-4 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <p className="text-xs font-bold uppercase text-neutral-500">Jenis Kelamin</p>
-                    <p className="mt-1 font-semibold text-black">Laki-laki {summary.kependudukan.jenis_kelamin.L} · Perempuan {summary.kependudukan.jenis_kelamin.P}</p>
+                    <p className="mt-1 font-semibold text-black">Laki-laki {summary.kependudukan.jenis_kelamin?.L ?? 0} · Perempuan {summary.kependudukan.jenis_kelamin?.P ?? 0}</p>
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase text-neutral-500">Usia Produktif / Tidak</p>

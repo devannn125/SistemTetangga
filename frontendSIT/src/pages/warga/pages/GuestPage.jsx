@@ -44,7 +44,9 @@ function formatLabel(value) {
 
 function formatDateTime(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d)
 }
 
 function getStatusClass(status) {

@@ -125,19 +125,19 @@ export default function RtCitizenPage() {
   }
 
   const COLUMNS = [
-    { key: 'nik', label: 'NIK', render: (row) => <span className="font-semibold text-neutral-900">{row.nik}</span> },
+    { key: 'nik', label: 'NIK', render: (value, row) => <span className="font-semibold text-neutral-900">{value}</span> },
     { key: 'nama_lengkap', label: 'Nama Lengkap' },
     { key: 'status_warga', label: 'Status Warga' },
     {
       key: 'status_verifikasi',
       label: 'Status Verifikasi',
-      render: (row) => <StatusBadge status={row.status_verifikasi || 'PENDING'} />,
+      render: (value, row) => <StatusBadge status={value || 'PENDING'} />,
     },
     {
       key: 'actions',
       label: 'Aksi',
       className: 'text-right',
-      render: (row) => (
+      render: (value, row) => (
         <Button
           variant="ghost"
           size="sm"

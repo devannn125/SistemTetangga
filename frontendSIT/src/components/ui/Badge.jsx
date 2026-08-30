@@ -33,11 +33,56 @@ function Badge({
   return (<div className={cn(badgeVariants({ variant }), className)} {...props} />);
 }
 
-function StatusBadge({ active }) {
-  return active ? (
-    <Badge variant="success">Aktif</Badge>
-  ) : (
-    <Badge variant="secondary">Nonaktif</Badge>
+const STATUS_LABELS = {
+  MENUNGGU: 'Menunggu',
+  DISETUJUI: 'Disetujui',
+  DITOLAK: 'Ditolak',
+  CHECK_OUT: 'Check Out',
+  DIAJUKAN: 'Diajukan',
+  DIVERIFIKASI: 'Diverifikasi',
+  DITANDATANGANI: 'Ditandatangani',
+  TERBIT: 'Terbit',
+  BELUM_BAYAR: 'Belum Bayar',
+  BELUM_LUNAS: 'Belum Lunas',
+  LUNAS: 'Lunas',
+  SEBAGIAN: 'Sebagian',
+  PENDING: 'Pending',
+  VERIFIED_RW: 'Terverifikasi RW',
+  APPROVED_DUKUH: 'Disetujui',
+  REJECTED: 'Ditolak',
+  AKTIF: 'Aktif',
+  ESKALASI: 'Eskalasi',
+}
+
+const STATUS_VARIANTS = {
+  MENUNGGU: 'warning',
+  DIAJUKAN: 'warning',
+  PENDING: 'warning',
+  BELUM_BAYAR: 'warning',
+  BELUM_LUNAS: 'warning',
+  DISETUJUI: 'success',
+  LUNAS: 'success',
+  AKTIF: 'success',
+  APPROVED_DUKUH: 'success',
+  TERBIT: 'success',
+  VERIFIED_RW: 'success',
+  DITOLAK: 'destructive',
+  REJECTED: 'destructive',
+  CHECK_OUT: 'secondary',
+  DITANDATANGANI: 'secondary',
+  DIVERIFIKASI: 'secondary',
+  SEBAGIAN: 'secondary',
+  ESKALASI: 'secondary',
+}
+
+function StatusBadge({ status, label }) {
+  const variant = STATUS_VARIANTS[status] || 'secondary'
+  const text = STATUS_LABELS[status] || status || '-'
+  return (
+    <div className="inline-flex items-center gap-1.5">
+      <Badge variant={variant}>{text}</Badge>
+      {label && <span className="text-xs text-neutral-500">{label}</span>}
+    </div>
   )
 }
 

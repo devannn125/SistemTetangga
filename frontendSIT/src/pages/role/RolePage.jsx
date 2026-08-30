@@ -1,6 +1,6 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/Button'
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/Dialog'
 import { clearAuthData, getAuthData, getAuthRole } from '@/services/authService'
 
 export function RolePage({ roleParam }) {

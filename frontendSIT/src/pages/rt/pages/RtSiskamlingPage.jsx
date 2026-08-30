@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
 import { DataTable } from '@/components/ui/DataTable'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/Dialog'
+import { Input } from '@/components/ui/Input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { Label } from '@/components/ui/Label'
 import { getSiskamlingSchedules, createSiskamlingSchedule, deleteSiskamlingSchedule, getCitizens, getWilayah } from '@/services/api'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
@@ -33,21 +33,21 @@ const SCHEDULE_COLUMNS = [
   {
     key: 'tanggal_jadwal',
     label: 'Tanggal',
-    render: (row) => <span className="font-medium text-neutral-900">{row.tanggal_jadwal}</span>,
+    render: (value, row) => <span className="font-medium text-neutral-900">{value}</span>,
   },
   {
     key: 'shift',
     label: 'Shift',
-    render: (row) => (
-      <Badge variant={row.shift === 'MALAM' ? 'info' : row.shift === 'PAGI' ? 'success' : 'default'}>
-        {row.shift}
+    render: (value, row) => (
+      <Badge variant={value === 'MALAM' ? 'info' : value === 'PAGI' ? 'success' : 'default'}>
+        {value}
       </Badge>
     ),
   },
   {
     key: 'petugas',
     label: 'Petugas',
-    render: (row) => row.petugas?.nama_lengkap || row.id_petugas_citizen || 'Unknown',
+    render: (value, row) => value?.nama_lengkap || row.id_petugas_citizen || 'Unknown',
   },
 ]
 
@@ -155,7 +155,7 @@ export default function RtSiskamlingPage() {
     {
       key: 'actions',
       label: 'Aksi',
-      render: (row) => (
+      render: (value, row) => (
         <Button
           variant="destructive"
           size="sm"

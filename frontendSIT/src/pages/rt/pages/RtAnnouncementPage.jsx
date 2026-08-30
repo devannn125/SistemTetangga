@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
 import { DataTable } from '@/components/ui/DataTable'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Alert } from '@/components/ui/alert'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Alert } from '@/components/ui/Alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import {
   Dialog,
   DialogContent,
@@ -12,12 +12,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+} from '@/components/ui/Dialog'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { Label } from '@/components/ui/Label'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { getAnnouncements, createAnnouncement, getWilayah } from '@/services/api'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
@@ -50,31 +50,31 @@ const COLUMNS = [
   {
     key: 'judul',
     label: 'Judul',
-    render: (row) => <span className="font-medium text-neutral-900">{row.judul}</span>,
+    render: (value, row) => <span className="font-medium text-neutral-900">{value}</span>,
   },
   {
     key: 'isi',
     label: 'Isi',
-    render: (row) => (
-      <p className="max-w-xs text-sm text-neutral-500 line-clamp-2">{row.isi}</p>
+    render: (value, row) => (
+      <p className="max-w-xs text-sm text-neutral-500 line-clamp-2">{value}</p>
     ),
   },
   {
     key: 'kategori',
     label: 'Kategori',
-    render: (row) => <Badge variant="info">{row.kategori}</Badge>,
+    render: (value, row) => <Badge variant="info">{value}</Badge>,
   },
   {
     key: 'target',
     label: 'Target',
-    render: (row) => <Badge variant="default">{row.target || 'Warga'}</Badge>,
+    render: (value, row) => <Badge variant="default">{value || 'Warga'}</Badge>,
   },
   {
     key: 'status_approval',
     label: 'Status',
-    render: (row) => (
-      <Badge variant={row.status_approval === 'RT' ? 'success' : 'warning'}>
-        {row.status_approval === 'RW' ? 'Menunggu RW' : row.status_approval || 'Aktif'}
+    render: (value, row) => (
+      <Badge variant={value === 'RT' ? 'success' : 'warning'}>
+        {value === 'RW' ? 'Menunggu RW' : value || 'Aktif'}
       </Badge>
     ),
   },

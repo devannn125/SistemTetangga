@@ -1,11 +1,19 @@
+function safeDate(value) {
+  if (!value) return null
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
 export function formatDate(value) {
-  if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+  const d = safeDate(value)
+  if (!d) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d)
 }
 
 export function formatDateShort(value) {
-  if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+  const d = safeDate(value)
+  if (!d) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
 }
 
 export function getStatusClass(status) {

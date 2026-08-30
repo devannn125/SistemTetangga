@@ -1,14 +1,13 @@
-import { useState } from 'react'
-import { Icon } from '@/components/ui/Icon'
+﻿import { Icon } from '@/components/ui/Icon'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { clearAuthData, getAuthData } from '@/services/authService'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/Button'
 
 /**
- * PortalSidebar — sidebar navigasi portal dengan item aktif + hover.
+ * PortalSidebar â€” sidebar navigasi portal dengan item aktif + hover.
  */
-function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubtitle }) {
+function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubtitle, onLogout }) {
   const authUser = getAuthData()
   const displayName = authUser?.nama_users || 'Pengguna'
   const displayRole = authUser?.role?.nama_role || 'Role'
@@ -49,22 +48,22 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
               key={item.path}
               href={item.path}
               className={cn(
-                'flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium no-underline transition-colors',
+                'flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium no-underline transition-colors hover:bg-black hover:text-white',
                 isActive
-                  ? 'bg-sky-50 text-sky-700 font-semibold'
-                  : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
+                  ? 'bg-black text-white font-semibold'
+                  : 'text-neutral-600',
               )}
             >
               <Icon
                 name={item.icon}
                 className={cn(
                   'h-4 w-4 shrink-0',
-                  isActive ? 'text-sky-600' : 'text-neutral-400',
+                  isActive ? 'text-white' : 'text-neutral-400',
                 )}
               />
               <span className="truncate">{item.label}</span>
               {isActive && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sky-600 shrink-0" />
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white shrink-0" />
               )}
             </a>
           )
@@ -73,7 +72,7 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
 
       {/* User info di bawah sidebar */}
       <div className="border-t border-neutral-100 p-3">
-        <div className="flex items-center gap-2.5 rounded-lg bg-neutral-50 px-3 py-2.5">
+        <div className="grid grid-cols-[36px_minmax(0,1fr)_28px] items-center gap-2.5 rounded-lg bg-neutral-50 px-3 py-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-700">
             {displayInitial}
           </span>
@@ -81,6 +80,15 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
             <p className="truncate text-sm font-semibold text-neutral-900">{displayName}</p>
             <p className="truncate text-xs text-neutral-400">{displayRole}</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-neutral-500 hover:text-red-600"
+            onClick={onLogout}
+            aria-label="Keluar"
+          >
+            <Icon name="logout" className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </aside>
@@ -88,58 +96,33 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
 }
 
 /**
- * PortalTopbar — topbar dengan tombol logout.
+ * PortalTopbar â€” topbar dengan tombol logout.
  */
 function PortalTopbar() {
-  const [confirmLogout, setConfirmLogout] = useState(false)
-  const confirm = useConfirm()
-
-  function handleLogout() {
-    setConfirmLogout(false)
-    clearAuthData()
-    window.location.assign('/login')
-  }
-
   return (
-    <header className="flex h-14 items-center justify-end border-b border-neutral-100 bg-white px-6">
-      <Button
-        variant="outline"
-        size="sm"
-        className="text-red-600 border-red-300 hover:bg-red-50"
-        onClick={() => confirm({
-          title: 'Konfirmasi Keluar',
-          message: 'Apakah Anda yakin ingin keluar dari akun ini?',
-          confirmLabel: 'Keluar',
-          onConfirm: handleLogout,
-        })}
-        type="button"
-      >
-        <Icon name="logout" className="h-4 w-4 mr-2" />
-        Keluar
-      </Button>
-    </header>
+    <header className="flex h-14 items-center justify-end border-b border-neutral-100 bg-white px-6" />
   )
 }
 
 /**
- * PortalFooter — footer sederhana.
+ * PortalFooter â€” footer sederhana.
  */
 function PortalFooter({ label }) {
   return (
     <footer className="border-t border-neutral-100 bg-white px-6 py-4 text-xs text-neutral-400">
       <div className="flex justify-between gap-4 max-sm:flex-col">
-        <span>© 2024 Kenaran &mdash; {label}</span>
-        <span>Kontak Pengurus · Bantuan · Kebijakan Privasi</span>
+        <span>Â© 2024 Kenaran &mdash; {label}</span>
+        <span>Kontak Pengurus Â· Bantuan Â· Kebijakan Privasi</span>
       </div>
     </footer>
   )
 }
 
 /**
- * PortalLayout — shell reusable untuk semua portal role (Warga, RT, RW, dst).
+ * PortalLayout â€” shell reusable untuk semua portal role (Warga, RT, RW, dst).
  * Tiap role tinggal kirim menuItems dan konten (children) miliknya sendiri.
  *
- * Props tidak berubah sama sekali — backward compatible.
+ * Props tidak berubah sama sekali â€” backward compatible.
  */
 export function PortalLayout({
   menuItems,
@@ -150,6 +133,20 @@ export function PortalLayout({
   footerLabel = 'Kenaran',
   children,
 }) {
+  const { confirm } = useConfirm()
+
+  function handleLogout() {
+    confirm({
+      title: 'Konfirmasi Keluar',
+      message: 'Apakah Anda yakin ingin keluar dari akun ini?',
+      confirmLabel: 'Keluar',
+      onConfirm: () => {
+        clearAuthData()
+        window.location.assign('/login')
+      },
+    })
+  }
+
   return (
     <div className="flex min-h-screen bg-neutral-50 text-neutral-900 max-md:block">
       <PortalSidebar
@@ -158,6 +155,7 @@ export function PortalLayout({
         homePath={homePath}
         brandTitle={brandTitle}
         brandSubtitle={brandSubtitle}
+        onLogout={handleLogout}
       />
 
       <section className="flex min-h-screen min-w-0 flex-1 flex-col">

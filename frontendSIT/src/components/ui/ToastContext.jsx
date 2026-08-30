@@ -9,7 +9,7 @@ export function ToastProvider({ children }) {
   }, [])
 
   return (
-    <ToastContext.Provider value={{ toast: showToast }}>
+    <ToastContext.Provider value={{ toast: showToast, showToast }}>
       {children}
       <Toaster
         position="top-right"

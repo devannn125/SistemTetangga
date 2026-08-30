@@ -11,7 +11,9 @@ import { useToast } from '../../../components/ui/ToastContext'
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
 }
 
 function isPastSla(complaint) {
@@ -151,37 +153,37 @@ export default function RtComplaintPage() {
     {
       key: 'nomor_tiket',
       label: 'Tiket',
-      render: (row) => (
+      render: (value, row) => (
         <span className="font-mono text-xs text-neutral-500">
-          {row.nomor_tiket || `#${row.id_complaint}`}
+          {value || `#${row.id_complaint}`}
         </span>
       ),
     },
     {
       key: 'judul',
       label: 'Judul',
-      render: (row) => (
+      render: (value, row) => (
         <div>
-          <p className="font-medium text-neutral-900">{row.judul}</p>
+          <p className="font-medium text-neutral-900">{value}</p>
           <p className="mt-0.5 text-xs text-neutral-400 line-clamp-1">{row.deskripsi}</p>
         </div>
       ),
     },
     { key: 'kategori', label: 'Kategori' },
     { key: 'urgensi', label: 'Urgensi' },
-    { key: 'created_at', label: 'Tanggal', render: (row) => formatDate(row.created_at) },
+    { key: 'created_at', label: 'Tanggal', render: (value, row) => formatDate(value) },
     {
       key: 'status',
       label: 'Status',
-      render: (row) => {
+      render: (value, row) => {
         const lockedBySla = isPastSla(row)
-        return <StatusBadge status={lockedBySla ? 'ESKALASI' : row.status} />
+        return <StatusBadge status={lockedBySla ? 'ESKALASI' : value} />
       },
     },
     {
       key: 'actions',
       label: 'Aksi',
-      render: (row) => {
+      render: (value, row) => {
         const lockedBySla = isPastSla(row)
         if (lockedBySla) {
           return (

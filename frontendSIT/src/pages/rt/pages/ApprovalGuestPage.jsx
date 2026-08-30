@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
 import { DataTable } from '@/components/ui/DataTable'
 import { StatusBadge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { getGuests, updateGuest } from '@/services/api'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d)
 }
 
 const FILTERS = [
@@ -83,18 +85,18 @@ export default function ApprovalGuestPage() {
     {
       key: 'nama',
       label: 'Nama Tamu',
-      render: (row) => <span className="font-medium text-neutral-900">{row.nama}</span>,
+      render: (value, row) => <span className="font-medium text-neutral-900">{value}</span>,
     },
-    { key: 'nik', label: 'NIK', render: (row) => row.nik || '-' },
-    { key: 'asal', label: 'Asal', render: (row) => row.asal || '-' },
-    { key: 'house', label: 'Rumah Tujuan', render: (row) => row.house?.alamat || '-' },
-    { key: 'jam_masuk', label: 'Masuk', render: (row) => formatDate(row.jam_masuk) },
-    { key: 'jam_keluar', label: 'Keluar', render: (row) => formatDate(row.jam_keluar) },
-    { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
+    { key: 'nik', label: 'NIK', render: (value, row) => value || '-' },
+    { key: 'asal', label: 'Asal', render: (value, row) => value || '-' },
+    { key: 'house', label: 'Rumah Tujuan', render: (value, row) => value?.alamat || '-' },
+    { key: 'jam_masuk', label: 'Masuk', render: (value, row) => formatDate(value) },
+    { key: 'jam_keluar', label: 'Keluar', render: (value, row) => formatDate(value) },
+    { key: 'status', label: 'Status', render: (value, row) => <StatusBadge status={value} /> },
     {
       key: 'actions',
       label: 'Aksi',
-      render: (row) => row.status === 'MENUNGGU' ? (
+      render: (value, row) => row.status === 'MENUNGGU' ? (
         <div className="flex items-center gap-2">
           <Button
             variant="default"

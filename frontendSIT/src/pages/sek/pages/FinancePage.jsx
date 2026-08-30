@@ -8,11 +8,15 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
 }
 
 function monthLabel(value) {
-  return new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  return new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(d)
 }
 
 function normalizeTransactions(response) {

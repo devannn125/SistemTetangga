@@ -5,6 +5,7 @@ import { getAuthData } from '@/services/authService'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 import { Icon } from '@/components/ui/Icon'
+import { DataTable } from '@/components/ui/DataTable'
 import {
   getCitizens,
   updateCitizen,
@@ -51,7 +52,9 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
 }
 
 function getVerificationStatusClass(status) {
@@ -358,6 +361,32 @@ function RwHousingPage() {
     })
   }, [])
 
+  const columns = [
+    {
+      key: 'tipe',
+      label: 'Tipe',
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 rounded text-xs font-bold ${value === 'KOS' ? 'bg-sky-100 text-sky-900' : 'bg-emerald-100 text-emerald-900'}`}>
+          {value === 'KOS' ? 'Kos' : 'Rumah Tinggal'}
+        </span>
+      ),
+    },
+    { key: 'alamat', label: 'Alamat', render: (value) => <span className="font-bold text-black">{value}</span> },
+    { key: 'wilayah', label: 'RT / Wilayah', render: (value) => value?.nama_wilayah || '-' },
+    { key: 'pemilik', label: 'Pemilik', render: (value) => value?.nama_lengkap || '-' },
+    { key: 'kategoriKos', label: 'Kategori Kos', render: (value, row) => row.tipe === 'KOS' ? (value?.nama_master || '-') : '-' },
+    { key: 'jumlah_kamar', label: 'Kamar / Penghuni', render: (value, row) => row.tipe === 'KOS' ? `${row.jumlah_kamar || 0} Kamar / ${row.jumlah_penghuni || 0} Orang` : '-' },
+    {
+      key: 'status_pajak',
+      label: 'Pajak',
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 rounded text-xs font-bold ${value === 'LUNAS' ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'}`}>
+          {value || '-'}
+        </span>
+      ),
+    },
+  ]
+
   return (
     <PageShell
       eyebrow="Perumahan"
@@ -365,52 +394,19 @@ function RwHousingPage() {
       description="Tinjau daftar rumah tinggal dan kamar kos warga tingkat RW secara read-only."
     >
       <section className="mt-8">
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-neutral-500 bg-white border rounded-xl">Memuat...</div>
-        ) : (
-          <div className="rounded-xl border bg-white overflow-hidden overflow-x-auto">
-            <table className="w-full text-left text-sm min-w-[900px]">
-              <thead className="bg-neutral-50 border-b">
-                <tr className="text-xs uppercase text-neutral-500">
-                  <th className="px-5 py-3 font-semibold">Tipe</th>
-                  <th className="px-5 py-3 font-semibold">Alamat</th>
-                  <th className="px-5 py-3 font-semibold">RT / Wilayah</th>
-                  <th className="px-5 py-3 font-semibold">Pemilik</th>
-                  <th className="px-5 py-3 font-semibold">Kategori Kos</th>
-                  <th className="px-5 py-3 font-semibold">Kamar / Penghuni</th>
-                  <th className="px-5 py-3 font-semibold">Pajak</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {houses.length === 0 ? (
-                  <tr><td colSpan="7" className="p-5 text-center text-neutral-500">Belum ada data perumahan</td></tr>
-                ) : (
-                  houses.map(h => (
-                    <tr key={h.id_house} className="hover:bg-neutral-50">
-                      <td className="px-5 py-3">
-                        <span className={`inline-flex px-2 py-1 rounded text-xs font-bold ${h.tipe === 'KOS' ? 'bg-sky-100 text-sky-900' : 'bg-emerald-100 text-emerald-900'}`}>
-                          {h.tipe === 'KOS' ? 'Kos' : 'Rumah Tinggal'}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 font-bold text-black">{h.alamat}</td>
-                      <td className="px-5 py-3">{h.wilayah?.nama_wilayah || '-'}</td>
-                      <td className="px-5 py-3">{h.pemilik?.nama_lengkap || '-'}</td>
-                      <td className="px-5 py-3">{h.tipe === 'KOS' ? (h.kategoriKos?.nama_master || '-') : '-'}</td>
-                      <td className="px-5 py-3">
-                        {h.tipe === 'KOS' ? `${h.jumlah_kamar || 0} Kamar / ${h.jumlah_penghuni || 0} Orang` : '-'}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className={`inline-flex px-2 py-1 rounded text-xs font-bold ${h.status_pajak === 'LUNAS' ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'}`}>
-                          {h.status_pajak || '-'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable
+          data={houses}
+          columns={columns}
+          searchKeys={['alamat', 'tipe', 'status_pajak']}
+          searchPlaceholder="Cari alamat, tipe, atau status..."
+          filters={[
+            { key: 'tipe', label: 'Tipe', options: [{ value: 'KOS', label: 'Kos' }, { value: 'NON_KOS', label: 'Rumah Tinggal' }] },
+            { key: 'status_pajak', label: 'Pajak', options: [{ value: 'LUNAS', label: 'Lunas' }, { value: 'BELUM_LUNAS', label: 'Belum Lunas' }] },
+          ]}
+          loading={isLoading}
+          emptyMessage="Belum ada data perumahan."
+          rowKey="id_house"
+        />
       </section>
     </PageShell>
   )

@@ -11,7 +11,9 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
 }
 
 function normalizeBills(response) {
@@ -19,24 +21,24 @@ function normalizeBills(response) {
 }
 
 const COLUMNS = [
-  { key: 'periode', label: 'Periode', render: (row) => <span className="font-semibold text-neutral-900">{row.periode}</span> },
+  { key: 'periode', label: 'Periode', render: (value, row) => <span className="font-semibold text-neutral-900">{value}</span> },
   {
     key: 'family',
     label: 'Keluarga',
-    render: (row) => row.family?.kepala_keluarga?.nama_lengkap || row.family?.no_kk || '-',
+    render: (value, row) => value?.kepala_keluarga?.nama_lengkap || value?.no_kk || '-',
   },
-  { key: 'jatuh_tempo', label: 'Jatuh Tempo', render: (row) => formatDate(row.jatuh_tempo) },
+  { key: 'jatuh_tempo', label: 'Jatuh Tempo', render: (value, row) => formatDate(value) },
   {
     key: 'jumlah_tagihan',
     label: 'Jumlah',
-    render: (row) => <span className="font-semibold">{formatCurrency(row.jumlah_tagihan)}</span>,
+    render: (value, row) => <span className="font-semibold">{formatCurrency(value)}</span>,
   },
   {
     key: 'status',
     label: 'Status',
-    render: (row) => <StatusBadge status={row.status} />,
+    render: (value, row) => <StatusBadge status={value} />,
   },
-  { key: 'dikonfirmasi_at', label: 'Dikonfirmasi', render: (row) => formatDate(row.dikonfirmasi_at) },
+  { key: 'dikonfirmasi_at', label: 'Dikonfirmasi', render: (value, row) => formatDate(value) },
 ]
 
 const FILTERS = [

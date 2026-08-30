@@ -3,7 +3,7 @@ import { PageShell } from '../../../components/layout/PageShell'
 import { Card, CardContent, CardHeader, CardTitle, CardDesc } from '../../../components/ui/Card'
 import { Badge } from '../../../components/ui/Badge'
 import { Input } from '../../../components/ui/Input'
-import { Select } from '../../../components/ui/Select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/Select'
 import { Button } from '../../../components/ui/Button'
 import { SkeletonCard } from '../../../components/ui/Skeleton'
 import { Search } from 'lucide-react'
@@ -67,11 +67,19 @@ export default function RtMessagePage() {
           </div>
           <div className="min-w-[140px]">
             <Select
-              placeholder="Filter Kategori"
-              value={kategoriFilter}
-              onChange={(e) => setKategoriFilter(e.target.value)}
-              options={KATEGORI_OPTIONS}
-            />
+              value={kategoriFilter || undefined}
+              onValueChange={(v) => setKategoriFilter(v === '__all' ? '' : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter Kategori" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua</SelectItem>
+                {KATEGORI_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {(search || kategoriFilter) && (
             <Button

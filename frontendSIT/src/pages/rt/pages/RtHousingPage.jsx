@@ -96,22 +96,22 @@ export default function RtHousingPage() {
   }
 
   const COLUMNS = [
-    { key: 'alamat', label: 'Alamat', render: (row) => <span className="font-semibold text-neutral-900">{row.alamat}</span> },
+    { key: 'alamat', label: 'Alamat', render: (value, row) => <span className="font-semibold text-neutral-900">{value}</span> },
     {
       key: 'tipe',
       label: 'Tipe',
-      render: (row) => <StatusBadge status={row.tipe === 'KOS' ? 'ESKALASI' : 'AKTIF'} label={row.tipe} />,
+      render: (value, row) => <StatusBadge status={value === 'KOS' ? 'ESKALASI' : 'AKTIF'} label={value} />,
     },
     {
       key: 'pemilik',
       label: 'Pemilik (Opsional)',
-      render: (row) => row.pemilik?.nama_lengkap || '-',
+      render: (value, row) => value?.nama_lengkap || '-',
     },
     {
       key: 'actions',
       label: 'Aksi',
       className: 'text-right',
-      render: (row) => (
+      render: (value, row) => (
         <Button
           variant="danger"
           size="sm"
@@ -142,8 +142,8 @@ export default function RtHousingPage() {
           <DataTable
             data={houses}
             columns={COLUMNS}
-            searchKeys={['alamat']}
-            searchPlaceholder="Cari alamat rumah..."
+            searchKeys={['alamat', 'tipe', 'status_kepemilikan', 'status_pajak', 'jumlah_kamar']}
+            searchPlaceholder="Cari alamat, tipe, atau status..."
             filters={FILTERS}
             loading={loading}
             error={error}

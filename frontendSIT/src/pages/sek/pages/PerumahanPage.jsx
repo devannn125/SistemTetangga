@@ -3,6 +3,8 @@ import { getHouses, createHouse, updateHouse, getCitizens, getMasterData, getWil
 import { PageShell } from '../../../components/layout/PageShell'
 import { useConfirm } from '../../../components/ui/ConfirmContext'
 import { useToast } from '../../../components/ui/ToastContext'
+import { DataTable } from '../../../components/ui/DataTable'
+import { Button } from '../../../components/ui/Button'
 import PerumahanFormModal from './PerumahanFormModal'
 import { toRows } from './utils'
 
@@ -109,6 +111,16 @@ export default function PerumahanPage() {
     { key: 'jumlah_penghuni', label: 'Penghuni', render: (v, row) => row.tipe === 'KOS' ? v : '-' },
     { key: 'status_pajak', label: 'Pajak', render: (v) => <span className={`inline-flex px-2 py-1 rounded text-xs font-bold ${getStatusPajakClass(v)}`}>{v}</span> },
     { key: 'status_aktif', label: 'Aktif', render: (v) => v ? 'Ya' : 'Tidak' },
+    {
+      key: 'actions',
+      label: 'Aksi',
+      render: (value, row) => (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => openEditPerumahan(row)}>Edit</Button>
+          <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => handleDelete(row.id_house)}>Nonaktifkan</Button>
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -118,67 +130,25 @@ export default function PerumahanPage() {
       description="Kelola data rumah warga dan kos/kost (CRUD) tingkat RT."
     >
       <section className="mt-8 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <button
-            className="rounded-full bg-black px-5 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-neutral-900"
-            onClick={openCreatePerumahan}
-            type="button"
-          >
-            + Tambah Perumahan
-          </button>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1" />
+          <Button size="sm" onClick={openCreatePerumahan}>+ Tambah Perumahan</Button>
         </div>
 
-        {isLoading ? (
-          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-            Memuat data...
-          </div>
-        ) : houses.length === 0 ? (
-          <div className="rounded-xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">
-            Belum ada data perumahan.
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-neutral-300 bg-white">
-            <table className="w-full min-w-[1100px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-neutral-300 text-xs uppercase text-neutral-500">
-                  {columns.map((col) => (
-                    <th key={col.key} className="px-5 py-3">{col.label}</th>
-                  ))}
-                  <th className="px-5 py-3">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {houses.map((item) => (
-                  <tr key={item.id_house} className="border-b border-neutral-100 last:border-0">
-                    {columns.map((col) => (
-                      <td key={col.key} className="px-5 py-3">
-                        {col.render ? col.render(item[col.key], item) : item[col.key] || '-'}
-                      </td>
-                    ))}
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-bold text-neutral-700 hover:bg-neutral-100 transition"
-                          onClick={() => openEditPerumahan(item)}
-                          type="button"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 transition"
-                          onClick={() => handleDelete(item.id_house)}
-                          type="button"
-                        >
-                          Nonaktifkan
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataTable
+          data={houses}
+          columns={columns}
+          searchKeys={['alamat', 'tipe', 'status_kepemilikan', 'status_pajak', 'jumlah_kamar']}
+          searchPlaceholder="Cari alamat, tipe, atau status..."
+          filters={[
+            { key: 'tipe', label: 'Tipe', options: [{ value: 'KOS', label: 'Kos/Kost' }, { value: 'NON_KOS', label: 'Rumah Warga' }] },
+            { key: 'status_kepemilikan', label: 'Kepemilikan', options: [{ value: 'MILIK_SENDIRI', label: 'Milik Sendiri' }, { value: 'KONTRAK', label: 'Kontrak' }] },
+            { key: 'status_pajak', label: 'Pajak', options: [{ value: 'LUNAS', label: 'Lunas' }, { value: 'BELUM_LUNAS', label: 'Belum Lunas' }] },
+          ]}
+          loading={isLoading}
+          emptyMessage="Belum ada data perumahan."
+          rowKey="id_house"
+        />
 
         <PerumahanFormModal
           open={perumahanModal.open}

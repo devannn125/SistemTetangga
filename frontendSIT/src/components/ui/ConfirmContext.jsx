@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+﻿import { createContext, useContext, useState, useCallback } from 'react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -8,7 +8,7 @@ import {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogCancel,
-} from '@/components/ui/alert-dialog'
+} from '@/components/ui/AlertDialog'
 
 const ConfirmContext = createContext(null)
 
@@ -23,15 +23,19 @@ export function ConfirmProvider({ children }) {
     onCancel: () => {},
   })
 
-  const confirm = useCallback((options) => {
-    setState({
-      open: true,
-      title: options.title || 'Konfirmasi',
-      message: options.message || '',
-      confirmLabel: options.confirmLabel || 'Ya, Lanjutkan',
-      cancelLabel: options.cancelLabel || 'Batal',
-      onConfirm: options.onConfirm || (() => {}),
-      onCancel: options.onCancel || (() => {}),
+  const confirm = useCallback((options = {}) => {
+    const { onConfirm, onCancel, ...rest } = options
+    return new Promise((resolve) => {
+      setState({
+        ...rest,
+        open: true,
+        title: options.title || 'Konfirmasi',
+        message: options.message || '',
+        confirmLabel: options.confirmLabel || 'Ya, Lanjutkan',
+        cancelLabel: options.cancelLabel || 'Batal',
+        onConfirm: () => { onConfirm?.(); resolve(true) },
+        onCancel: () => { onCancel?.(); resolve(false) },
+      })
     })
   }, [])
 

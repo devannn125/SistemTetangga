@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { getCitizens, createCitizen, updateCitizen, getFamilies, createFamily, updateFamily, getMasterData } from '@/services/api'
 import { PageShell } from '@/components/layout/PageShell'
 import { DataTable } from '@/components/ui/DataTable'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 import WargaFormModal from '@/pages/sek/pages/WargaFormModal'
@@ -198,14 +198,14 @@ export default function WargaPage() {
       key: 'no_hp',
       label: 'Kontak',
       render: (v, item) => (
-        <CellStack main={v || '-'} subs={[item.email]} />
+        <CellStack main={v || '-'} subs={[item?.email]} />
       ),
     },
     {
       key: 'pendidikan',
       label: 'Pendidikan & Profesi',
       render: (v, item) => (
-        <CellStack main={v?.nama_master || '-'} subs={[item.profesi?.nama_master]} />
+        <CellStack main={v?.nama_master || '-'} subs={[item?.profesi?.nama_master]} />
       ),
     },
     {
@@ -214,7 +214,7 @@ export default function WargaPage() {
       render: (v, item) => (
         <CellStack
           main={v?.nama_master || '-'}
-          subs={[item.status_nikah ? enumLabel(item.status_nikah) : null]}
+          subs={[item?.status_nikah ? enumLabel(item.status_nikah) : null]}
         />
       ),
     },
@@ -240,7 +240,7 @@ export default function WargaPage() {
       render: (v, item) => (
         <CellStack
           main={v?.no_kk || '-'}
-          subs={[item.hubungan_keluarga ? enumLabel(item.hubungan_keluarga) : null]}
+          subs={[item?.hubungan_keluarga ? enumLabel(item?.hubungan_keluarga) : null]}
         />
       ),
     },
@@ -251,10 +251,10 @@ export default function WargaPage() {
         <CellStack
           main={v ? `Masuk RT: ${formatDateShort(v)}` : '-'}
           subs={[
-            `KK Luar RT: ${yaTidakLabel(item.alamat_kk_luar_rt)}`,
-            `Domisili Luar: ${yaTidakLabel(item.berdomisili_luar_rt)}`,
-            item.status_hidup ? enumLabel(item.status_hidup) : null,
-            `Aktif: ${yaTidakLabel(item.status_aktif)}`,
+            `KK Luar RT: ${yaTidakLabel(item?.alamat_kk_luar_rt)}`,
+            `Domisili Luar: ${yaTidakLabel(item?.berdomisili_luar_rt)}`,
+            item?.status_hidup ? enumLabel(item.status_hidup) : null,
+            `Aktif: ${yaTidakLabel(item?.status_aktif)}`,
           ]}
         />
       ),
@@ -262,7 +262,7 @@ export default function WargaPage() {
     {
       key: 'actions',
       label: 'Aksi',
-      render: (row) => (
+      render: (_, row) => (
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -297,7 +297,7 @@ export default function WargaPage() {
     {
       key: 'actions',
       label: 'Aksi',
-      render: (row) => (
+      render: (_, row) => (
         <div className="flex items-center gap-2">
           <Button
             variant="outline"

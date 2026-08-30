@@ -1,6 +1,6 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/Button'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -8,11 +8,26 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
+} from '@/components/ui/DropdownMenu'
+import { Input } from '@/components/ui/Input'
+import { clearAuthData } from '@/services/authService'
+import { useConfirm } from '@/components/ui/ConfirmContext'
 
 export function Topbar() {
   const [searchOpen, setSearchOpen] = useState(false)
+  const { confirm } = useConfirm()
+
+  function handleLogout() {
+    confirm({
+      title: 'Konfirmasi Keluar',
+      message: 'Apakah Anda yakin ingin keluar dari akun ini?',
+      confirmLabel: 'Keluar',
+      onConfirm: () => {
+        clearAuthData()
+        window.location.assign('/login')
+      },
+    })
+  }
 
   return (
     <header className="flex h-16 items-center justify-between gap-5 border-b border-neutral-200 bg-neutral-50 px-6 max-md:h-auto max-md:flex-col max-md:items-stretch max-md:p-4">
@@ -60,7 +75,7 @@ export function Topbar() {
             <DropdownMenuItem>Profil</DropdownMenuItem>
             <DropdownMenuItem>Pengaturan Notifikasi</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">Keluar</DropdownMenuItem>
+            <DropdownMenuItem className="text-red-600" onClick={handleLogout}>Keluar</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

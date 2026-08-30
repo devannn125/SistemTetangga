@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
 import { DataTable } from '@/components/ui/DataTable'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Alert } from '@/components/ui/alert'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Alert } from '@/components/ui/Alert'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { getUsers, updateUser, assignUserRole, getCitizenMe } from '@/services/api'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
@@ -169,18 +169,18 @@ export default function RtUserManagementPage() {
     {
       key: 'nama_users',
       label: 'Nama Warga',
-      render: (row) => (
+      render: (value, row) => (
         <div>
-          <p className="font-medium text-neutral-900">{row.citizen?.nama_lengkap || row.nama_users}</p>
-          <p className="text-xs text-neutral-400">{row.citizen?.wilayah?.nama_wilayah || '-'} · {row.no_hp}</p>
+          <p className="font-medium text-neutral-900">{row.citizen?.nama_lengkap || value}</p>
+          <p className="text-xs text-neutral-400">{row.citizen?.wilayah?.nama_wilayah || '-'} Â· {row.no_hp}</p>
         </div>
       ),
     },
     {
       key: 'user_roles',
       label: 'Role Aktif',
-      render: (row) => {
-        const actives = (row.user_roles || []).filter((r) => r.status === 'ACTIVE')
+      render: (value, row) => {
+        const actives = (value || []).filter((r) => r.status === 'ACTIVE')
         const hasPengurus = actives.some((r) => r.kode !== 'WARGA')
         const displayRoles = hasPengurus ? actives.filter((r) => r.kode !== 'WARGA') : actives
         return (
@@ -201,16 +201,16 @@ export default function RtUserManagementPage() {
     {
       key: 'status',
       label: 'Status',
-      render: (row) => (
-        <Badge variant={STATUS_VARIANT[row.status] || 'default'}>
-          {STATUS_LABEL[row.status] || row.status}
+      render: (value, row) => (
+        <Badge variant={STATUS_VARIANT[value] || 'default'}>
+          {STATUS_LABEL[value] || value}
         </Badge>
       ),
     },
     {
       key: 'role_assign',
       label: 'Tunjuk Peran',
-      render: (row) => {
+      render: (value, row) => {
         const isStructural = ['SEKRETARIS', 'BENDAHARA'].includes(currentRoleCode(row))
         return (
           <select
@@ -230,7 +230,7 @@ export default function RtUserManagementPage() {
     {
       key: 'actions',
       label: 'Aksi',
-      render: (row) => (
+      render: (value, row) => (
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"

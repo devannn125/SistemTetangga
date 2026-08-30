@@ -11,11 +11,15 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
 }
 
 function monthLabel(value) {
-  return new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  return new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(d)
 }
 
 function normalizeTransactions(response) {
@@ -88,25 +92,25 @@ const COLUMNS = [
   {
     key: 'tanggal',
     label: 'Tanggal',
-    render: (row) => formatDate(row.tanggal || row.created_at),
+    render: (value, row) => formatDate(value || row.created_at),
   },
   {
     key: 'tipe',
     label: 'Tipe',
-    render: (row) => (
-      <span className={`text-xs font-semibold ${row.tipe === 'PEMASUKAN' ? 'text-emerald-700' : 'text-red-600'}`}>
-        {row.tipe}
+    render: (value, row) => (
+      <span className={`text-xs font-semibold ${value === 'PEMASUKAN' ? 'text-emerald-700' : 'text-red-600'}`}>
+        {value}
       </span>
     ),
   },
-  { key: 'kategori', label: 'Kategori', render: (row) => row.kategori || '-' },
-  { key: 'deskripsi', label: 'Deskripsi', render: (row) => row.deskripsi || '-' },
+  { key: 'kategori', label: 'Kategori', render: (value, row) => value || '-' },
+  { key: 'deskripsi', label: 'Deskripsi', render: (value, row) => value || '-' },
   {
     key: 'jumlah',
     label: 'Jumlah',
-    render: (row) => (
+    render: (value, row) => (
       <span className={`font-semibold ${row.tipe === 'PEMASUKAN' ? 'text-emerald-700' : 'text-red-600'}`}>
-        {row.tipe === 'PEMASUKAN' ? '+' : '-'}{formatCurrency(row.jumlah)}
+        {row.tipe === 'PEMASUKAN' ? '+' : '-'}{formatCurrency(value)}
       </span>
     ),
   },

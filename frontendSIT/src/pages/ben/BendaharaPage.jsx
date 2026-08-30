@@ -4,6 +4,7 @@ import { PageShell } from '@/components/layout/PageShell'
 import { getAuthData } from '@/services/authService'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
+import { DataTable } from '@/components/ui/DataTable'
 import {
   createFeeBill,
   createFinanceTransaction,
@@ -51,7 +52,9 @@ function getPurchaseStatusClass(status) {
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
 }
 
 function formatPeriod(value) {
@@ -576,41 +579,44 @@ function PerumahanPage() {
     }
   }
 
+  const columns = [
+    { key: 'alamat', label: 'Alamat', render: (value) => <span className="font-semibold text-neutral-900">{value}</span> },
+    { key: 'tipe', label: 'Tipe', render: (value) => value === 'KOS' ? 'Kos' : 'Rumah' },
+    { key: 'pemilik', label: 'Pemilik', render: (value) => value?.nama_lengkap || '-' },
+    {
+      key: 'status_pajak',
+      label: 'Status Pajak',
+      render: (value, row) => (
+        <select
+          value={value || ''}
+          disabled={savingId === row.id_house}
+          onChange={(e) => handlePajak(row.id_house, e.target.value)}
+          className="h-9 rounded-lg border border-neutral-300 bg-white px-3 text-xs outline-none focus:border-sky-600 disabled:opacity-50"
+        >
+          <option value="">-</option>
+          <option value="LUNAS">Lunas</option>
+          <option value="BELUM_LUNAS">Belum Lunas</option>
+        </select>
+      ),
+    },
+  ]
+
   return (
     <PageShell eyebrow="Perumahan" title="Data Rumah" description="Pemantauan rumah warga dan kos; input status pajak (read-only lainnya).">
       <section className="mt-8 space-y-4">
         {notice ? <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900">{notice}</div> : null}
-        {isLoading ? (
-          <div className="rounded-2xl border border-neutral-300 bg-white p-8 text-center text-sm font-semibold text-neutral-600">Memuat data rumah...</div>
-        ) : (
-          <div className="grid gap-4">
-            {houses.map((house) => (
-              <article key={house.id_house} className="rounded-2xl border border-neutral-300 bg-white p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-base font-extrabold text-black">{house.alamat}</h3>
-                    <p className="text-xs text-neutral-500">{house.tipe === 'KOS' ? 'Kos' : 'Rumah'}{house.pemilik?.nama_lengkap ? ` · Pemilik: ${house.pemilik.nama_lengkap}` : ''}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <label className="grid gap-1 text-xs font-bold text-black">
-                      Status Pajak
-                      <select
-                        value={house.status_pajak || ''}
-                        disabled={savingId === house.id_house}
-                        onChange={(e) => handlePajak(house.id_house, e.target.value)}
-                        className="h-9 rounded-lg border border-neutral-300 bg-white px-3 text-xs outline-none focus:border-sky-600 disabled:opacity-50"
-                      >
-                        <option value="">-</option>
-                        <option value="LUNAS">Lunas</option>
-                        <option value="BELUM_LUNAS">Belum Lunas</option>
-                      </select>
-                    </label>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+        <DataTable
+          data={houses}
+          columns={columns}
+          searchKeys={['alamat', 'tipe', 'status_pajak']}
+          searchPlaceholder="Cari alamat, tipe, atau status..."
+          filters={[
+            { key: 'status_pajak', label: 'Pajak', options: [{ value: 'LUNAS', label: 'Lunas' }, { value: 'BELUM_LUNAS', label: 'Belum Lunas' }] },
+          ]}
+          loading={isLoading}
+          emptyMessage="Belum ada data perumahan."
+          rowKey="id_house"
+        />
       </section>
     </PageShell>
   )

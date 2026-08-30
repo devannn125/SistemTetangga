@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import L from 'leaflet'
 import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -14,11 +14,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/Dialog'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { Label } from '@/components/ui/Label'
 
 const DEFAULT_CENTER = [-7.7956, 110.3695]
 

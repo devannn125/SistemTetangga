@@ -399,3 +399,9 @@ export function assignUserRole(id, roleKode) {
 export function getDashboardStatistics() {
   return request(`/dashboard`)
 }
+export function createSiskamlingCheckin(data) {
+  return request('/siskamling-checkins', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}

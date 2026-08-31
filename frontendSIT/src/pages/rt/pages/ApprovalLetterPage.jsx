@@ -114,7 +114,7 @@ export default function ApprovalLetterPage() {
     {
       key: 'actions',
       label: 'Aksi',
-      render: (value, row) => row.status === 'DIVERIFIKASI' ? (
+      render: (value, row) => (row.status === 'DIVERIFIKASI' || row.status === 'DIAJUKAN') ? (
         <div className="flex items-center gap-2">
           <Button
             variant="default"

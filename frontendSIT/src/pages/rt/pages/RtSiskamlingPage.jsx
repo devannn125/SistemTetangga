@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
 import { DataTable } from '@/components/ui/DataTable'
 import { Button } from '@/components/ui/Button'
@@ -19,36 +19,10 @@ import { getSiskamlingSchedules, createSiskamlingSchedule, deleteSiskamlingSched
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 
-const initialAlerts = [
-  { id: 101, tanggal: '2026-08-20', laporan: 'Mati lampu di blok A, patroli diperketat.', eskalasi: false },
-]
-
 const SHIFT_OPTIONS = [
   { value: 'PAGI', label: 'Pagi' },
   { value: 'SORE', label: 'Sore' },
   { value: 'MALAM', label: 'Malam' },
-]
-
-const SCHEDULE_COLUMNS = [
-  {
-    key: 'tanggal_jadwal',
-    label: 'Tanggal',
-    render: (value, row) => <span className="font-medium text-neutral-900">{value}</span>,
-  },
-  {
-    key: 'shift',
-    label: 'Shift',
-    render: (value, row) => (
-      <Badge variant={value === 'MALAM' ? 'info' : value === 'PAGI' ? 'success' : 'default'}>
-        {value}
-      </Badge>
-    ),
-  },
-  {
-    key: 'petugas',
-    label: 'Petugas',
-    render: (value, row) => value?.nama_lengkap || row.id_petugas_citizen || 'Unknown',
-  },
 ]
 
 const SCHEDULE_FILTERS = [
@@ -61,15 +35,28 @@ const SCHEDULE_FILTERS = [
       { value: 'MALAM', label: 'Malam' },
     ],
   },
+  {
+    key: 'bulan_tahun',
+    label: 'Bulan / Tahun',
+    options: [
+      { value: '2026-08', label: 'Agustus 2026' },
+      { value: '2026-07', label: 'Juli 2026' },
+      { value: '2026-06', label: 'Juni 2026' },
+    ]
+  }
 ]
 
 export default function RtSiskamlingPage() {
   const [schedules, setSchedules] = useState([])
   const [citizens, setCitizens] = useState([])
   const [wilayahs, setWilayahs] = useState([])
-  const [alerts, setAlerts] = useState(initialAlerts)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Modal Absensi State
+  const [isAbsensiModalOpen, setIsAbsensiModalOpen] = useState(false)
+  const [selectedAbsensi, setSelectedAbsensi] = useState(null)
+
   const confirm = useConfirm()
   const { showToast } = useToast()
 
@@ -89,9 +76,25 @@ export default function RtSiskamlingPage() {
         getWilayah({ per_page: 100 }),
       ])
       const scData = Array.isArray(resSched?.data) ? resSched.data : Array.isArray(resSched) ? resSched : []
+      
+      const scDataEnhanced = scData.map((s, idx) => {
+        const hasCheckin = s.checkins && s.checkins.length > 0;
+        const checkinData = hasCheckin ? s.checkins[0] : null;
+
+        return {
+          ...s,
+          nomor: idx + 1,
+          bulan_tahun: s.tanggal_jadwal ? s.tanggal_jadwal.substring(0, 7) : '',
+          status_absensi: hasCheckin ? 'HADIR' : 'BELUM',
+          timestamp_hadir: hasCheckin && checkinData?.checkin_time ? new Date(checkinData.checkin_time).toLocaleString('id-ID') : null,
+          foto_url: hasCheckin ? checkinData.foto_url : null
+        };
+      })
+
       const cData = Array.isArray(resCit?.data) ? resCit.data : Array.isArray(resCit) ? resCit : []
       const wData = Array.isArray(resWil?.data) ? resWil.data : Array.isArray(resWil) ? resWil : []
-      setSchedules(scData)
+      
+      setSchedules(scDataEnhanced)
       setCitizens(cData)
       setWilayahs(wData)
       if (wData.length > 0 && cData.length > 0) {
@@ -105,11 +108,6 @@ export default function RtSiskamlingPage() {
   }
 
   useEffect(() => { loadData() }, [])
-
-  function handleEscalateAlert(id) {
-    setAlerts(alerts.map((a) => (a.id === id ? { ...a, eskalasi: true } : a)))
-    showToast('Kejadian berhasil dieskalasi ke tingkat RW/Dukuh secara langsung.')
-  }
 
   async function handleAddSchedule(e) {
     e.preventDefault()
@@ -130,7 +128,8 @@ export default function RtSiskamlingPage() {
       setIsModalOpen(false)
       loadData()
     } catch (err) {
-      showToast('Gagal menyimpan jadwal: ' + err.message, 'error')
+      console.error(err)
+      showToast('Gagal menyimpan jadwal: ' + (err.response?.data?.message || err.message), 'error')
     }
   }
 
@@ -150,8 +149,61 @@ export default function RtSiskamlingPage() {
     }
   }
 
+  function handleViewAbsensi(row) {
+    setSelectedAbsensi(row)
+    setIsAbsensiModalOpen(true)
+  }
+
   const columnsWithAction = [
-    ...SCHEDULE_COLUMNS,
+    {
+      key: 'nomor',
+      label: '#',
+      render: (value) => <span className="text-neutral-500 font-medium">{value}</span>
+    },
+    {
+      key: 'tanggal_jadwal',
+      label: 'Tanggal',
+      render: (value, row) => <span className="font-bold text-neutral-900">{value}</span>,
+    },
+    {
+      key: 'shift',
+      label: 'Shift',
+      render: (value, row) => (
+        <Badge variant={value === 'MALAM' ? 'info' : value === 'PAGI' ? 'success' : 'default'}>
+          {value}
+        </Badge>
+      ),
+    },
+    {
+      key: 'petugas',
+      label: 'Petugas',
+      render: (value, row) => value?.nama_lengkap || row.id_petugas_citizen || 'Unknown',
+    },
+    {
+      key: 'status_absensi',
+      label: 'Status Absensi',
+      render: (value, row) => (
+        <div className="flex items-center gap-2">
+          {value === 'HADIR' ? (
+            <Badge variant="success">Hadir</Badge>
+          ) : (
+            <Badge variant="outline" className="text-neutral-500">Belum Absen</Badge>
+          )}
+          {value === 'HADIR' && (
+            <button 
+              onClick={() => handleViewAbsensi(row)}
+              className="text-sky-600 hover:text-sky-800 transition p-1"
+              title="Lihat Bukti Absensi"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+          )}
+        </div>
+      )
+    },
     {
       key: 'actions',
       label: 'Aksi',
@@ -170,26 +222,25 @@ export default function RtSiskamlingPage() {
   return (
     <PageShell
       eyebrow="Siskamling"
-      title="Jadwal & Kejadian Siskamling"
-      description="Kelola jadwal ronda warga. Kejadian atau laporan darurat dapat langsung dieskalasi ke RW/Dukuh tanpa melalui proses bertingkat (Bypass)."
+      title="Manajemen Jadwal Ronda"
+      description="Kelola jadwal ronda dan periksa bukti presensi petugas siskamling (Role Ketua RT)."
     >
       <div className="space-y-6">
-        {/* Jadwal Ronda */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Jadwal Ronda (Siskamling)</CardTitle>
-              <Button size="sm" onClick={() => setIsModalOpen(true)}>
+        <Card className="border-2 border-neutral-900 shadow-none rounded-xl">
+          <CardHeader className="border-b border-neutral-100">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <CardTitle className="text-xl font-extrabold text-black">Daftar Jadwal & Absensi Ronda</CardTitle>
+              <Button onClick={() => setIsModalOpen(true)} className="bg-black text-white hover:bg-neutral-800 font-bold rounded-lg px-4">
                 + Tambah Jadwal
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <DataTable
               data={schedules}
               columns={columnsWithAction}
-              searchKeys={['tanggal_jadwal']}
-              searchPlaceholder="Cari tanggal atau nama petugas..."
+              searchKeys={['tanggal_jadwal', 'petugas.nama_lengkap']}
+              searchPlaceholder="Cari nama petugas atau tanggal..."
               filters={SCHEDULE_FILTERS}
               loading={isLoading}
               emptyMessage="Belum ada jadwal ronda."
@@ -198,41 +249,43 @@ export default function RtSiskamlingPage() {
             />
           </CardContent>
         </Card>
-
-        {/* Log Kejadian & Eskalasi */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Log Kejadian & Darurat</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3">
-              {alerts.map((alert) => (
-                <div key={alert.id} className="flex items-start justify-between gap-4 rounded-lg border border-neutral-100 bg-neutral-50 p-4">
-                  <div>
-                    <p className="text-xs font-semibold text-neutral-400">{alert.tanggal}</p>
-                    <p className="mt-1 text-sm text-neutral-900">{alert.laporan}</p>
-                  </div>
-                  {alert.eskalasi ? (
-                    <Badge variant="destructive" className="shrink-0">Diteruskan ke RW</Badge>
-                  ) : (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="shrink-0"
-                      onClick={() => handleEscalateAlert(alert.id)}
-                    >
-                      Bypass Eskalasi
-                    </Button>
-                  )}
-                </div>
-              ))}
-              {alerts.length === 0 && (
-                <p className="py-4 text-center text-sm text-neutral-400">Tidak ada laporan kejadian.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Modal Absensi (View Detail) */}
+      <Dialog open={isAbsensiModalOpen} onOpenChange={setIsAbsensiModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detail Bukti Absensi</DialogTitle>
+          </DialogHeader>
+          {selectedAbsensi && (
+            <div className="space-y-4 py-2">
+              <div className="w-full h-48 bg-neutral-100 border border-neutral-300 rounded-lg flex items-center justify-center flex-col overflow-hidden text-neutral-400">
+                {selectedAbsensi.foto_url ? (
+                  <img src={selectedAbsensi.foto_url.startsWith('http') || selectedAbsensi.foto_url.startsWith('data:') ? selectedAbsensi.foto_url : `http://localhost:8000/storage/${selectedAbsensi.foto_url}`} alt="Bukti Selfie" className="w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <svg className="w-12 h-12 mb-2 opacity-30" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"></path></svg>
+                    <span className="text-sm font-bold">[Tidak ada foto]</span>
+                  </>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-y-2 text-sm border-t pt-4">
+                <span className="text-neutral-500 font-medium">Petugas</span>
+                <span className="font-bold text-black">{selectedAbsensi.petugas?.nama_lengkap}</span>
+                
+                <span className="text-neutral-500 font-medium">Shift</span>
+                <span className="font-bold text-black">{selectedAbsensi.shift}</span>
+                
+                <span className="text-neutral-500 font-medium">Waktu Check-in</span>
+                <span className="font-bold text-sky-600">{selectedAbsensi.timestamp_hadir || '-'}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={() => setIsAbsensiModalOpen(false)}>Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal Tambah Jadwal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -292,7 +345,7 @@ export default function RtSiskamlingPage() {
               </Select>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-3">
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 Batal
               </Button>
               <Button type="submit">Simpan Jadwal</Button>

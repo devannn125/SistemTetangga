@@ -20,7 +20,8 @@ import {
   getInventoryPurchases,
   getStatistikSummary,
   getDashboardStatistics,
-  getFamilies
+  getFamilies,
+  getCitizenMe
 } from '@/services/api'
 import { BarChart, Bar as RechartsBar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
@@ -944,13 +945,54 @@ function RwOrganizationPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    getOrganizationMembers({ per_page: 100 }).then(res => {
-      setMembers(Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [])
-      setIsLoading(false)
-    }).catch(err => {
-      console.error(err)
-      setIsLoading(false)
-    })
+    Promise.all([
+      getCitizenMe(),
+      getOrganizationMembers({ per_page: 100 })
+    ])
+      .then(([resMe, resOrg]) => {
+        const wil = resMe?.data?.wilayah || {}
+        const arr = Array.isArray(resOrg?.data) ? resOrg.data : Array.isArray(resOrg) ? resOrg : []
+
+        // RW Wants: Dukuh, RW, and ALL RTs under this RW
+        const userRoles = getAuthData()?.user_roles || []
+        const rwRole = userRoles.find(r => r.role?.kode_role === 'RW' && r.status === 'ACTIVE')
+        const myRwId = rwRole?.id_wilayah || wil.id_wilayah
+
+        const kelWilayahId = arr.find(m => m.wilayah?.tipe === 'KELURAHAN')?.wilayah?.id_wilayah
+
+        const validIds = [
+          kelWilayahId,
+          myRwId,
+          ...arr.filter(m => m.wilayah?.parent_id === myRwId).map(m => m.wilayah?.id_wilayah)
+        ].filter(Boolean)
+
+        const filtered = arr.filter(m => m.status_aktif && validIds.includes(m.id_wilayah))
+
+        const rank = { KELURAHAN: 1, RW: 2, RT: 3 }
+        filtered.sort((a, b) => {
+          const rA = rank[a.wilayah?.tipe] || 99
+          const rB = rank[b.wilayah?.tipe] || 99
+          if (rA !== rB) return rA - rB
+          
+          const getJobRank = (job = '') => {
+            const j = job.toLowerCase()
+            if (j.includes('dukuh')) return 1
+            if (j.includes('ketua rw')) return 2
+            if (j.includes('ketua rt')) return 3
+            if (j.includes('sekretaris')) return 4
+            if (j.includes('bendahara')) return 5
+            return 99
+          }
+          return getJobRank(a.jabatan) - getJobRank(b.jabatan)
+        })
+
+        setMembers(filtered)
+        setIsLoading(false)
+      })
+      .catch(err => {
+        console.error(err)
+        setIsLoading(false)
+      })
   }, [])
 
   return (
@@ -1077,3 +1119,5 @@ export function RwPage() {
     </PortalLayout>
   )
 }
+
+

@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -73,5 +73,5 @@ export function useConfirm() {
   if (!context) {
     throw new Error('useConfirm must be used within a ConfirmProvider')
   }
-  return context
+  return context.confirm
 }

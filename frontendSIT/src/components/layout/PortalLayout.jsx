@@ -1,4 +1,4 @@
-﻿import { Icon } from '@/components/ui/Icon'
+import { Icon } from '@/components/ui/Icon'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { clearAuthData, getAuthData } from '@/services/authService'
 import { cn } from '@/lib/utils'
@@ -133,7 +133,7 @@ export function PortalLayout({
   footerLabel = 'Kenaran',
   children,
 }) {
-  const { confirm } = useConfirm()
+  const confirm = useConfirm()
 
   function handleLogout() {
     confirm({

@@ -43,12 +43,14 @@ export default function RulesPage() {
             <div className="flex justify-between items-start border-b pb-4 mb-4">
               <div>
                 <h3 className="font-extrabold text-black text-lg">{d.judul}</h3>
-                <p className="mt-1 text-xs font-bold uppercase text-neutral-500">Tipe: {d.jenis_peraturan}</p>
+                <p className="mt-1 text-xs font-bold uppercase text-neutral-500">Tipe: {d.kategori}</p>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-neutral-700 whitespace-pre-wrap">{d.isi_peraturan || d.deskripsi}</p>
-            {d.file_url && (
-              <a href={d.file_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-xs font-bold uppercase text-sky-600 hover:underline">
+            <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-wrap">
+              {d.isi || d.deskripsi || 'Tidak ada deskripsi peraturan.'}
+            </div>
+            {d.lampiran_url && (
+              <a href={d.lampiran_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-xs font-bold uppercase text-sky-600 hover:underline">
                 Unduh Lampiran PDF
               </a>
             )}

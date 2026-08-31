@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -20,7 +20,6 @@ import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 
 const ALL_POSITIONS = [
-  'Ketua RT',
   'Sekretaris',
   'Bendahara',
   'Pengurus Siskamling',
@@ -226,14 +225,16 @@ export default function RtOrganizationPage() {
 
                 <div className="mt-6 flex w-full items-center justify-between border-t border-neutral-100 pt-4 text-xs">
                   <span className="text-neutral-400">Mulai: {m.periode_mulai}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-red-600 hover:bg-red-50 hover:text-red-700"
-                    onClick={() => handleDelete(m.id_organization_member || m.id)}
-                  >
-                    Cabut
-                  </Button>
+                  {(m.jabatan?.toLowerCase().includes('sekretaris') || m.jabatan?.toLowerCase().includes('bendahara')) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => handleDelete(m.id_organization_member || m.id)}
+                    >
+                      Cabut
+                    </Button>
+                  )}
                 </div>
               </Card>
             ))

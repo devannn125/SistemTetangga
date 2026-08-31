@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { clearAuthData, getAuthData } from '@/services/authService'
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 
 export function Sidebar({ items, user }) {
   const [openMenus, setOpenMenus] = useState(['warga'])
-  const { confirm } = useConfirm()
+  const confirm = useConfirm()
   const authUser = getAuthData()
 
   const displayName = authUser?.nama_users || user?.name || 'Administrator'

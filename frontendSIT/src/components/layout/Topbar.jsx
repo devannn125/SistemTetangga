@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { Button } from '@/components/ui/Button'
 import {
@@ -15,7 +15,7 @@ import { useConfirm } from '@/components/ui/ConfirmContext'
 
 export function Topbar() {
   const [searchOpen, setSearchOpen] = useState(false)
-  const { confirm } = useConfirm()
+  const confirm = useConfirm()
 
   function handleLogout() {
     confirm({

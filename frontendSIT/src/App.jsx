@@ -7,6 +7,7 @@ import { RtPage } from './pages/rt/RtPage'
 import { SekretarisPage } from './pages/sek/SekretarisPage'
 import { BendaharaPage } from './pages/ben/BendaharaPage'
 import { RwPage } from './pages/rw/RwPage'
+import { DukuhPage } from './pages/dukuh/DukuhPage'
 import { useDashboardData } from './hooks/useDashboardData'
 import { usePathname } from './services/router'
 
@@ -34,6 +35,10 @@ function App() {
     return <RwPage />
   }
 
+  if (pathname.startsWith('/dukuh')) {
+    return <DukuhPage />
+  }
+
   if (pathname.startsWith('/sek')) {
     return <SekretarisPage />
   }
@@ -44,8 +49,11 @@ function App() {
 
   if (pathname.startsWith('/role')) {
     const roleParam = pathname.replace(/^\/role\/?/, '').split('/')[0]?.toLowerCase()
-    if (roleParam === 'admin' || roleParam === 'dukuh') {
+    if (roleParam === 'admin') {
       return <DashboardPage data={data} error={error} isLoading={isLoading} />
+    }
+    if (roleParam === 'dukuh') {
+      return <DukuhPage />
     }
     if (roleParam === 'rt') {
       return <RtPage />

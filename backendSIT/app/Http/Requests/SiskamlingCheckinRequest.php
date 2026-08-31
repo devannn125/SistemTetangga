@@ -18,7 +18,7 @@ class SiskamlingCheckinRequest extends FormRequest
             'checkin_time' => ['required', 'date'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'foto_url' => ['nullable', 'url', 'max:500'],
+            'foto_url' => ['nullable', 'string'],
         ];
     }
 }

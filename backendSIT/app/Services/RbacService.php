@@ -229,7 +229,7 @@ class RbacService
      * Contoh: anchor KEL01 scope KELURAHAN → KEL01 + RW01/RW02 + RT01..RT04;
      * anchor RW01 scope RW → RW01 + RT01 + RT02.
      */
-    protected function expandWilayah(string $anchorId, string $scope): array
+        protected function expandWilayah(string $anchorId, string $scope): array
     {
         $anchor = Wilayah::find($anchorId);
         if (! $anchor) {
@@ -242,13 +242,26 @@ class RbacService
 
         $all = Wilayah::all(['id_wilayah', 'tipe', 'parent_id']);
 
+        $rootAnchorId = $anchorId;
+        if (in_array($scope, [self::SCOPE_RT, self::SCOPE_RW, self::SCOPE_KELURAHAN])) {
+            $current = $anchor;
+            while ($current && strtoupper($current->tipe) !== $scope) {
+                $parent = $all->firstWhere('id_wilayah', $current->parent_id);
+                if (!$parent) break;
+                $current = $parent;
+            }
+            if ($current && strtoupper($current->tipe) === $scope) {
+                $rootAnchorId = $current->id_wilayah;
+            }
+        }
+
         $children = [];
         foreach ($all as $w) {
             $children[$w->parent_id][] = $w->id_wilayah;
         }
 
         $result = [];
-        $queue = [$anchorId];
+        $queue = [$rootAnchorId];
 
         while (! empty($queue)) {
             $id = array_shift($queue);
@@ -262,3 +275,4 @@ class RbacService
         return array_values(array_unique($result));
     }
 }
+

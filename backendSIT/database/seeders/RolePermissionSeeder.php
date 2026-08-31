@@ -100,7 +100,7 @@ class RolePermissionSeeder extends Seeder
             ->max() ?: 0;
 
         foreach ($roles as $roleKode => $roleId) {
-            foreach ($matrix[$roleKode] as $module => $grants) {
+            foreach ($matrix[$roleKode] ?? [] as $module => $grants) {
                 $moduleId = DB::table('module')->where('kode_module', $module)->value('id_module');
                 if (! $moduleId) {
                     continue;
@@ -182,7 +182,7 @@ class RolePermissionSeeder extends Seeder
                 'SURAT' => $view('RW'),
                 'PENGUMUMAN' => $view('RW'),
                 'PERATURAN' => $view('RW'),
-                'ORGANISASI' => $view('RW'),
+                'ORGANISASI' => $view('KELURAHAN'),
                 'PENGADUAN' => $view('RW'),
                 'INVENTARIS' => $view('RW'),
                 'STATISTIK' => $view('RW'),
@@ -198,10 +198,15 @@ class RolePermissionSeeder extends Seeder
                 'KEUANGAN' => $view('RT'),
                 'IURAN' => array_merge($view('RT'), [['action' => 'APPROVE', 'level' => 'RT']]),
                 'SURAT' => array_merge($view('RT'), [['action' => 'APPROVE', 'level' => 'RT']]),
-                'SISKAMLING' => array_merge($view('RT'), [['action' => 'CREATE', 'level' => 'RT'], ['action' => 'UPDATE', 'level' => 'RT'], ['action' => 'APPROVE', 'level' => 'RT']]),
+                'SISKAMLING' => array_merge($crud('RT'), [['action' => 'APPROVE', 'level' => 'RT']]),
                 'PENGUMUMAN' => $crud('RT'),
                 'PERATURAN' => $crud('RT'),
-                'ORGANISASI' => $crud('RT'),
+                'ORGANISASI' => [
+                    ['action' => 'VIEW', 'level' => 'KELURAHAN'],
+                    ['action' => 'CREATE', 'level' => 'RT'],
+                    ['action' => 'UPDATE', 'level' => 'RT'],
+                    ['action' => 'DELETE', 'level' => 'RT']
+                ],
                 'PESAN' => $view('RT'),
                 'PENGADUAN' => array_merge($view('RT'), [['action' => 'UPDATE', 'level' => 'RT'], ['action' => 'APPROVE', 'level' => 'RT']]),
                 'NOTIFIKASI' => $view('RT'),
@@ -259,10 +264,10 @@ class RolePermissionSeeder extends Seeder
                 'KEUANGAN' => $view('OWN'),
                 'IURAN' => $view('OWN'),
                 'SURAT' => [['action' => 'CREATE', 'level' => 'OWN'], ['action' => 'VIEW', 'level' => 'OWN']],
-                'SISKAMLING' => $view('OWN'),
+                'SISKAMLING' => array_merge($view('OWN'), [['action' => 'CREATE', 'level' => 'OWN']]),
                 'PENGUMUMAN' => $view('OWN'),
                 'PERATURAN' => $view('OWN'),
-                'ORGANISASI' => $view('OWN'),
+                'ORGANISASI' => $view('KELURAHAN'),
                 'PESAN' => [['action' => 'CREATE', 'level' => 'OWN']],
                 'PENGADUAN' => [['action' => 'CREATE', 'level' => 'OWN'], ['action' => 'VIEW', 'level' => 'OWN']],
                 'NOTIFIKASI' => $view('OWN'),

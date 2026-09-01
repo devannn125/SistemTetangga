@@ -11,7 +11,7 @@ export default function DataKepalaDukuhPage() {
   const { showToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [dataList, setDataList] = useState([])
-  const [dukuhs, setDukuhs] = useState([])
+  
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({
     nama: '',
@@ -35,15 +35,19 @@ export default function DataKepalaDukuhPage() {
       const arrOrg = Array.isArray(resOrg?.data) ? resOrg.data : Array.isArray(resOrg) ? resOrg : []
       const arrWil = Array.isArray(resWil?.data) ? resWil.data : Array.isArray(resWil) ? resWil : []
 
-      const dukuhList = arrWil.filter((w) => w.tipe === 'DUKUH').sort((a, b) => a.kode_wilayah.localeCompare(b.kode_wilayah))
-      setDukuhs(dukuhList)
-      const dukuhIds = new Set(dukuhList.map((d) => d.id_wilayah))
+      const kelurahanId = arrWil.find(w => w.tipe === 'KELURAHAN')?.id_wilayah;
+      if (kelurahanId) setForm(f => ({ ...f, id_wilayah: kelurahanId }));
 
-      const appointed = new Set(arrOrg.filter((m) => m.status_aktif && m.jabatan?.toLowerCase().includes('kepala dukuh')).map((m) => m.id_citizen))
+      const appointed = new Set(arrOrg.filter((m) => m.status_aktif).map((m) => m.id_citizen))
 
       const calons = arrCit
-        .filter((c) => dukuhIds.has(c.id_wilayah) && !appointed.has(c.id_citizen))
-        .map((c) => ({ ...c, _dukuh: dukuhList.find((d) => d.id_wilayah === c.id_wilayah)?.nama_wilayah || '-' }))
+        .filter((c) => {
+          const wId = c.wilayah?.id_wilayah || c.id_wilayah;
+          return wId === kelurahanId && !appointed.has(c.id_citizen);
+        })
+        .map((c) => {
+          return { ...c, _dukuh: 'Belum Ditugaskan' };
+        })
       setDataList(calons)
     } catch (err) {
       console.error(err)
@@ -57,14 +61,14 @@ export default function DataKepalaDukuhPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.nama || !form.email || !form.password || !form.nik || !form.no_hp || !form.id_wilayah) {
-      showToast('Lengkapi semua field (Nama, Email, Password, NIK, No. HP, Wilayah Dukuh).', 'error')
+      showToast('Lengkapi semua field (Nama, Email, Password, NIK, No. HP).', 'error')
       return
     }
     setIsSubmitting(true)
     try {
       await createStrukturPengurus(form)
       showToast('Data Kepala Dukuh berhasil dibuat. Silakan angkat di menu Struktur Organisasi.')
-      setForm({ nama: '', email: '', password: '', nik: '', no_hp: '', jenis_kelamin: 'L', id_wilayah: '' })
+      setForm((f) => ({ ...f, nama: '', email: '', password: '', nik: '', no_hp: '', jenis_kelamin: 'L' }))
       loadData()
     } catch (err) {
       showToast(err.message || 'Gagal membuat data Kepala Dukuh.', 'error')
@@ -77,7 +81,7 @@ export default function DataKepalaDukuhPage() {
     <PageShell
       eyebrow="Kependudukan"
       title="Data Kepala Dukuh"
-      description="Buat data kepengurusan Kepala Dukuh sebagai akun (login). Pilih wilayah dukuh yang sudah dibuat di menu Wilayah Dukuh."
+      description="Buat data kepengurusan Kepala Dukuh sebagai akun (login). Angkat jabatan ini ke wilayah spesifik melalui menu Struktur Organisasi."
     >
       <section className="mx-auto mt-6 max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-neutral-300 bg-white p-6 shadow-sm">
@@ -117,23 +121,6 @@ export default function DataKepalaDukuhPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-black">Wilayah Dukuh <span className="text-red-500">*</span></Label>
-            <Select value={form.id_wilayah} onValueChange={(v) => setForm({ ...form, id_wilayah: v })}>
-              <SelectTrigger>
-                <SelectValue placeholder="-- Pilih Wilayah Dukuh --" />
-              </SelectTrigger>
-              <SelectContent>
-                {dukuhs.length === 0 ? (
-                  <SelectItem value="__none__" disabled>Belum ada wilayah dukuh. Buat dulu di menu Wilayah Dukuh.</SelectItem>
-                ) : dukuhs.map((d) => (
-                  <SelectItem key={d.id_wilayah} value={d.id_wilayah}>
-                    {d.nama_wilayah} ({d.kode_wilayah})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <button
             type="submit"
             disabled={isSubmitting}
@@ -152,7 +139,7 @@ export default function DataKepalaDukuhPage() {
                 <tr className="text-xs uppercase text-neutral-500">
                   <th className="px-5 py-3 font-semibold">Nama</th>
                   <th className="px-5 py-3 font-semibold">Email</th>
-                  <th className="px-5 py-3 font-semibold">Wilayah Dukuh</th>
+                  <th className="px-5 py-3 font-semibold">Status Wilayah</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -164,7 +151,7 @@ export default function DataKepalaDukuhPage() {
                   <tr key={c.id_citizen} className="hover:bg-neutral-50">
                     <td className="px-5 py-3 font-bold text-black">{c.nama_lengkap}</td>
                     <td className="px-5 py-3">{c.email || '-'}</td>
-                    <td className="px-5 py-3">{c._dukuh}</td>
+                    <td className="px-5 py-3"><span className="inline-block rounded-full bg-yellow-100 text-yellow-800 px-2 py-0.5 text-xs font-semibold">{c._dukuh}</span></td>
                   </tr>
                 ))}
               </tbody>

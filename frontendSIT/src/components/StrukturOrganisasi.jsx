@@ -126,7 +126,11 @@ export default function StrukturOrganisasi() {
       const appointedCitizens = new Set(activeMembers.map((m) => m.id_citizen))
       const calons = arrCit
         .filter((c) => !appointedCitizens.has(c.id_citizen))
-        .map((c) => ({ id_citizen: c.id_citizen, nama_lengkap: c.nama_lengkap }))
+        .map((c) => ({ 
+          id_citizen: c.id_citizen, 
+          nama_lengkap: c.nama_lengkap,
+          id_wilayah: c.wilayah?.id_wilayah || c.id_wilayah
+        }))
       setCitizens(calons)
     } catch (err) {
       console.error('Gagal memuat struktur organisasi:', err)
@@ -273,6 +277,13 @@ export default function StrukturOrganisasi() {
 
   const addJabatan = addModal.type ? JABATAN[addModal.type] : ''
   const addNodes = addModal.type ? targetNodes(addModal.type) : []
+  const availableCitizens = form.id_wilayah ? citizens.filter((c) => {
+    if (addModal.type === 'dukuh') {
+      const kelId = wilayahs.find(w => w.tipe === 'KELURAHAN')?.id_wilayah;
+      return c.id_wilayah === kelId;
+    }
+    return c.id_wilayah === form.id_wilayah;
+  }) : []
 
   return (
     <PageShell
@@ -487,15 +498,15 @@ export default function StrukturOrganisasi() {
                 <SelectTrigger>
                   <SelectValue placeholder="-- Pilih Calon Pengurus --" />
                 </SelectTrigger>
-                <SelectContent>
-                  {citizens.length === 0 ? (
-                    <SelectItem value="__none__" disabled>Tidak ada calon. Buat data terlebih dahulu.</SelectItem>
-                  ) : citizens.map((c) => (
-                    <SelectItem key={c.id_citizen} value={c.id_citizen}>
-                      {c.nama_lengkap}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                  <SelectContent>
+                    {availableCitizens.length === 0 ? (
+                      <SelectItem value="__none__" disabled>Tidak ada calon di wilayah ini.</SelectItem>
+                    ) : availableCitizens.map((c) => (
+                      <SelectItem key={c.id_citizen} value={c.id_citizen}>
+                        {c.nama_lengkap}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

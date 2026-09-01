@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { Input } from './Input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from './Select'
 import { Button } from './Button'
 import { Table, THead, TBody, Tr, Th, Td } from './Table'
 import { SkeletonTable } from './Skeleton'
@@ -107,7 +107,12 @@ export function DataTable({
     // Dropdown filters
     Object.entries(filterValues).forEach(([key, value]) => {
       if (value) {
-        result = result.filter((row) => String(row[key]) === String(value))
+        result = result.filter((row) => {
+          if (Array.isArray(row[key])) {
+            return row[key].map(String).includes(String(value));
+          }
+          return String(row[key]) === String(value);
+        })
       }
     })
 
@@ -164,11 +169,27 @@ export function DataTable({
                 <SelectValue placeholder={`Filter ${filter.label}`} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all">Semua</SelectItem>
-                {filter.options.map((o) => (
-                  <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
+                  <SelectItem value="__all">Semua</SelectItem>
+                  {filter.options.map((o, idx) => {
+                    if (o.group) {
+                      return (
+                        <SelectGroup key={`group-${idx}`}>
+                          <SelectLabel className="bg-neutral-50 border-y border-neutral-100 font-bold">{o.group}</SelectLabel>
+                          {o.items.map((item) => (
+                            <SelectItem key={item.value} value={String(item.value)}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      );
+                    }
+                    return (
+                      <SelectItem key={o.value || idx} value={String(o.value)}>
+                        {o.label}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
             </Select>
           </div>
         ))}

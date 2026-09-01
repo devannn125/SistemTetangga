@@ -10,7 +10,7 @@ class LoginRequest extends FormRequest
     /**
      * Kode role yang valid, sesuai isi tabel `role`.
      */
-    public const VALID_ROLES = ['ADMIN', 'DUKUH', 'RW', 'RT', 'SEKRETARIS', 'BENDAHARA', 'WARGA'];
+    public const VALID_ROLES = ['ADMIN', 'LURAH', 'DUKUH', 'RW', 'RT', 'SEKRETARIS', 'BENDAHARA', 'WARGA'];
 
     public function authorize(): bool
     {

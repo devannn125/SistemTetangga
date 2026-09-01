@@ -30,7 +30,7 @@ class RolePermissionController extends BaseApiController
             'id_module' => ['required', 'exists:module,id_module'],
             'id_permission_action' => ['required', 'exists:permission_action,id_permission_action'],
             'resource_scope' => ['nullable', 'string', 'max:100'],
-            'scope_level' => ['required', 'in:OWN,RT,RW,KELURAHAN,ALL'],
+            'scope_level' => ['required', 'in:OWN,RT,RW,DUKUH,KELURAHAN,ALL'],
         ]);
 
         $rp = RolePermission::updateOrCreate(

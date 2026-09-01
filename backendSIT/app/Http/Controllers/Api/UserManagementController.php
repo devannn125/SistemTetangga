@@ -20,7 +20,7 @@ class UserManagementController extends BaseApiController
 
     private const CUSTOM_ROLES = ['WARGA', 'SISKAMLING', 'PKK', 'KARANG_TARUNA'];
 
-    private const PROTECTED_ROLES = ['ADMIN', 'DUKUH', 'RW', 'RT', 'SEKRETARIS', 'BENDAHARA'];
+    private const PROTECTED_ROLES = ['ADMIN', 'LURAH', 'DUKUH', 'RW', 'RT', 'SEKRETARIS', 'BENDAHARA'];
 
     private const ORG_JABATAN = [
         'SISKAMLING' => 'Pengurus Siskamling',

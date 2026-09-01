@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\WilayahRequest;
 use App\Http\Resources\WilayahResource;
 use App\Models\Wilayah;
+use App\Services\RbacService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class WilayahController extends BaseApiController
 {
@@ -20,7 +24,7 @@ class WilayahController extends BaseApiController
         }
         if ($request->has('parent_id')) {
             $query->where('parent_id', $request->query('parent_id'));
-        } else {
+        } elseif (! filter_var($request->query('all'), FILTER_VALIDATE_BOOLEAN)) {
             $query->whereNull('parent_id');
         }
 
@@ -31,11 +35,85 @@ class WilayahController extends BaseApiController
     {
         $this->authorizeModule('MASTER', 'CREATE');
 
-        $wilayah = Wilayah::create($request->validated());
+        $validated = $request->validated();
+        $user = $this->requestUser();
+
+        // Kepala Lurah: hanya berwenang membuat node DUKUH di bawah kelurahan
+        // yang menjadi lingkupnya, dengan kode_wilayah auto-generate (DUK##).
+        if ($this->rbac->hasAnyRole($user, ['LURAH'])) {
+            return response()->json($this->storeDukuh($request, $validated), 201);
+        }
+
+        // Non-LURAH (mis. ADMIN): kode_wilayah wajib diisi.
+        if (empty($validated['kode_wilayah'])) {
+            throw ValidationException::withMessages([
+                'kode_wilayah' => ['Kode wilayah wajib diisi.'],
+            ]);
+        }
+
+        $wilayah = Wilayah::create($validated);
 
         $this->audit('MASTER', 'CREATE', 'wilayah', $wilayah->id_wilayah);
 
         return (new WilayahResource($wilayah))->response()->setStatusCode(201);
+    }
+
+    /**
+     * Buat node DUKUH oleh Kepala Lurah: parent harus node KELURAHAN dalam
+     * lingkup aktor, kode_wilayah dikonsistensikan mengikuti pola DUK##.
+     */
+    protected function storeDukuh(Request $request, array $validated): array
+    {
+        $user = $this->requestUser();
+        $tipe = strtoupper((string) ($validated['tipe'] ?? 'DUKUH'));
+
+        if ($tipe !== 'DUKUH') {
+            throw ValidationException::withMessages([
+                'tipe' => ['Kepala Lurah hanya dapat membuat wilayah bertipe Dukuh.'],
+            ]);
+        }
+
+        $parentId = $validated['parent_id'] ?? null;
+        $parent = $parentId ? Wilayah::find($parentId) : null;
+        if (! $parent || strtoupper((string) $parent->tipe) !== 'KELURAHAN') {
+            throw ValidationException::withMessages([
+                'parent_id' => ['Dukuh harus berada di bawah Kelurahan.'],
+            ]);
+        }
+
+        // Zero-trust: parent (kelurahan) harus dalam lingkup aktor utk MASTER.CREATE.
+        $scopeIds = $this->rbac->wilayahScopeIds($user, 'MASTER', 'CREATE');
+        if ($scopeIds !== null && ! in_array($parent->id_wilayah, $scopeIds, true)) {
+            throw ValidationException::withMessages([
+                'parent_id' => ['Kelurahan di luar lingkup kewenangan Anda.'],
+            ]);
+        }
+
+        $nama = trim((string) ($validated['nama_wilayah'] ?? ''));
+        if ($nama === '') {
+            throw ValidationException::withMessages([
+                'nama_wilayah' => ['Nama wilayah dukuh wajib diisi.'],
+            ]);
+        }
+
+        // Auto-generate kode konsisten: DUK + nomor berikutnya (DUK01, DUK02, ...).
+        $next = (int) Wilayah::query()
+            ->where('kode_wilayah', 'like', 'DUK%')
+            ->pluck('kode_wilayah')
+            ->map(fn ($k) => (int) preg_replace('/\D/', '', (string) $k))
+            ->max() ?: 0;
+        $kode = 'DUK'.str_pad((string) ($next + 1), 2, '0', STR_PAD_LEFT);
+
+        $wilayah = Wilayah::create([
+            'nama_wilayah' => $nama,
+            'tipe' => 'DUKUH',
+            'kode_wilayah' => $kode,
+            'parent_id' => $parent->id_wilayah,
+        ]);
+
+        $this->audit('MASTER', 'CREATE', 'wilayah', $wilayah->id_wilayah);
+
+        return (new WilayahResource($wilayah))->resolve() + ['message' => 'Wilayah Dukuh berhasil dibuat.'];
     }
 
     public function show(string $id)

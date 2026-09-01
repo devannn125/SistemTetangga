@@ -22,8 +22,9 @@ class RolePermissionSeeder extends Seeder
     private function seedRoles(): void
     {
         $roles = [
-            ['kode' => 'ADMIN', 'nama_role' => 'Administrator', 'level' => 1, 'is_strategic' => true, 'deskripsi' => 'Administrator sistem'],
-            ['kode' => 'DUKUH', 'nama_role' => 'Kepala Dukuh', 'level' => 2, 'is_strategic' => true, 'deskripsi' => 'Pengelola tingkat kelurahan/dukuh'],
+            ['kode' => 'ADMIN', 'nama_role' => 'Administrator', 'level' => 0, 'is_strategic' => true, 'deskripsi' => 'Administrator sistem'],
+            ['kode' => 'LURAH', 'nama_role' => 'Kepala Lurah', 'level' => 1, 'is_strategic' => true, 'deskripsi' => 'Kepala Kelurahan / Lurah'],
+            ['kode' => 'DUKUH', 'nama_role' => 'Kepala Dukuh', 'level' => 2, 'is_strategic' => true, 'deskripsi' => 'Pengelola tingkat dukuh (sub kelurahan)'],
             ['kode' => 'RW', 'nama_role' => 'Ketua RW', 'level' => 3, 'is_strategic' => false, 'deskripsi' => 'Pengurus tingkat RW'],
             ['kode' => 'RT', 'nama_role' => 'Ketua RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Pengurus tingkat RT'],
             ['kode' => 'SEKRETARIS', 'nama_role' => 'Sekretaris RT', 'level' => 4, 'is_strategic' => true, 'deskripsi' => 'Sekretaris tingkat RT'],
@@ -117,6 +118,7 @@ class RolePermissionSeeder extends Seeder
                         ->where('id_module', $moduleId)
                         ->where('id_permission_action', $actionId)
                         ->where('resource_scope', $grant['scope'] ?? '*')
+                        ->where('scope_level', $grant['level'] ?? 'ALL')
                         ->exists();
 
                     if ($exists) {
@@ -158,6 +160,8 @@ class RolePermissionSeeder extends Seeder
             'ADMIN' => $admin,
 
             // Kepala Dukuh: read-only lintas wilayah, tanpa data sensitif/operasional.
+            // Kecuali Struktur Organisasi: dukuh berwenang mengangkat/mencabut Ketua RW
+            // di wilayah dukuh masing-masing.
             'DUKUH' => [
                 'DASHBOARD' => $view('KELURAHAN'),
                 'WARGA' => $view('KELURAHAN'),
@@ -166,10 +170,40 @@ class RolePermissionSeeder extends Seeder
                 'KEUANGAN' => $view('KELURAHAN'),
                 'PENGUMUMAN' => $view('KELURAHAN'),
                 'PERATURAN' => $view('KELURAHAN'),
-                'ORGANISASI' => $view('KELURAHAN'),
+                'ORGANISASI' => [
+                    ['action' => 'VIEW', 'level' => 'KELURAHAN'],
+                    ['action' => 'CREATE', 'level' => 'DUKUH'],
+                    ['action' => 'DELETE', 'level' => 'DUKUH'],
+                ],
                 'PENGADUAN' => $view('KELURAHAN'),
                 'INVENTARIS' => $view('KELURAHAN'),
                 'STATISTIK' => $view('KELURAHAN'),
+                'MASTER' => $view('KELURAHAN'),
+            ],
+
+            // Kepala Lurah: kelola seluruh wilayah kelurahan, termasuk angkat/cabut
+            // Kepala Dukuh di tiap dukuh. Boleh membuat node wilayah Dukuh
+            // di bawah kelurahan (bukan kelurahan/RW/RT).
+            'LURAH' => [
+                'DASHBOARD' => $view('KELURAHAN'),
+                'WARGA' => $view('KELURAHAN'),
+                'KELUARGA' => $view('KELURAHAN'),
+                'PERUMAHAN' => $view('KELURAHAN'),
+                'KEUANGAN' => $view('KELURAHAN'),
+                'PENGUMUMAN' => $view('KELURAHAN'),
+                'PERATURAN' => $view('KELURAHAN'),
+                'ORGANISASI' => [
+                    ['action' => 'VIEW', 'level' => 'KELURAHAN'],
+                    ['action' => 'CREATE', 'level' => 'KELURAHAN'],
+                    ['action' => 'DELETE', 'level' => 'KELURAHAN'],
+                ],
+                'PENGADUAN' => $view('KELURAHAN'),
+                'INVENTARIS' => $view('KELURAHAN'),
+                'STATISTIK' => $view('KELURAHAN'),
+                'MASTER' => [
+                    ['action' => 'VIEW', 'level' => 'KELURAHAN'],
+                    ['action' => 'CREATE', 'level' => 'KELURAHAN'],
+                ],
             ],
 
             // Ketua RW: agregat seluruh RT di bawahnya + verifikasi warga baru.

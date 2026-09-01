@@ -27,6 +27,14 @@ class OrganizationMemberRequest extends FormRequest
                         return;
                     }
 
+                    // Enforce lokasi hanya saat warga ditempatkan di RT langsung
+                    // (Ketua RT / pengurus RT). Untuk jabatan tingkat RW atau Dukuh,
+                    // warga boleh berada di wilayah lain di bawah cakupan yang sama.
+                    $wilayahTipe = \App\Models\Wilayah::where('id_wilayah', $idWilayah)->value('tipe');
+                    if ($wilayahTipe !== 'RT') {
+                        return;
+                    }
+
                     $citizenWilayah = Citizen::query()
                         ->where('id_citizen', $value)
                         ->value('id_wilayah');

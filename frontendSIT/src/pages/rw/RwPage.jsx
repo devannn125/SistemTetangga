@@ -16,14 +16,13 @@ import {
   getFinanceTransactions,
   getLetterRequests,
   getRegulations,
-  getOrganizationMembers,
   getInventoryPurchases,
   getStatistikSummary,
   getDashboardStatistics,
   getFamilies,
-  getCitizenMe
 } from '@/services/api'
 import { BarChart, Bar as RechartsBar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import StrukturOrganisasi from '@/components/StrukturOrganisasi'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RW
 // Dashboard (read), Data Warga (verify), Keuangan (monitor), Surat Keterangan (read),
@@ -941,97 +940,7 @@ function RwRegulationPage() {
 
 // 9. STRUKTUR ORGANISASI (READ ONLY)
 function RwOrganizationPage() {
-  const [members, setMembers] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    Promise.all([
-      getCitizenMe(),
-      getOrganizationMembers({ per_page: 100 })
-    ])
-      .then(([resMe, resOrg]) => {
-        const wil = resMe?.data?.wilayah || {}
-        const arr = Array.isArray(resOrg?.data) ? resOrg.data : Array.isArray(resOrg) ? resOrg : []
-
-        // RW Wants: Dukuh, RW, and ALL RTs under this RW
-        const userRoles = getAuthData()?.user_roles || []
-        const rwRole = userRoles.find(r => r.role?.kode_role === 'RW' && r.status === 'ACTIVE')
-        const myRwId = rwRole?.id_wilayah || wil.id_wilayah
-
-        const kelWilayahId = arr.find(m => m.wilayah?.tipe === 'KELURAHAN')?.wilayah?.id_wilayah
-
-        const validIds = [
-          kelWilayahId,
-          myRwId,
-          ...arr.filter(m => m.wilayah?.parent_id === myRwId).map(m => m.wilayah?.id_wilayah)
-        ].filter(Boolean)
-
-        const filtered = arr.filter(m => m.status_aktif && validIds.includes(m.id_wilayah))
-
-        const rank = { KELURAHAN: 1, RW: 2, RT: 3 }
-        filtered.sort((a, b) => {
-          const rA = rank[a.wilayah?.tipe] || 99
-          const rB = rank[b.wilayah?.tipe] || 99
-          if (rA !== rB) return rA - rB
-          
-          const getJobRank = (job = '') => {
-            const j = job.toLowerCase()
-            if (j.includes('dukuh')) return 1
-            if (j.includes('ketua rw')) return 2
-            if (j.includes('ketua rt')) return 3
-            if (j.includes('sekretaris')) return 4
-            if (j.includes('bendahara')) return 5
-            return 99
-          }
-          return getJobRank(a.jabatan) - getJobRank(b.jabatan)
-        })
-
-        setMembers(filtered)
-        setIsLoading(false)
-      })
-      .catch(err => {
-        console.error(err)
-        setIsLoading(false)
-      })
-  }, [])
-
-  return (
-    <PageShell
-      eyebrow="Struktur Organisasi"
-      title="Struktur Pengurus Lingkungan"
-      description="Daftar pengurus RT/RW yang aktif menjabat di wilayah kerja RW."
-    >
-      <section className="mt-8">
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-neutral-500 bg-white border rounded-xl">Memuat data pengurus...</div>
-        ) : members.length === 0 ? (
-          <div className="p-8 text-center text-sm text-neutral-500 bg-white border rounded-xl">Belum ada data pengurus terdaftar.</div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {members.filter(m => m.status_aktif).map(m => (
-              <div key={m.id_organization_member} className="flex flex-col items-center rounded-2xl border border-neutral-300 bg-white p-6 relative">
-                <div className="mb-4 flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 text-4xl font-extrabold text-neutral-300 shadow-sm">
-                  {m.foto_url ? (
-                    <img src={m.foto_url.startsWith('http') ? m.foto_url : 'http://127.0.0.1:8000/storage/' + m.foto_url} alt="Foto" className="h-full w-full object-cover" />
-                  ) : (
-                    m.citizen?.nama_lengkap?.[0] || '?'
-                  )}
-                </div>
-                <div className="text-center">
-                  <h3 className="text-lg font-bold text-black">{m.citizen?.nama_lengkap || '-'}</h3>
-                  <p className="mt-1 text-xs font-extrabold uppercase tracking-wide text-sky-600">{m.jabatan}</p>
-                  <p className="mt-1 text-xs text-neutral-400">RT: {m.wilayah?.nama_wilayah || '-'}</p>
-                </div>
-                <p className="mt-4 w-full border-t border-neutral-100 pt-3 text-[10px] text-neutral-400 text-center font-medium">
-                  Periode Mulai: {formatDate(m.periode_mulai)}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </PageShell>
-  )
+  return <StrukturOrganisasi />
 }
 
 // 10. INVENTARIS (READ ONLY)

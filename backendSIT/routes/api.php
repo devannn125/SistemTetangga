@@ -35,9 +35,9 @@ use App\Http\Controllers\Api\SiskamlingScheduleController;
 use App\Http\Controllers\Api\UserManagementController;
 use App\Http\Controllers\Api\UserRoleController;
 use App\Http\Controllers\Api\UserSessionController;
+use App\Http\Controllers\Api\StrukturPengurusController;
 use App\Http\Controllers\Api\WilayahController;
 use Illuminate\Support\Facades\Route;
-
 Route::post('/login', [AuthController::class, 'login']);
 
 // Dashboard agregat statistik (publik, dipakai halaman login/landing).
@@ -75,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Organisasi & Regulasi.
     Route::apiResource('organization-members', OrganizationMemberController::class);
+    Route::post('struktur/pengurus', [StrukturPengurusController::class, 'store']);
     Route::apiResource('regulations', RegulationController::class);
 
     // Pengumuman, Feedback, Pengaduan.

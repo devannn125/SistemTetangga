@@ -19,6 +19,7 @@ import RtHousingPage from '@/pages/sek/pages/PerumahanPage'
 import RtOrganizationPage from '@/pages/rt/pages/RtOrganizationPage'
 import RtMessagePage from '@/pages/rt/pages/RtMessagePage'
 import RtStatisticsPage from '@/pages/rt/pages/RtStatisticsPage'
+import StrukturOrganisasi from '@/components/StrukturOrganisasi'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RT
 // (Dashboard full, Data Warga CRUD, Perumahan, Tamu approve, Keuangan read,
@@ -37,7 +38,8 @@ const rtMenus = [
   { label: 'Siskamling', path: '/rt/siskamling', icon: 'shield' },
   { label: 'Informasi & Statistik', path: '/rt/statistik', icon: 'trendingUp' },
   { label: 'Peraturan', path: '/rt/peraturan', icon: 'scroll' },
-  { label: 'Struktur Organisasi', path: '/rt/organisasi', icon: 'users' },
+  { label: 'Struktur Organisasi', path: '/rt/struktur', icon: 'building' },
+  { label: 'Kelola Pengurus', path: '/rt/organisasi', icon: 'users' },
   { label: 'Pesan Warga', path: '/rt/pesan', icon: 'message' },
   { label: 'Pengumuman', path: '/rt/pengumuman', icon: 'megaphone' },
   { label: 'Manajemen User', path: '/rt/user', icon: 'key' },
@@ -334,6 +336,7 @@ function renderPage(activePath) {
   if (activePath === '/rt/siskamling') return <RtSiskamlingPage />
   if (activePath === '/rt/statistik') return <RtStatisticsPage />
   if (activePath === '/rt/peraturan') return <RtRegulationPage />
+  if (activePath === '/rt/struktur') return <StrukturOrganisasi />
   if (activePath === '/rt/organisasi') return <RtOrganizationPage />
   if (activePath === '/rt/pesan') return <RtMessagePage />
   if (activePath === '/rt/pengumuman') return <RtAnnouncementPage />

@@ -80,9 +80,11 @@ export function LoginPage() {
               ? '/ben'
               : roleLower === 'dukuh'
                 ? '/dukuh'
-                : roleLower === 'admin'
-                  ? '/dashboard'
-                  : `/role/${roleLower}`
+                : roleLower === 'lurah'
+                  ? '/kelurahan'
+                  : roleLower === 'admin'
+                    ? '/dashboard'
+                    : `/role/${roleLower}`
 
       const destination = response.data?.redirect_to || fallbackDest
       window.location.assign(destination)
@@ -232,6 +234,7 @@ export function LoginPage() {
                   {[
                     { email: 'siti@example.com', password: 'password', label: 'Warga' },
                     { email: 'admin@sukamaju.test', password: 'password', label: 'Admin' },
+                    { email: 'lurah@sukamaju.test', password: 'password', label: 'Kepala Lurah' },
                     { email: 'budi@example.com', password: 'password', label: 'Ketua RT' },
                     { email: 'dukuh@sukamaju.test', password: 'password', label: 'Kepala Dukuh' },
                     { email: 'bendahara@example.com', password: 'password', label: 'Bendahara' },

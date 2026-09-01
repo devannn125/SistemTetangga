@@ -18,5 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call(AdditionalRolesSeeder::class);
         $this->call(CleanWargaSeeder::class);
         $this->call(InventorySeeder::class);
+        $this->call(OrganisasiHierarkiSeeder::class);
     }
 }

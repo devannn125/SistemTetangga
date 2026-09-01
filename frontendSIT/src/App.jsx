@@ -8,6 +8,7 @@ import { SekretarisPage } from './pages/sek/SekretarisPage'
 import { BendaharaPage } from './pages/ben/BendaharaPage'
 import { RwPage } from './pages/rw/RwPage'
 import { DukuhPage } from './pages/dukuh/DukuhPage'
+import { KelurahanPage } from './pages/kelurahan/KelurahanPage'
 import { useDashboardData } from './hooks/useDashboardData'
 import { usePathname } from './services/router'
 
@@ -39,6 +40,10 @@ function App() {
     return <DukuhPage />
   }
 
+  if (pathname.startsWith('/kelurahan')) {
+    return <KelurahanPage />
+  }
+
   if (pathname.startsWith('/sek')) {
     return <SekretarisPage />
   }
@@ -60,6 +65,9 @@ function App() {
     }
     if (roleParam === 'rw') {
       return <RwPage />
+    }
+    if (roleParam === 'lurah') {
+      return <KelurahanPage />
     }
     return <RolePage roleParam={roleParam} />
   }

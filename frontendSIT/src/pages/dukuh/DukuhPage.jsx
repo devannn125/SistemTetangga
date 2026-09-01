@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { PortalLayout } from '@/components/layout/PortalLayout'
-import DukuhOrganizationPage from './pages/DukuhOrganizationPage'
+import StrukturOrganisasi from '@/components/StrukturOrganisasi'
+import DataPengurusPage from './pages/DataPengurusPage'
 import { PageShell } from '@/components/layout/PageShell'
 import { getAuthData } from '@/services/authService'
 import { useConfirm } from '@/components/ui/ConfirmContext'
@@ -32,11 +33,12 @@ import { BarChart, Bar as RechartsBar, XAxis, YAxis, CartesianGrid, Tooltip, Leg
 const DukuhMenus = [
   { label: 'Beranda', path: '/dukuh', icon: 'home' },
   { label: 'Data Warga', path: '/dukuh/warga', icon: 'users' },
+  { label: 'Data Ketua RW / RT', path: '/dukuh/data-pengurus', icon: 'users' },
   { label: 'Perumahan', path: '/dukuh/perumahan', icon: 'box' },
   { label: 'Keuangan', path: '/dukuh/keuangan', icon: 'wallet' },
   { label: 'Informasi & Statistik', path: '/dukuh/statistik', icon: 'trendingUp' },
   { label: 'Peraturan', path: '/dukuh/peraturan', icon: 'scroll' },
-  { label: 'Struktur Organisasi', path: '/dukuh/organisasi', icon: 'users' },
+  { label: 'Struktur Organisasi', path: '/dukuh/struktur', icon: 'building' },
   { label: 'Inventaris', path: '/dukuh/inventaris', icon: 'box' },
 ]
 
@@ -78,7 +80,7 @@ function getVerificationStatusLabel(status) {
 // --- SUB-PAGES ---
 
 // 1. HOME PAGE
-function HomePage() {
+export function HomePage() {
   const authUser = getAuthData()
   const [counts, setCounts] = useState({ pendingWarga: 0, escalatedComplaints: 0, letters: 0 })
   const [loading, setLoading] = useState(true)
@@ -158,7 +160,7 @@ function HomePage() {
 }
 
 // 2. DATA WARGA (VERIFY ONLY)
-function DukuhCitizenPage() {
+export function DukuhCitizenPage() {
   const [activeTab, setActiveTab] = useState('warga')
   const [citizens, setCitizens] = useState([])
   const [families, setFamilies] = useState([])
@@ -326,7 +328,7 @@ function DukuhCitizenPage() {
 }
 
 // 3. PERUMAHAN (READ ONLY)
-function DukuhHousingPage() {
+export function DukuhHousingPage() {
   const [houses, setHouses] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -393,7 +395,7 @@ function DukuhHousingPage() {
 
 // 4. ESKALASI PENGADUAN
 // 5. KEUANGAN (MONITOR/READ-ONLY)
-function DukuhFinancePage() {
+export function DukuhFinancePage() {
   const [transactions, setTransactions] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -512,7 +514,7 @@ function downloadCsv(demographicSummary) {
   URL.revokeObjectURL(url)
 }
 
-function DukuhStatisticsPage() {
+export function DukuhStatisticsPage() {
   const [stats, setStats] = useState({ total_warga: '0', total_rumah: '0', total_pengaduan: '0', kas_rt: 'Rp 0' })
   const [cashflowData, setCashflowData] = useState([])
   const [complaintData, setComplaintData] = useState([])
@@ -697,7 +699,7 @@ function DukuhStatisticsPage() {
 }
 
 // 8. PERATURAN (READ ONLY)
-function DukuhRegulationPage() {
+export function DukuhRegulationPage() {
   const [regulations, setRegulations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -748,7 +750,7 @@ function DukuhRegulationPage() {
 
 // 9. STRUKTUR ORGANISASI (READ ONLY)
 // 10. INVENTARIS (READ ONLY)
-function DukuhInventoryPage() {
+export function DukuhInventoryPage() {
   const [purchases, setPurchases] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -805,11 +807,12 @@ function DukuhInventoryPage() {
 
 function renderPage(activePath) {
   if (activePath === '/dukuh/warga') return <DukuhCitizenPage />
+  if (activePath === '/dukuh/data-pengurus') return <DataPengurusPage />
   if (activePath === '/dukuh/perumahan') return <DukuhHousingPage />
   if (activePath === '/dukuh/keuangan') return <DukuhFinancePage />
   if (activePath === '/dukuh/statistik') return <DukuhStatisticsPage />
   if (activePath === '/dukuh/peraturan') return <DukuhRegulationPage />
-  if (activePath === '/dukuh/organisasi') return <DukuhOrganizationPage />
+  if (activePath === '/dukuh/struktur') return <StrukturOrganisasi />
   if (activePath === '/dukuh/inventaris') return <DukuhInventoryPage />
   return <HomePage />
 }

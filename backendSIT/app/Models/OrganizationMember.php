@@ -14,6 +14,8 @@ class OrganizationMember extends Model
     public const ID_PREFIX = 'ORG';
 
     public const STRATEGIC_POSITIONS = [
+        'Kepala Lurah',
+        'Kepala Dukuh',
         'Ketua RW',
         'Ketua RT',
         'Sekretaris',
@@ -21,6 +23,8 @@ class OrganizationMember extends Model
     ];
 
     public const POSITION_TO_ROLE = [
+        'Kepala Lurah' => 'LURAH',
+        'Kepala Dukuh' => 'DUKUH',
         'Ketua RW' => 'KETUA_RW',
         'Ketua RT' => 'KETUA_RT',
         'Sekretaris' => 'SEKRETARIS',
@@ -68,6 +72,8 @@ class OrganizationMember extends Model
     }
 
     public const SYNC_USER_ROLE_POSITIONS = [
+        'Kepala Lurah',
+        'Kepala Dukuh',
         'Ketua RW',
         'Ketua RT',
         'Sekretaris',

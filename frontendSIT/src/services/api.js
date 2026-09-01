@@ -76,6 +76,13 @@ export function getWilayah(params = {}) {
   return request(`/wilayah${query ? `?${query}` : ''}`)
 }
 
+export function createWilayah(payload) {
+  return request('/wilayah', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getMyHouses() {
   return request('/houses/mine')
 }
@@ -375,6 +382,13 @@ export function createOrganizationMember(payload) {
 
 export function deleteOrganizationMember(id) {
   return request(`/organization-members/${id}`, { method: 'DELETE' })
+}
+
+export function createStrukturPengurus(payload) {
+  return request('/struktur/pengurus', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export function getUsers(params = {}) {

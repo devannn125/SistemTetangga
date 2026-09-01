@@ -79,13 +79,13 @@ class DashboardService
             ? (DB::table('wilayah')->where('tipe', 'KELURAHAN')->value('nama_wilayah') ?: 'Kelurahan Sukamaju')
             : 'Kelurahan Sukamaju';
 
-        $isDukuh = in_array($roleCode, ['DUKUH', 'KELURAHAN']);
+        $isDukuh = in_array($roleCode, ['DUKUH', 'KELURAHAN', 'LURAH']);
 
-        $userName = $userObj->nama_users ?? ($isDukuh ? 'Pak Dukuh Sukamaju' : 'Administrator');
-        $userRoleName = $isDukuh ? 'Kepala Dukuh' : ($roleCode === 'ADMIN' ? 'Administrator' : 'Ketua RT');
+        $userName = $userObj->nama_users ?? ($isDukuh ? 'Pengelola Wilayah Sukamaju' : 'Administrator');
+        $userRoleName = $isDukuh ? ($roleCode === 'LURAH' ? 'Kepala Lurah' : 'Kepala Dukuh') : ($roleCode === 'ADMIN' ? 'Administrator' : 'Ketua RT');
         $initial = strtoupper(substr($userName, 0, 1)) ?: 'D';
 
-        $areaLabel = $isDukuh ? "{$kelurahanName} (Tingkat Dukuh)" : 'RT Digital';
+        $areaLabel = $isDukuh ? "{$kelurahanName} (Tingkat Wilayah)" : 'RT Digital';
 
         $summaryCards = [
             [

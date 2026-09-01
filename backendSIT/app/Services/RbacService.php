@@ -22,6 +22,8 @@ class RbacService
 
     public const SCOPE_RW = 'RW';
 
+    public const SCOPE_DUKUH = 'DUKUH';
+
     public const SCOPE_KELURAHAN = 'KELURAHAN';
 
     public const SCOPE_ALL = 'ALL';
@@ -38,7 +40,7 @@ class RbacService
 
     /**
      * Scope terbaik yang dimiliki user untuk module+action.
-     * Prioritas: ALL > KELURAHAN > RW > RT > OWN.
+     * Prioritas: ALL > KELURAHAN > DUKUH > RW > RT > OWN.
      */
     public function scopeFor(User $user, string $moduleCode, string $action): string
     {
@@ -49,8 +51,9 @@ class RbacService
         }
 
         $order = [
-            self::SCOPE_ALL => 5,
-            self::SCOPE_KELURAHAN => 4,
+            self::SCOPE_ALL => 6,
+            self::SCOPE_KELURAHAN => 5,
+            self::SCOPE_DUKUH => 4,
             self::SCOPE_RW => 3,
             self::SCOPE_RT => 2,
             self::SCOPE_OWN => 1,
@@ -139,6 +142,7 @@ class RbacService
         $scopeByTipe = [
             'RT' => self::SCOPE_RT,
             'RW' => self::SCOPE_RW,
+            'DUKUH' => self::SCOPE_DUKUH,
             'KELURAHAN' => self::SCOPE_KELURAHAN,
             'KECAMATAN' => self::SCOPE_KELURAHAN,
         ];
@@ -214,8 +218,9 @@ class RbacService
     protected function scopeRank(?string $scope): int
     {
         return match (strtoupper((string) $scope)) {
-            self::SCOPE_ALL => 5,
-            self::SCOPE_KELURAHAN => 4,
+            self::SCOPE_ALL => 6,
+            self::SCOPE_KELURAHAN => 5,
+            self::SCOPE_DUKUH => 4,
             self::SCOPE_RW => 3,
             self::SCOPE_RT => 2,
             self::SCOPE_OWN => 1,
@@ -226,7 +231,8 @@ class RbacService
     /**
      * Perluas anchor wilayah sesuai scope dengan menelusuri seluruh hierarki
      * descendant (termasuk anchor itu sendiri). OWN → hanya anchor.
-     * Contoh: anchor KEL01 scope KELURAHAN → KEL01 + RW01/RW02 + RT01..RT04;
+     * Contoh: anchor KEL01 scope KELURAHAN → KEL01 + DUKUH + RW01/RW02 + RT01..RT04;
+     * anchor DUKUH scope DUKUH → DUKUH + RW01 + RT01..RT02;
      * anchor RW01 scope RW → RW01 + RT01 + RT02.
      */
         protected function expandWilayah(string $anchorId, string $scope): array
@@ -243,7 +249,7 @@ class RbacService
         $all = Wilayah::all(['id_wilayah', 'tipe', 'parent_id']);
 
         $rootAnchorId = $anchorId;
-        if (in_array($scope, [self::SCOPE_RT, self::SCOPE_RW, self::SCOPE_KELURAHAN])) {
+        if (in_array($scope, [self::SCOPE_RT, self::SCOPE_RW, self::SCOPE_DUKUH, self::SCOPE_KELURAHAN])) {
             $current = $anchor;
             while ($current && strtoupper($current->tipe) !== $scope) {
                 $parent = $all->firstWhere('id_wilayah', $current->parent_id);

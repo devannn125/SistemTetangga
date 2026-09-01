@@ -1,4 +1,7 @@
-import { useState, useEffect } from "react"
+
+const fs = require("fs");
+
+const fileContent = `import { useState, useEffect } from "react"
 import { PageShell } from "@/components/layout/PageShell"
 import { DataTable } from "@/components/ui/DataTable"
 import { Button } from "@/components/ui/Button"
@@ -33,8 +36,8 @@ function getDynamicMonthOptions() {
   for(let i = 0; i < 7; i++) {
     const yr = d.getFullYear()
     const m = d.getMonth()
-    const val = `${yr}-${String(m + 1).padStart(2, "0")}`
-    options.push({ value: val, label: `${monthNames[m]} ${yr}` })
+    const val = \`\${yr}-\${String(m + 1).padStart(2, "0")}\`
+    options.push({ value: val, label: \`\${monthNames[m]} \${yr}\` })
     d.setMonth(d.getMonth() - 1)
   }
   return options
@@ -71,7 +74,7 @@ function CalendarWidget({ schedules, selectedDate, onSelectDate, currentMonth, c
     <div className="border-2 border-neutral-900 p-6 rounded-xl bg-white shadow-none h-full flex flex-col">
       <div className="flex justify-between items-center mb-6 border-b-2 border-neutral-100 pb-4">
         <button onClick={() => onChangeMonth(-1)} className="px-3 py-1 font-extrabold border-2 border-transparent hover:border-black rounded-lg transition">&lt; Prev</button>
-        <h3 className="text-center font-extrabold text-black text-lg">${monthNames[currentMonth]} ${currentYear}</h3>
+        <h3 className="text-center font-extrabold text-black text-lg">\${monthNames[currentMonth]} \${currentYear}</h3>
         <button onClick={() => onChangeMonth(1)} className="px-3 py-1 font-extrabold border-2 border-transparent hover:border-black rounded-lg transition">Next &gt;</button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-neutral-400 mb-2">
@@ -79,8 +82,8 @@ function CalendarWidget({ schedules, selectedDate, onSelectDate, currentMonth, c
       </div>
       <div className="grid grid-cols-7 gap-2 flex-grow">
         {days.map((d, i) => {
-          if (!d) return <div key={`empty-${i}`} />
-          const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+          if (!d) return <div key={\`empty-\${i}\`} />
+          const dateStr = \`\${currentYear}-\${String(currentMonth + 1).padStart(2, "0")}-\${String(d).padStart(2, "0")}\`
           const isSelected = selectedDate === dateStr
           const isToday = new Date().toISOString().split("T")[0] === dateStr
           const duties = schedules.filter(s => s.tanggal_jadwal === dateStr)
@@ -89,15 +92,15 @@ function CalendarWidget({ schedules, selectedDate, onSelectDate, currentMonth, c
             <button
               key={i}
               onClick={() => onSelectDate(dateStr)}
-              className={`aspect-square rounded-full flex flex-col items-center justify-center relative border-2 transition-all ${
+              className={\`aspect-square rounded-full flex flex-col items-center justify-center relative border-2 transition-all \${
                 isSelected ? "border-black bg-black text-white" : 
                 isToday ? "border-sky-500 bg-sky-50 text-sky-900" :
                 "border-transparent hover:border-neutral-300 bg-neutral-50 text-neutral-700"
-              }`}
+              }\`}
             >
               <span className="font-extrabold text-sm">{d}</span>
               {duties.length > 0 && (
-                <span className={`w-1.5 h-1.5 rounded-full absolute bottom-1.5 ${isSelected ? "bg-white" : "bg-red-500"}`} />
+                <span className={\`w-1.5 h-1.5 rounded-full absolute bottom-1.5 \${isSelected ? "bg-white" : "bg-red-500"}\`} />
               )}
             </button>
           )
@@ -195,7 +198,7 @@ export default function RtSiskamlingPage() {
     e.preventDefault()
     const approved = await confirm({
       title: "Konfirmasi Jadwal",
-      message: `Yakin ingin menambahkan jadwal ronda pada tanggal ${form.tanggal_jadwal} (shift ${form.shift})?`,
+      message: \`Yakin ingin menambahkan jadwal ronda pada tanggal \${form.tanggal_jadwal} (shift \${form.shift})?\`,
       confirmLabel: "Ya, Simpan",
     })
     if (!approved) return
@@ -394,7 +397,7 @@ export default function RtSiskamlingPage() {
             <div className="space-y-4 py-2">
               <div className="w-full h-48 bg-neutral-100 border border-neutral-300 rounded-lg flex items-center justify-center flex-col overflow-hidden text-neutral-400">
                 {selectedAbsensi.foto_url ? (
-                  <img src={selectedAbsensi.foto_url.startsWith("http") || selectedAbsensi.foto_url.startsWith("data:") ? selectedAbsensi.foto_url : `http://localhost:8000/storage/${selectedAbsensi.foto_url}`} alt="Bukti Selfie" className="w-full h-full object-cover" />
+                  <img src={selectedAbsensi.foto_url.startsWith("http") || selectedAbsensi.foto_url.startsWith("data:") ? selectedAbsensi.foto_url : \`http://localhost:8000/storage/\${selectedAbsensi.foto_url}\`} alt="Bukti Selfie" className="w-full h-full object-cover" />
                 ) : (
                   <>
                     <svg className="w-12 h-12 mb-2 opacity-30" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"></path></svg>
@@ -489,3 +492,7 @@ export default function RtSiskamlingPage() {
     </PageShell>
   )
 }
+`
+
+fs.writeFileSync("src/pages/rt/pages/RtSiskamlingPage.jsx", fileContent);
+

@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { PageShell } from '@/components/layout/PageShell'
 
-function CalendarWidget({ schedules }) {
+function CalendarWidget({ schedules, selectedDate, onSelectDate }) {
+  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+  
   const today = new Date()
   const year = today.getFullYear()
   const month = today.getMonth() 
@@ -21,7 +23,7 @@ function CalendarWidget({ schedules }) {
     
   return (
     <div className="border border-neutral-200 p-6 rounded-2xl bg-white shadow-sm">
-      <h3 className="text-center font-extrabold text-black mb-6">Agustus 2026</h3>
+      <h3 className="text-center font-extrabold text-black mb-6">{monthNames[month]} {year}</h3>
       <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-neutral-400 mb-2">
         <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
       </div>
@@ -29,15 +31,15 @@ function CalendarWidget({ schedules }) {
         {days.map((d, idx) => {
           if (!d) return <div key={idx} className="h-14"></div>
           
-          const dateStr = `2026-08-${String(d).padStart(2, '0')}`
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
           const daySchedules = schedules.filter(s => s.tanggal_jadwal === dateStr)
           
-          let bgClass = "bg-neutral-50 border border-neutral-100 text-neutral-600 hover:bg-neutral-100 transition-colors"
-          if (daySchedules.length > 0) bgClass = "bg-sky-50 border-sky-200 text-sky-800 font-extrabold"
-          if (d === today.getDate()) bgClass = "bg-amber-100 border-amber-300 text-amber-900 font-extrabold ring-2 ring-amber-400"
+          let bgClass = "bg-neutral-50 border border-neutral-100 text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+          if (daySchedules.length > 0) bgClass = "bg-sky-50 border-sky-200 text-sky-800 font-extrabold cursor-pointer"
+          if (dateStr === selectedDate) bgClass = "bg-amber-100 border-amber-300 text-amber-900 font-extrabold ring-2 ring-amber-400 cursor-pointer"
           
           return (
-            <div key={idx} className={`h-16 rounded-xl flex flex-col items-center justify-center relative p-1 ${bgClass}`}>
+            <div key={idx} onClick={() => onSelectDate && onSelectDate(dateStr)} className={`h-16 rounded-xl flex flex-col items-center justify-center relative p-1 ${bgClass}`}>
               <span className="text-xs mb-1">{d}</span>
               {daySchedules.length > 0 && (
                 <div className="flex flex-col gap-0.5 w-full items-center">
@@ -57,6 +59,8 @@ function CalendarWidget({ schedules }) {
 }
 
 export default function WargaSiskamlingPage() {
+  const initialTodayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`
+  const [selectedDate, setSelectedDate] = useState(initialTodayStr)
   const [schedules, setSchedules] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('kalender')
@@ -77,15 +81,6 @@ export default function WargaSiskamlingPage() {
       const res = await getSiskamlingSchedules({ per_page: 100 })
       const arr = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
       setSchedules(arr)
-      
-      const today = new Date()
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-      
-      const duty = arr.find(s => 
-        s.tanggal_jadwal === todayStr && 
-        (s.id_petugas_citizen === authUser?.id_citizen || s.petugas?.nama_lengkap === authUser?.nama_users)
-      )
-      setTodaySchedule(duty || null)
     } catch (err) {
       console.error(err)
     } finally {
@@ -96,6 +91,14 @@ export default function WargaSiskamlingPage() {
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    const duty = schedules.find(s => 
+      s.tanggal_jadwal === selectedDate && 
+      (s.id_petugas_citizen === authUser?.id_citizen || s.petugas?.nama_lengkap === authUser?.nama_users)
+    )
+    setTodaySchedule(duty || null)
+  }, [selectedDate, schedules, authUser])
 
   useEffect(() => {
     let stream = null
@@ -196,7 +199,7 @@ export default function WargaSiskamlingPage() {
           </div>
 
           {activeTab === 'kalender' ? (
-            <CalendarWidget schedules={schedules} />
+            <CalendarWidget schedules={schedules} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
           ) : (
             <div className="space-y-4">
               <h2 className="font-bold text-lg text-black mb-4">Riwayat Bulan Sebelumnya (Juli, Juni)</h2>
@@ -242,17 +245,21 @@ export default function WargaSiskamlingPage() {
                 <div className="mx-auto w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd"></path></svg>
                 </div>
-                <h3 className="text-xl font-extrabold text-amber-900 mb-1">Tugas Anda Hari Ini</h3>
+                <h3 className="text-xl font-extrabold text-amber-900 mb-1">
+                  {selectedDate === initialTodayStr ? 'Tugas Anda Hari Ini' : `Tugas Tanggal ${selectedDate}`}
+                </h3>
                 <p className="text-sm font-bold text-amber-700 mb-6">Shift {todaySchedule.shift}</p>
                 
-                <Button size="lg" className="w-full text-base py-6 shadow-md" onClick={() => setIsCameraModalOpen(true)} disabled={isCheckingIn}>
-                  {isCheckingIn ? 'Menyimpan...' : 'Mulai Ronda (Check-in)'}
+                <Button size="lg" className="w-full text-base py-6 shadow-md" onClick={() => setIsCameraModalOpen(true)} disabled={isCheckingIn || selectedDate !== initialTodayStr}>
+                  {isCheckingIn ? 'Menyimpan...' : (selectedDate !== initialTodayStr ? 'Check-in Hanya Untuk Hari Ini' : 'Mulai Ronda (Check-in)')}
                 </Button>
               </div>
             )
           ) : (
             <div className="border border-neutral-200 bg-neutral-50 p-6 rounded-2xl text-center">
-              <p className="text-sm font-bold text-neutral-500">Tidak ada jadwal ronda untuk Anda hari ini.</p>
+              <p className="text-sm font-bold text-neutral-500">
+                {selectedDate === initialTodayStr ? 'Tidak ada jadwal ronda untuk Anda hari ini.' : `Tidak ada jadwal ronda pada ${selectedDate}.`}
+              </p>
             </div>
           )}
         </div>

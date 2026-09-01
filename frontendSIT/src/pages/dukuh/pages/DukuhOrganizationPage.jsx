@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import { Label } from '@/components/ui/Label'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getUsers, getCitizenMe, getWilayah } from '@/services/api'
+import { getOrganizationMembers, createOrganizationMember, deleteOrganizationMember, getCitizens, getCitizenMe, getWilayah } from '@/services/api'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 
@@ -45,7 +45,7 @@ export default function DukuhOrganizationPage() {
     try {
       const [resM, resUsers, resMe, resWilayah] = await Promise.all([
         getOrganizationMembers({ per_page: 100 }),
-        getUsers({ per_page: 100 }),
+        getCitizens({ per_page: 100 }),
         getCitizenMe(),
         getWilayah({ per_page: 100 }),
       ])
@@ -56,19 +56,11 @@ export default function DukuhOrganizationPage() {
       const arrW = Array.isArray(resWilayah?.data) ? resWilayah.data : Array.isArray(resWilayah) ? resWilayah : []
       setWilayahs(arrW.filter(w => w.tipe === 'RT' || w.tipe === 'RW'))
 
-      const allUsers = Array.isArray(resUsers?.data) ? resUsers.data : Array.isArray(resUsers) ? resUsers : []
-      const filteredUsers = allUsers.filter((u) => {
-        const roles = (u.user_roles || []).filter((r) => r.status === 'ACTIVE').map((r) => r.role?.kode_role || '')
-        return !roles.includes('ADMIN') && !roles.includes('DUKUH')
-      })
-
-      const arrCitizens = filteredUsers.map((u) => {
-        const citizenData = u.citizen || {}
-        return {
-          id_citizen: citizenData.id_citizen || u.id_users,
-          nama_lengkap: citizenData.nama_lengkap || u.nama_users || 'Tanpa Nama',
-        }
-      })
+      const allCitizens = Array.isArray(resUsers?.data) ? resUsers.data : Array.isArray(resUsers) ? resUsers : []
+      const arrCitizens = allCitizens.map((c) => ({
+        id_citizen: c.id_citizen,
+        nama_lengkap: c.nama_lengkap || 'Tanpa Nama',
+      }))
 
       // Dukuh can see all (Dukuh, RW, RT)
       const rank = { KELURAHAN: 1, RW: 2, RT: 3 }
@@ -92,7 +84,7 @@ export default function DukuhOrganizationPage() {
       setCitizens(arrCitizens)
     } catch (error) {
       console.error(error)
-      showToast('Gagal memuat data struktur organisasi.', 'error')
+      showToast('Gagal: ' + (error.response?.data?.message || error.message), 'error')
     } finally {
       setLoading(false)
     }

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -78,9 +78,11 @@ export function LoginPage() {
             ? '/sek'
             : roleLower === 'bendahara'
               ? '/ben'
-              : ['admin', 'dukuh'].includes(roleLower)
-                ? '/dashboard'
-                : `/role/${roleLower}`
+              : roleLower === 'dukuh'
+                ? '/dukuh'
+                : roleLower === 'admin'
+                  ? '/dashboard'
+                  : `/role/${roleLower}`
 
       const destination = response.data?.redirect_to || fallbackDest
       window.location.assign(destination)

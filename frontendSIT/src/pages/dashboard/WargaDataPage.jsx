@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/Label'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { getCitizens, getGuests, getHouses } from '@/services/api'
 import { navigate } from '@/services/router'
+import { StatCard } from '@/components/dashboard/StatCard'
 
 const ALL_COLUMNS = [
   { key: 'nama_lengkap', label: 'Nama' },

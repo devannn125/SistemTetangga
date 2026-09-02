@@ -9,6 +9,7 @@ import { BendaharaPage } from './pages/ben/BendaharaPage'
 import { RwPage } from './pages/rw/RwPage'
 import { DukuhPage } from './pages/dukuh/DukuhPage'
 import { KelurahanPage } from './pages/kelurahan/KelurahanPage'
+import { AdminPage } from './pages/admin/AdminPage'
 import { useDashboardData } from './hooks/useDashboardData'
 import { usePathname } from './services/router'
 
@@ -52,10 +53,14 @@ function App() {
     return <BendaharaPage />
   }
 
+  if (pathname.startsWith('/admin')) {
+    return <AdminPage />
+  }
+
   if (pathname.startsWith('/role')) {
     const roleParam = pathname.replace(/^\/role\/?/, '').split('/')[0]?.toLowerCase()
     if (roleParam === 'admin') {
-      return <DashboardPage data={data} error={error} isLoading={isLoading} />
+      return <AdminPage />
     }
     if (roleParam === 'dukuh') {
       return <DukuhPage />

@@ -10,7 +10,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, options = {}) {
+export async function request(path, options = {}) {
   const token = getAccessToken()
 
   const isFormData = options.body instanceof FormData;

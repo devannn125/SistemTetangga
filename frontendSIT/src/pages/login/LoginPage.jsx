@@ -83,7 +83,7 @@ export function LoginPage() {
                 : roleLower === 'lurah'
                   ? '/kelurahan'
                   : roleLower === 'admin'
-                    ? '/dashboard'
+                    ? '/admin'
                     : `/role/${roleLower}`
 
       const destination = response.data?.redirect_to || fallbackDest

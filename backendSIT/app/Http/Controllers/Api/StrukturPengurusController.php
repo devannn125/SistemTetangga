@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Citizen;
 use App\Models\User;
-use App\Models\Wilayah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -37,30 +36,11 @@ class StrukturPengurusController extends BaseApiController
             'id_wilayah' => ['nullable', 'exists:wilayah,id_wilayah'],
             'nama_wilayah' => ['nullable', 'string', 'max:100'],
             'no_hp' => ['required', 'string', 'max:20', 'unique:users,no_hp'],
+            'calon_jabatan' => ['nullable', Rule::in(['RW', 'RT'])],
         ]);
 
-        if (empty($validated['id_wilayah']) && empty(trim((string) $validated['nama_wilayah']))) {
-            throw ValidationException::withMessages([
-                'id_wilayah' => ['Wilayah penugasan wajib diisi (id atau nama wilayah).'],
-            ]);
-        }
-
-        // Resolve id_wilayah dari nama node dukuh bila id tidak dikirim.
-        $idWilayah = $validated['id_wilayah'] ?? null;
-        if (! $idWilayah) {
-            $dukuh = Wilayah::query()
-                ->whereRaw('LOWER(TRIM(nama_wilayah)) = ?', [strtolower(trim($validated['nama_wilayah']))])
-                ->where('tipe', 'DUKUH')
-                ->first();
-
-            if (! $dukuh) {
-                throw ValidationException::withMessages([
-                    'nama_wilayah' => ['Wilayah dukuh tidak ditemukan.'],
-                ]);
-            }
-
-            $idWilayah = $dukuh->id_wilayah;
-        }
+        // Wilayah penugasan DIANGKAT lewat menu Struktur Organisasi, bukan di sini.
+        // Di sini hanya membuat akun calon; id_wilayah bersifat opsional (nullable).
 
         // Cek duplikat dengan pesan per-field yang jelas.
         if (User::where('email', $validated['email'])->exists()) {
@@ -75,13 +55,9 @@ class StrukturPengurusController extends BaseApiController
 
         $actor = $this->requestUser();
 
-        // Zero-trust: id_wilayah harus berada dalam lingkup aktor utk ORGANISASI.CREATE.
-        $scopeIds = $this->rbac->wilayahScopeIds($actor, 'ORGANISASI', 'CREATE');
-        if ($scopeIds !== null && ! in_array($idWilayah, $scopeIds, true)) {
-            throw ValidationException::withMessages([
-                'id_wilayah' => ['Wilayah di luar lingkup kewenangan Anda.'],
-            ]);
-        }
+        // Wilayah tidak wajib dari form (diangkat via Struktur Organisasi).
+        // Untuk citizen (wajib id_wilayah), default ke wilayah anchor aktor (dukuh-nya).
+        $idWilayah = $validated['id_wilayah'] ?? $this->rbac->anchorWilayahId($actor);
 
         $user = DB::transaction(function () use ($validated, $idWilayah) {
             $citizen = Citizen::create([
@@ -101,6 +77,7 @@ class StrukturPengurusController extends BaseApiController
                 'status_hidup' => 'HIDUP',
                 'status_aktif' => true,
                 'status_verifikasi' => 'APPROVED_DUKUH',
+                'calon_jabatan' => $validated['calon_jabatan'] ?? null,
             ]);
 
             $user = User::create([

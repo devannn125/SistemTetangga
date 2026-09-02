@@ -16,7 +16,6 @@ import RtSiskamlingPage from '@/pages/rt/pages/RtSiskamlingPage'
 import RtAnnouncementPage from '@/pages/rt/pages/RtAnnouncementPage'
 import RtUserManagementPage from '@/pages/rt/pages/RtUserManagementPage'
 import RtHousingPage from '@/pages/sek/pages/PerumahanPage'
-import RtOrganizationPage from '@/pages/rt/pages/RtOrganizationPage'
 import RtMessagePage from '@/pages/rt/pages/RtMessagePage'
 import RtStatisticsPage from '@/pages/rt/pages/RtStatisticsPage'
 import StrukturOrganisasi from '@/components/StrukturOrganisasi'
@@ -39,7 +38,6 @@ const rtMenus = [
   { label: 'Informasi & Statistik', path: '/rt/statistik', icon: 'trendingUp' },
   { label: 'Peraturan', path: '/rt/peraturan', icon: 'scroll' },
   { label: 'Struktur Organisasi', path: '/rt/struktur', icon: 'building' },
-  { label: 'Kelola Pengurus', path: '/rt/organisasi', icon: 'users' },
   { label: 'Pesan Warga', path: '/rt/pesan', icon: 'message' },
   { label: 'Pengumuman', path: '/rt/pengumuman', icon: 'megaphone' },
   { label: 'Manajemen User', path: '/rt/user', icon: 'key' },
@@ -337,7 +335,6 @@ function renderPage(activePath) {
   if (activePath === '/rt/statistik') return <RtStatisticsPage />
   if (activePath === '/rt/peraturan') return <RtRegulationPage />
   if (activePath === '/rt/struktur') return <StrukturOrganisasi />
-  if (activePath === '/rt/organisasi') return <RtOrganizationPage />
   if (activePath === '/rt/pesan') return <RtMessagePage />
   if (activePath === '/rt/pengumuman') return <RtAnnouncementPage />
   if (activePath === '/rt/user') return <RtUserManagementPage />

@@ -133,7 +133,7 @@ export default function RtUserManagementPage() {
     if (!approved) return
     setProcessingId(user.id_users)
     try {
-      await updateUser(user.id_users, buildUpdatePayload(user, { password: '123456' }))
+      await updateUser(user.id_users, buildUpdatePayload(user, { password: '123456', status: user.status }))
       showToast('Password berhasil di-reset menjadi default (123456).')
     } catch (err) {
       showToast(err.message || 'Gagal mereset password.', 'error')

@@ -46,6 +46,7 @@ class Citizen extends Model
         'status_hidup',
         'status_aktif',
         'status_verifikasi',
+        'calon_jabatan',
     ];
 
     protected $casts = [

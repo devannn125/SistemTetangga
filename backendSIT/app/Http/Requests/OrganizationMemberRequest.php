@@ -27,21 +27,27 @@ class OrganizationMemberRequest extends FormRequest
                         return;
                     }
 
-                    // Enforce lokasi hanya saat warga ditempatkan di RT langsung
-                    // (Ketua RT / pengurus RT). Untuk jabatan tingkat RW atau Dukuh,
-                    // warga boleh berada di wilayah lain di bawah cakupan yang sama.
-                    $wilayahTipe = \App\Models\Wilayah::where('id_wilayah', $idWilayah)->value('tipe');
-                    if ($wilayahTipe !== 'RT') {
-                        return;
-                    }
-
-                    $citizenWilayah = Citizen::query()
+                    // Calon diinput di node dukuh (calon_jabatan membedakan jenis),
+                    // lalu diangkat ke RT/RW mana pun di bawah dukuh tsb. Jadi cukup
+                    // pastikan target penugasan berada dalam subtree yang berakar di
+                    // wilayah warga calon (atau sama dengan wilayah calon).
+                    $citizenWilayahId = Citizen::query()
                         ->where('id_citizen', $value)
                         ->value('id_wilayah');
 
-                    if ($citizenWilayah !== $idWilayah) {
-                        $fail('Warga yang dipilih bukan warga dari wilayah RT ini.');
+                    if ($citizenWilayahId === $idWilayah) {
+                        return;
                     }
+
+                    $target = \App\Models\Wilayah::find($idWilayah);
+                    while ($target) {
+                        if ($target->id_wilayah === $citizenWilayahId) {
+                            return;
+                        }
+                        $target = $target->parent;
+                    }
+
+                    $fail('Warga yang dipilih berada di luar cakupan wilayah penugasan ini.');
                 },
             ],
             'jabatan' => [

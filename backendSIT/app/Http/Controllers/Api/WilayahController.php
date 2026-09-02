@@ -15,7 +15,14 @@ class WilayahController extends BaseApiController
 {
     public function index(Request $request)
     {
-        $this->authorizeModule('MASTER', 'VIEW');
+        // Struktur organisasi (read-only utk RW/Sekretaris/Bendahara/Warga)
+        // butuh pohon wilayah via getWilayah. Role tsb punya ORGANISASI.VIEW tapi
+        // bukan MASTER.VIEW — izinkan baca wilayah bila punya salah satu.
+        $actor = $this->requestUser();
+        if (! $this->rbac->can($actor, 'ORGANISASI', 'VIEW')
+            && ! $this->rbac->can($actor, 'MASTER', 'VIEW')) {
+            abort(403, 'Tidak memiliki akses ke modul ini.');
+        }
 
         $query = Wilayah::query()->with('children');
 

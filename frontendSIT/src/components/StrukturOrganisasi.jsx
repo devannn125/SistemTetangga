@@ -68,12 +68,16 @@ const JABATAN = {
   dukuh: 'Kepala Dukuh',
   rw: 'Ketua RW',
   rt: 'Ketua RT',
+  sek: 'Sekretaris',
+  ben: 'Bendahara',
 }
 
 export default function StrukturOrganisasi() {
   const role = getAuthRole()
   const isDukuh = role === 'DUKUH'
   const isLurah = role === 'LURAH'
+  const isRtRole = role === 'RT'
+  const canManageSekBen = isRtRole
   const canManageDukuh = isLurah
   const canManageRw = isDukuh
 
@@ -129,7 +133,8 @@ export default function StrukturOrganisasi() {
         .map((c) => ({ 
           id_citizen: c.id_citizen, 
           nama_lengkap: c.nama_lengkap,
-          id_wilayah: c.wilayah?.id_wilayah || c.id_wilayah
+          id_wilayah: c.wilayah?.id_wilayah || c.id_wilayah,
+          calon_jabatan: c.calon_jabatan
         }))
       setCitizens(calons)
     } catch (err) {
@@ -173,13 +178,27 @@ export default function StrukturOrganisasi() {
   }, [authRoles, myWilayah])
 
   const myRwId = useMemo(() => {
-    if (!myWilayah) return null
-    if (myWilayah.tipe === 'RW') return myWilayah.id_wilayah
-    if (myWilayah.tipe === 'RT') return myWilayah.parent_id
+    const rw = authRoles.find((r) => (r.kode === 'RW' || r.role?.kode_role === 'RW') && r.status === 'ACTIVE')
+    if (rw?.id_wilayah) return rw.id_wilayah
+    const rtId = authRoles
+      .find((r) => (['RT', 'SEKRETARIS', 'BENDAHARA', 'WARGA'].includes(r.kode) || ['RT', 'SEKRETARIS', 'BENDAHARA', 'WARGA'].includes(r.role?.kode_role)) && r.status === 'ACTIVE')
+      ?.id_wilayah
+    const rtNode = rtId && wilayahs.find((w) => w.id_wilayah === rtId)
+    if (rtNode?.parent_id) return rtNode.parent_id
+    if (myWilayah?.tipe === 'RW') return myWilayah.id_wilayah
+    if (myWilayah?.tipe === 'RT') return myWilayah.parent_id
     return null
-  }, [myWilayah])
+  }, [authRoles, wilayahs, myWilayah])
 
-  const myRtId = useMemo(() => (myWilayah?.tipe === 'RT' ? myWilayah.id_wilayah : null), [myWilayah])
+  const myRtId = useMemo(() => {
+    const rtId = authRoles
+      .find((r) => (['RT', 'SEKRETARIS', 'BENDAHARA', 'WARGA'].includes(r.kode) || ['RT', 'SEKRETARIS', 'BENDAHARA', 'WARGA'].includes(r.role?.kode_role)) && r.status === 'ACTIVE')
+      ?.id_wilayah
+    if (rtId) return rtId
+    return myWilayah?.tipe === 'RT' ? myWilayah.id_wilayah : null
+  }, [authRoles, myWilayah])
+
+  const isRwRole = useMemo(() => authRoles.some((r) => (r.kode === 'RW' || r.role?.kode_role === 'RW') && r.status === 'ACTIVE'), [authRoles])
 
   const currentDukuh = useMemo(() => {
     if (isDukuh) return tree.dukuhList.find((d) => d.id_wilayah === myDukuhId)
@@ -190,6 +209,10 @@ export default function StrukturOrganisasi() {
     ? (selectedDukuhId || tree.dukuhList[0]?.id_wilayah)
     : null
 
+  const scopeRwOnly = useMemo(() => !isDukuh && !isLurah && (isRwRole || Boolean(myRtId)), [isDukuh, isLurah, isRwRole, myRtId])
+
+  // Role berbasis wilayah (RW/RT/SEK/BEN/Warga) hanya melihat RW miliknya sendiri;
+  // Dukuh & Lurah melihat semua RW utk keperluan kelola.
   const visibleDukuhs = useMemo(() => {
     if (isDukuh) return currentDukuh ? [currentDukuh] : []
     if (isLurah) {
@@ -208,9 +231,15 @@ export default function StrukturOrganisasi() {
   const targetNodes = useCallback((type) => {
     if (type === 'dukuh') return tree.dukuhList
     if (type === 'rw') return currentDukuh?.rws || []
-    if (type === 'rt') return (currentDukuh?.rws || []).flatMap((rw) => rw.rts || [])
+    if (type === 'rt') return (currentDukuh?.rws || []).flatMap((rw) =>
+      (rw.rts || []).map((rt) => ({ ...rt, _rwLabel: rw.nama_wilayah }))
+    )
+    if (type === 'sek' || type === 'ben') {
+      const rt = myRtId ? wilayahs.find((w) => w.id_wilayah === myRtId) : null
+      return rt ? [{ id_wilayah: rt.id_wilayah, nama_wilayah: rt.nama_wilayah }] : []
+    }
     return []
-  }, [tree.dukuhList, currentDukuh])
+  }, [tree.dukuhList, currentDukuh, myRtId, wilayahs])
 
   const openAdd = (type) => {
     const nodes = targetNodes(type)
@@ -281,6 +310,13 @@ export default function StrukturOrganisasi() {
     if (addModal.type === 'dukuh') {
       const kelId = wilayahs.find(w => w.tipe === 'KELURAHAN')?.id_wilayah;
       return c.id_wilayah === kelId;
+    }
+    if (addModal.type === 'rw' || addModal.type === 'rt') {
+      const wantJabatan = addModal.type === 'rw' ? 'RW' : 'RT';
+      return c.id_wilayah === currentDukuh?.id_wilayah && c.calon_jabatan === wantJabatan;
+    }
+    if (addModal.type === 'sek' || addModal.type === 'ben') {
+      return c.id_wilayah === myRtId;
     }
     return c.id_wilayah === form.id_wilayah;
   }) : []
@@ -397,12 +433,14 @@ export default function StrukturOrganisasi() {
             )}
 
             <div className="space-y-4">
-              {visibleDukuhs.map((dk) => (
+              {visibleDukuhs.map((dk) => {
+                const rwList = scopeRwOnly ? dk.rws.filter((rw) => rw.id_wilayah === myRwId) : dk.rws
+                return (
                 <div key={dk.id_wilayah} className="space-y-3">
-                  {dk.rws.length === 0 && (
+                  {rwList.length === 0 && (
                     <p className="rounded-xl border border-neutral-200 bg-white p-4 text-center text-xs text-neutral-400">Dukuh ini belum memiliki RW</p>
                   )}
-                  {dk.rws.map((rw) => {
+                  {rwList.map((rw) => {
                     const rwMembers = getRwMembers(rw.id_wilayah)
                     return (
                       <div key={rw.id_wilayah} className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
@@ -432,17 +470,47 @@ export default function StrukturOrganisasi() {
                           ))}
                         </div>
 
-                        {rw.rts.filter((rt) => !isDukuh && !isLurah ? rt.id_wilayah === myRtId : true).map((rt) => (
+                        {rw.rts.filter((rt) => (isRwRole || isDukuh || isLurah) ? true : rt.id_wilayah === myRtId).map((rt) => (
                           <div key={rt.id_wilayah} className="mt-3 rounded-lg border border-neutral-200 bg-white px-4">
                             <div className="flex items-center gap-2 border-b border-neutral-100 py-2">
                               <Icon name="building" className="h-3.5 w-3.5 text-neutral-400" />
                               <p className="text-xs font-extrabold text-black">{rt.nama_wilayah}</p>
+                              {canManageSekBen && (
+                                <div className="ml-auto flex gap-2">
+                                  <button
+                                    onClick={() => openAdd('sek')}
+                                    className="rounded-full bg-black px-3 py-1 text-[10px] font-bold uppercase text-white transition hover:bg-neutral-800"
+                                  >
+                                    Tambah Sekretaris
+                                  </button>
+                                  <button
+                                    onClick={() => openAdd('ben')}
+                                    className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-[10px] font-bold uppercase text-neutral-700 transition hover:border-black"
+                                  >
+                                    Tambah Bendahara
+                                  </button>
+                                </div>
+                              )}
                             </div>
                             {getRtMembers(rt.id_wilayah).length === 0 ? (
                               <p className="py-2 text-[11px] text-neutral-400 italic">Belum ada pengurus RT</p>
                             ) : (
                               <div className="divide-y divide-neutral-100">
-                                {getRtMembers(rt.id_wilayah).map((m) => <OfficialRow key={m.id_organization_member} member={m} />)}
+                                {getRtMembers(rt.id_wilayah).map((m) => (
+                                  <div key={m.id_organization_member} className="flex items-center gap-3">
+                                    <div className="min-w-0 flex-1">
+                                      <OfficialRow member={m} />
+                                    </div>
+                                    {canManageSekBen && (m.jabatan === 'Sekretaris' || m.jabatan === 'Bendahara') && (
+                                      <button
+                                        onClick={() => handleRemove(m, m.jabatan)}
+                                        className="shrink-0 rounded-full bg-neutral-100 px-3 py-1 text-[10px] font-bold uppercase text-neutral-500 transition hover:bg-red-100 hover:text-red-600"
+                                      >
+                                        Cabut
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -451,7 +519,8 @@ export default function StrukturOrganisasi() {
                     )
                   })}
                 </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}
@@ -486,7 +555,7 @@ export default function StrukturOrganisasi() {
                     <SelectItem value="__none__" disabled>Belum ada wilayah</SelectItem>
                   ) : addNodes.map((n) => (
                     <SelectItem key={n.id_wilayah} value={n.id_wilayah}>
-                      {n.nama_wilayah}
+                      {n._rwLabel ? `${n._rwLabel} - ${n.nama_wilayah}` : n.nama_wilayah}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -25,8 +25,8 @@ class OrganizationMember extends Model
     public const POSITION_TO_ROLE = [
         'Kepala Lurah' => 'LURAH',
         'Kepala Dukuh' => 'DUKUH',
-        'Ketua RW' => 'KETUA_RW',
-        'Ketua RT' => 'KETUA_RT',
+        'Ketua RW' => 'RW',
+        'Ketua RT' => 'RT',
         'Sekretaris' => 'SEKRETARIS',
         'Bendahara' => 'BENDAHARA',
         'Pengurus Siskamling' => 'SISKAMLING',

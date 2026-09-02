@@ -65,6 +65,7 @@ class UserManagementController extends BaseApiController
         $this->authorizeModule('USER', 'CREATE');
 
         $data = $request->validated();
+        $data = $this->fillEmailFromCitizen($data);
 
         if (! empty($data['password'])) {
             $data['password_hash'] = Hash::make($data['password']);
@@ -106,6 +107,7 @@ class UserManagementController extends BaseApiController
         $user = User::findOrFail($id);
         $old = $user->toArray();
         $data = $request->validated();
+        $data = $this->fillEmailFromCitizen($data);
 
         if (! empty($data['password'])) {
             $data['password_hash'] = Hash::make($data['password']);
@@ -268,5 +270,23 @@ class UserManagementController extends BaseApiController
         $this->audit('USER', 'DELETE', 'users', $user->id_users);
 
         return response()->json(['message' => 'Akun dinonaktifkan.']);
+    }
+
+    /**
+     * Isi users.email dari citizen.email bila akun dibuat/diupdate tanpa email.
+     * Mencegah akun login tanpa email padahal data warga punya email.
+     */
+    private function fillEmailFromCitizen(array $data): array
+    {
+        if (! empty($data['email']) || empty($data['id_citizen'])) {
+            return $data;
+        }
+
+        $citizenEmail = \App\Models\Citizen::where('id_citizen', $data['id_citizen'])->value('email');
+        if ($citizenEmail) {
+            $data['email'] = $citizenEmail;
+        }
+
+        return $data;
     }
 }

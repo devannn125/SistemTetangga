@@ -9,6 +9,8 @@ import RwStatisticsPage from './pages/RwStatisticsPage'
 import RwRegulationPage from './pages/RwRegulationPage'
 import RwOrganizationPage from './pages/RwOrganizationPage'
 import RwInventoryPage from './pages/RwInventoryPage'
+import { RwDashboard } from '@/components/dashboard/roles/RwDashboard'
+import { PageShell } from '@/components/layout/PageShell'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RW
 // Dashboard (read), Data Warga (verify), Keuangan (monitor), Surat Keterangan (read),
@@ -41,7 +43,11 @@ function renderPage(activePath) {
   if (activePath === '/rw/peraturan') return <RwRegulationPage />
   if (activePath === '/rw/organisasi') return <RwOrganizationPage />
   if (activePath === '/rw/inventaris') return <RwInventoryPage />
-  return <HomePage />
+  return (
+      <PageShell eyebrow="Portal Ketua RW" title="Dashboard Ketua RW" description="Ringkasan informasi dan metrik terkini untuk Ketua RW.">
+        <RwDashboard  />
+      </PageShell>
+    )
 }
 
 export function RwPage() {

@@ -8,6 +8,8 @@ import { DukuhFinancePage } from './pages/DukuhFinancePage'
 import { DukuhStatisticsPage } from './pages/DukuhStatisticsPage'
 import { DukuhRegulationPage } from './pages/DukuhRegulationPage'
 import { DukuhInventoryPage } from './pages/DukuhInventoryPage'
+import { LurahDashboard } from '@/components/dashboard/roles/LurahDashboard'
+import { PageShell } from '@/components/layout/PageShell'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua Dukuh
 // Dashboard (read), Data Warga (verify), Keuangan (monitor), Surat Keterangan (read),
@@ -38,7 +40,11 @@ function renderPage(activePath) {
   if (activePath === '/dukuh/peraturan') return <DukuhRegulationPage />
   if (activePath === '/dukuh/struktur') return <StrukturOrganisasi />
   if (activePath === '/dukuh/inventaris') return <DukuhInventoryPage />
-  return <HomePage />
+  return (
+      <PageShell eyebrow="Portal Kepala Dukuh" title="Dashboard Kepala Dukuh" description="Ringkasan informasi dan metrik terkini untuk Kepala Dukuh.">
+        <LurahDashboard  />
+      </PageShell>
+    )
 }
 
 export function DukuhPage() {

@@ -6,6 +6,8 @@ import IuranPage from './pages/IuranPage'
 import WargaReadPage from './pages/WargaReadPage'
 import PerumahanPage from './pages/PerumahanPage'
 import InventoryPage from './pages/InventoryPage'
+import { BendaharaDashboard } from '@/components/dashboard/roles/BendaharaDashboard'
+import { PageShell } from '@/components/layout/PageShell'
 
 const benMenus = [
   { label: 'Beranda', path: '/ben', icon: 'home' },
@@ -29,7 +31,11 @@ function renderPage(activePath) {
   if (activePath === '/ben/perumahan') return <PerumahanPage />
   if (activePath === '/ben/inventaris') return <InventoryPage />
   if (activePath === '/ben/struktur') return <StrukturOrganisasi />
-  return <HomePage />
+  return (
+      <PageShell eyebrow="Portal Bendahara" title="Dashboard Bendahara" description="Ringkasan informasi dan metrik terkini untuk Bendahara.">
+        <BendaharaDashboard  />
+      </PageShell>
+    )
 }
 
 export function BendaharaPage() {

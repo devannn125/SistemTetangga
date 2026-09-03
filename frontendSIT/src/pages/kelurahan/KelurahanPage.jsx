@@ -4,6 +4,7 @@ import StrukturOrganisasi from '@/components/StrukturOrganisasi'
 import { PageShell } from '@/components/layout/PageShell'
 import { getAuthData } from '@/services/authService'
 import { getCitizens, getComplaints, getLetterRequests } from '@/services/api'
+import { LurahDashboard } from '@/components/dashboard/roles/LurahDashboard'
 import {
   DukuhCitizenPage,
   DukuhHousingPage,
@@ -90,7 +91,7 @@ function renderPage(activePath) {
   if (activePath === '/kelurahan/peraturan') return <DukuhRegulationPage />
   if (activePath === '/kelurahan/struktur') return <StrukturOrganisasi />
   if (activePath === '/kelurahan/inventaris') return <DukuhInventoryPage />
-  return <KelurahanHomePage />
+  return ( <PageShell eyebrow="Portal Lurah" title="Dashboard Lurah" description="Ringkasan informasi kelurahan."><LurahDashboard /></PageShell> )
 }
 
 export function KelurahanPage() {
@@ -109,3 +110,4 @@ export function KelurahanPage() {
     </PortalLayout>
   )
 }
+

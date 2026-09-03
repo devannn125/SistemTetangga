@@ -288,23 +288,23 @@ export default function ComplaintPage() {
                 </div>
               ) : (
                 filteredReports.map((report) => (
-                  <article key={report.id_complaint || report.nomor_tiket} className="rounded-3xl border border-neutral-300 bg-white p-6">
+                  <article key={report.id_complaint || report.nomor_tiket} className="rounded-3xl border border-neutral-300 bg-white p-6 min-w-0 overflow-hidden">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
                           <span>{report.nomor_tiket}</span>
                           <span className="rounded-full border border-neutral-300 bg-neutral-100 px-2 py-1 text-neutral-700">{formatLabel(report.kategori)}</span>
                         </div>
-                        <h2 className="text-xl font-extrabold text-black">{report.judul}</h2>
+                        <h2 className="text-xl font-extrabold text-black break-all">{report.judul}</h2>
                       </div>
                       <span className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(report.status)}`}>{formatLabel(report.status)}</span>
                     </div>
 
-                    <p className="mt-4 text-sm leading-6 text-neutral-600">{report.deskripsi}</p>
+                    <p className="mt-4 text-sm leading-6 text-neutral-600 break-all whitespace-pre-wrap">{report.deskripsi}</p>
 
                     <div className="mt-5 grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1 text-sm text-neutral-500">
-                        <p><span className="font-bold text-neutral-900">Lokasi:</span> {report.lokasi || '-'}</p>
+                        <p><span className="font-bold text-neutral-900">Lokasi:</span> <span className="break-all">{report.lokasi || '-'}</span></p>
                         <p><span className="font-bold text-neutral-900">Pelapor:</span> {getReporterName(report)}</p>
                       </div>
                       <div className="space-y-1 text-sm text-neutral-500">

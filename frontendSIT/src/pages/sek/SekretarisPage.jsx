@@ -12,6 +12,8 @@ import SiskamlingPage from '@/pages/sek/pages/SiskamlingPage'
 import RegulationPage from '@/pages/sek/pages/RegulationPage'
 import OrganizationPage from '@/pages/sek/pages/OrganizationPage'
 import MessagePage from '@/pages/sek/pages/MessagePage'
+import { SekretarisDashboard } from '@/components/dashboard/roles/SekretarisDashboard'
+import { PageShell } from '@/components/layout/PageShell'
 
 const sekMenus = [
   { label: 'Beranda', path: '/sek', icon: 'home' },
@@ -47,7 +49,11 @@ function renderPage(activePath) {
   if (activePath === '/sek/peraturan') return <RegulationPage />
   if (activePath === '/sek/organisasi') return <OrganizationPage />
   if (activePath === '/sek/pesan') return <MessagePage />
-  return <HomePage />
+  return (
+      <PageShell eyebrow="Portal Sekretaris" title="Dashboard Sekretaris" description="Ringkasan informasi dan metrik terkini untuk Sekretaris.">
+        <SekretarisDashboard  />
+      </PageShell>
+    )
 }
 
 export function SekretarisPage() {

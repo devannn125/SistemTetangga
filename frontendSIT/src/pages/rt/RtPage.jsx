@@ -18,6 +18,7 @@ import RtUserManagementPage from '@/pages/rt/pages/RtUserManagementPage'
 import RtHousingPage from '@/pages/sek/pages/PerumahanPage'
 import RtMessagePage from '@/pages/rt/pages/RtMessagePage'
 import RtStatisticsPage from '@/pages/rt/pages/RtStatisticsPage'
+import { RtDashboard } from '@/components/dashboard/roles/RtDashboard'
 import StrukturOrganisasi from '@/components/StrukturOrganisasi'
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RT
@@ -339,7 +340,11 @@ function renderPage(activePath) {
   if (activePath === '/rt/pengumuman') return <RtAnnouncementPage />
   if (activePath === '/rt/user') return <RtUserManagementPage />
   if (activePath === '/rt/inventaris') return <ApprovalInventoryPage />
-  return <HomePage />
+  return (
+      <PageShell eyebrow="Portal Ketua RT" title="Dashboard Ketua RT" description="Ringkasan informasi dan metrik terkini untuk Ketua RT.">
+        <RtDashboard  />
+      </PageShell>
+    )
 }
 
 export function RtPage() {

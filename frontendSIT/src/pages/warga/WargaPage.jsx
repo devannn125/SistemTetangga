@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { PortalLayout } from '@/components/layout/PortalLayout'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
-import { getAuthRole } from '@/services/authService'
+import { getAuthRole, getAuthData } from '@/services/authService'
 import { DemographyCharts } from '@/components/dashboard/DemographyCharts'
 import ComplaintPage from '@/pages/warga/pages/ComplaintPage'
 import FinancePage from '@/pages/warga/pages/FinancePage'
@@ -18,6 +18,8 @@ import InventoryPage from '@/pages/warga/pages/InventoryPage'
 import RulesPage from '@/pages/warga/pages/RulesPage'
 import OrgPage from '@/pages/warga/pages/OrgPage'
 import StatisticsPage from '@/pages/warga/pages/StatisticsPage'
+import { WargaDashboard } from '@/components/dashboard/roles/WargaDashboard'
+import { PageShell } from '@/components/layout/PageShell'
 
 const wargaMenus = [
   { label: 'Beranda', path: '/warga', icon: 'home' },
@@ -54,19 +56,6 @@ const ROLE_NAME = {
 function getCurrentMenu() {
   const pathname = window.location.pathname
   return wargaMenus.find((item) => item.path === pathname) || wargaMenus[0]
-}
-
-function PageShell({ children, eyebrow, title, description }) {
-  return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
-      <section className="border-2 border-neutral-900 bg-white p-8 max-sm:p-5">
-        <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">{eyebrow}</p>
-        <h1 className="mt-3 text-3xl font-extrabold leading-tight text-black max-sm:text-2xl">{title}</h1>
-        {description ? <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-600">{description}</p> : null}
-      </section>
-      {children}
-    </div>
-  )
 }
 
 function HomePage() {
@@ -489,7 +478,11 @@ function renderPage(activePath) {
   if (activePath === '/warga/notifikasi') return <NotificationPage />
   if (activePath === '/warga/feedback') return <FeedbackPage />
   if (activePath === '/warga/password') return <PasswordPage />
-  return <HomePage />
+  return (
+      <PageShell eyebrow="Portal Warga" title="Dashboard Warga" description="Ringkasan informasi dan metrik terkini untuk Warga.">
+        <WargaDashboard role={getAuthData()?.role || "WARGA"} />
+      </PageShell>
+    )
 }
 
 export function WargaPage() {

@@ -71,8 +71,8 @@ export default function RwComplaintPage() {
                     <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-neutral-500">
                       {c.nomor_tiket || `#${c.id_complaint}`} · {c.kategori}
                     </p>
-                    <h2 className="mt-3 text-xl font-extrabold text-black">{c.judul}</h2>
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">{c.deskripsi}</p>
+                    <h2 className="mt-3 text-xl font-extrabold text-black break-all">{c.judul}</h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600 break-all whitespace-pre-wrap">{c.deskripsi}</p>
                   </div>
                   <span className="rounded-full bg-orange-100 text-orange-900 px-3 py-1 text-xs font-bold uppercase">
                     ESKALASI
@@ -80,7 +80,7 @@ export default function RwComplaintPage() {
                 </div>
 
                 <div className="mt-4 grid gap-2 text-sm text-neutral-500 sm:grid-cols-2 lg:grid-cols-4">
-                  <p><span className="font-bold text-neutral-900">Lokasi:</span> {c.lokasi || '-'}</p>
+                  <p><span className="font-bold text-neutral-900">Lokasi:</span> <span className="break-all">{c.lokasi || '-'}</span></p>
                   <p><span className="font-bold text-neutral-900">Urgensi:</span> {c.urgensi}</p>
                   <p><span className="font-bold text-neutral-900">Tanggal:</span> {formatDate(c.created_at)}</p>
                   <p><span className="font-bold text-neutral-900">RT:</span> {c.wilayah?.nama_wilayah || '-'}</p>

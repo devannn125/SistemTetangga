@@ -28,8 +28,8 @@ class StoreCitizenRequest extends FormRequest
             'status_nikah' => ['nullable', Rule::in(['BELUM_KAWIN', 'KAWIN', 'CERAI_HIDUP', 'CERAI_MATI'])],
             'id_pendidikan' => ['nullable', Rule::exists('master_data', 'id_master')->where('tipe', 'PENDIDIKAN')],
             'id_profesi' => ['nullable', Rule::exists('master_data', 'id_master')->where('tipe', 'PROFESI')],
-            'no_hp' => ['nullable', 'string', 'max:20'],
-            'email' => ['nullable', 'email', 'max:150'],
+            'no_hp' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
             'status_warga' => ['nullable', Rule::in(['TETAP', 'TIDAK_TETAP'])],
             'kewarganegaraan' => ['nullable', Rule::in(['WNI', 'WNA'])],
             'status_ekonomi' => ['nullable', Rule::in(['MAMPU', 'KURANG_MAMPU'])],
@@ -55,6 +55,9 @@ class StoreCitizenRequest extends FormRequest
         return [
             'nik.size' => 'NIK harus terdiri dari 16 digit.',
             'nik.unique' => 'NIK sudah terdaftar untuk warga lain.',
+            'email.required' => 'Email wajib diisi agar warga bisa login.',
+            'email.unique' => 'Email sudah digunakan akun lain.',
+            'no_hp.required' => 'Nomor HP wajib diisi agar warga bisa login.',
         ];
     }
 }

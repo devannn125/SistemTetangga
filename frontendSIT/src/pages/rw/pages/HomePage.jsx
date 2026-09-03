@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
 import { getAuthData } from '@/services/authService'
-import { getCitizens, getComplaints, getLetterRequests } from '@/services/api'
+import { getCitizens, getComplaints, getLetterRequests, getStatistikSummary } from '@/services/api'
+import { DemographyCharts } from '@/components/dashboard/DemographyCharts'
 
 export default function HomePage() {
   const authUser = getAuthData()
   const [counts, setCounts] = useState({ pendingWarga: 0, escalatedComplaints: 0, letters: 0 })
   const [loading, setLoading] = useState(true)
+  const [summary, setSummary] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -28,6 +30,7 @@ export default function HomePage() {
       console.error(err)
       setLoading(false)
     })
+    getStatistikSummary().then((r) => setSummary(r?.data || r)).catch(() => {})
   }, [])
 
   return (
@@ -77,6 +80,12 @@ export default function HomePage() {
             Monitor Surat
           </a>
         </article>
+      </section>
+      <section className="mt-8">
+        <h2 className="text-sm font-extrabold uppercase tracking-wider text-neutral-500">Statistik Wilayah</h2>
+        <div className="mt-3">
+          <DemographyCharts summary={summary} />
+        </div>
       </section>
     </PageShell>
   )

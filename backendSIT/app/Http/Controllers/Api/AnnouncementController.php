@@ -14,6 +14,7 @@ class AnnouncementController extends BaseApiController
         $this->authorizeModule('PENGUMUMAN', 'VIEW');
 
         $query = Announcement::query()->with('wilayah')->latest();
+        $this->scopeQuery($query, 'PENGUMUMAN', 'VIEW');
 
         if ($request->has('kategori')) {
             $query->where('kategori', $request->query('kategori'));
@@ -29,7 +30,7 @@ class AnnouncementController extends BaseApiController
     {
         $this->authorizeModule('PENGUMUMAN', 'CREATE');
 
-        $data = $request->validated();
+        $data = $this->pinActorWilayah($request->validated(), 'PENGUMUMAN', 'CREATE');
         $data['created_by'] = $this->requestUser()->id_users;
 
         $announcement = Announcement::create($data);

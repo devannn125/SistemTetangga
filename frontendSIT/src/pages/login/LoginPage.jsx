@@ -72,7 +72,7 @@ export function LoginPage() {
       const roleKode = (response.data?.role?.kode || '').toLowerCase()
       const roleLower = roleKode === 'warga' ? 'warga' : roleKode
       const fallbackDest =
-        roleLower === 'warga'
+        roleLower === 'warga' || roleLower === 'siskamling' || roleLower === 'pkk' || roleLower === 'karang_taruna'
           ? '/warga'
           : roleLower === 'sekretaris'
             ? '/sek'

@@ -59,6 +59,13 @@ export function getCitizenMe() {
   return request('/citizens/me')
 }
 
+export function changePassword(payload) {
+  return request('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getHouses(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request(`/houses${query ? `?${query}` : ''}`)
@@ -280,6 +287,11 @@ export function getSiskamlingCheckins(params = {}) {
   return request(`/siskamling-checkins${query ? `?${query}` : ''}`)
 }
 
+export function getPosyanduSchedules(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/posyandu-schedules${query ? `?${query}` : ''}`)
+}
+
 export function createCitizen(payload) {
   return request('/citizens', {
     method: 'POST',
@@ -363,6 +375,26 @@ export function updateSiskamlingSchedule(id, payload) {
 
 export function deleteSiskamlingSchedule(id) {
   return request(`/siskamling-schedules/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export function createPosyanduSchedule(payload) {
+  return request('/posyandu-schedules', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updatePosyanduSchedule(id, payload) {
+  return request(`/posyandu-schedules/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deletePosyanduSchedule(id) {
+  return request(`/posyandu-schedules/${id}`, {
     method: 'DELETE',
   })
 }

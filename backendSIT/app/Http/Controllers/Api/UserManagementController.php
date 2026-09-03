@@ -109,6 +109,14 @@ class UserManagementController extends BaseApiController
         $data = $request->validated();
         $data = $this->fillEmailFromCitizen($data);
 
+        // Aktivasi akun (PENDING -> ACTIVE) hanya boleh utk warga yang sudah
+        // diverifikasi Ketua RW (citizen.status_verifikasi = VERIFIED_RW).
+        if (array_key_exists('status', $data)
+            && $data['status'] === 'ACTIVE'
+            && $user->status !== 'ACTIVE') {
+            $this->assertCitizenVerifiedForActivation($user);
+        }
+
         if (! empty($data['password'])) {
             $data['password_hash'] = Hash::make($data['password']);
         }
@@ -118,7 +126,25 @@ class UserManagementController extends BaseApiController
 
         $this->audit('USER', 'UPDATE', 'users', $user->id_users, $old, $user->toArray());
 
-        return new UserResource($user->load(['userRoles.role', 'citizen']));
+        return new UserResource($user->load(['userRoles.role', 'citizen.wilayah']));
+    }
+
+    /**
+     * Cek syarat aktivasi: akun wajib terhubung ke data warga yang sudah
+     * diverifikasi Ketua RW (VERIFIED_RW) ATAU disetujui Dukuh sebagai calon
+     * perangkat wilayah (APPROVED_DUKUH). Calon perangkat dibuat langsung oleh
+     * Dukuh, jadi tidak perlu lewat verifikasi Ketua RW lagi. Blok kalau belum
+     * (Zero Trust — bukan cuma UI).
+     */
+    private function assertCitizenVerifiedForActivation(User $user): void
+    {
+        $citizenStatus = $user->id_citizen
+            ? \App\Models\Citizen::where('id_citizen', $user->id_citizen)->value('status_verifikasi')
+            : null;
+
+        if (! in_array($citizenStatus, ['VERIFIED_RW', 'APPROVED_DUKUH'], true)) {
+            abort(422, 'Akun tidak dapat diaktifkan sebelum data warga diverifikasi Ketua RW / disetujui Dukuh.');
+        }
     }
 
     /**

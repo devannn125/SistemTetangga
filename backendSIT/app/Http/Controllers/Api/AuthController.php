@@ -120,6 +120,32 @@ class AuthController extends Controller
     }
 
     /**
+     * POST /api/auth/change-password
+     * Body: { "current_password": "...", "new_password": "..." } (auth)
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'new_password' => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+
+        if (! $user->password_hash || ! Hash::check($data['current_password'], $user->password_hash)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Password lama salah.'],
+            ]);
+        }
+
+        $user->forceFill(['password_hash' => $data['new_password']])->save();
+
+        return response()->json([
+            'message' => 'Password berhasil diubah.',
+        ]);
+    }
+
+    /**
      * POST /api/auth/logout
      * Perlu header: Authorization: Bearer {token}
      */

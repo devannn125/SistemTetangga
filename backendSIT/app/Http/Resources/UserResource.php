@@ -20,6 +20,12 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'no_hp' => $this->no_hp,
             'id_citizen' => $this->id_citizen,
+            'citizen' => $this->whenLoaded('citizen', fn () => [
+                'id_citizen' => $this->citizen->id_citizen,
+                'nama_lengkap' => $this->citizen->nama_lengkap,
+                'status_verifikasi' => $this->citizen->status_verifikasi,
+                'wilayah' => $this->whenLoaded('citizen.wilayah', fn () => new WilayahResource($this->citizen->wilayah)),
+            ]),
             // 'nik' dan 'role' diisi manual di controller lewat setAttribute()
             // sebelum resource ini dibuat, karena bukan kolom asli tabel users.
             'nik' => $this->nik,

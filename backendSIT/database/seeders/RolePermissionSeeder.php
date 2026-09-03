@@ -63,6 +63,7 @@ class RolePermissionSeeder extends Seeder
             'AUDIT' => 'Audit Log',
             'INVENTARIS' => 'Inventaris',
             'STATISTIK' => 'Informasi & Statistik',
+            'POSYANDU' => 'Jadwal Posyandu',
         ];
 
         $urutan = 1;
@@ -151,7 +152,7 @@ class RolePermissionSeeder extends Seeder
         $admin = [];
         $modules = ['DASHBOARD', 'WARGA', 'KELUARGA', 'SURAT', 'KEUANGAN', 'IURAN', 'SISKAMLING',
             'PENGUMUMAN', 'PERUMAHAN', 'TAMU', 'PENGADUAN', 'PERATURAN', 'ORGANISASI', 'PESAN',
-            'NOTIFIKASI', 'MASTER', 'USER', 'AUDIT', 'INVENTARIS', 'STATISTIK'];
+            'NOTIFIKASI', 'MASTER', 'USER', 'AUDIT', 'INVENTARIS', 'STATISTIK', 'POSYANDU'];
         foreach ($modules as $m) {
             $admin[$m] = array_map(fn ($a) => ['action' => $a, 'level' => 'ALL', 'scope' => '*'], $all);
         }
@@ -249,6 +250,7 @@ class RolePermissionSeeder extends Seeder
                 'AUDIT' => $view('RT'),
                 'INVENTARIS' => array_merge($view('RT'), [['action' => 'APPROVE', 'level' => 'RT']]),
                 'STATISTIK' => $view('RT'),
+                'POSYANDU' => $view('RT'),
             ],
 
             // Sekretaris RT: verifikasi data & surat, kelola tata tertib/pengumuman.
@@ -269,6 +271,7 @@ class RolePermissionSeeder extends Seeder
                 'PENGADUAN' => $view('RT'),
                 'INVENTARIS' => array_merge($view('RT'), [['action' => 'CREATE', 'level' => 'RT']]),
                 'STATISTIK' => $view('RT'),
+                'POSYANDU' => $view('RT'),
             ],
 
             // Bendahara RT: kelola keuangan & iuran, baca data warga (iuran/bansos),
@@ -298,8 +301,8 @@ class RolePermissionSeeder extends Seeder
                 'KEUANGAN' => $view('OWN'),
                 'IURAN' => $view('OWN'),
                 'SURAT' => [['action' => 'CREATE', 'level' => 'OWN'], ['action' => 'VIEW', 'level' => 'OWN']],
-                'SISKAMLING' => array_merge($view('OWN'), [['action' => 'CREATE', 'level' => 'OWN']]),
-                'PENGUMUMAN' => $view('OWN'),
+                'SISKAMLING' => array_merge($view('RT'), [['action' => 'CREATE', 'level' => 'OWN']]),
+                'PENGUMUMAN' => $view('RT'),
                 'PERATURAN' => $view('OWN'),
                 'ORGANISASI' => $view('KELURAHAN'),
                 'PESAN' => [['action' => 'CREATE', 'level' => 'OWN']],
@@ -309,6 +312,8 @@ class RolePermissionSeeder extends Seeder
                 // PRD 3.2: warga boleh Read statistik non-sensitif (agregat RT);
                 // kategori sensitif tetap disensor & drill-down diblokir di service.
                 'STATISTIK' => $view('OWN'),
+                // Semua warga di satu RT melihat jadwal posyandu yang sama → scope RT.
+                'POSYANDU' => $view('RT'),
             ],
         ];
     }

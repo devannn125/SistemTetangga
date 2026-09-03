@@ -59,6 +59,15 @@ function currentRoleCode(user) {
   return custom?.kode || 'WARGA'
 }
 
+function isVerifiedRw(user) {
+  return ['VERIFIED_RW', 'APPROVED_DUKUH'].includes(user.citizen?.status_verifikasi)
+}
+
+function canActivate(user) {
+  // Warga yang belum diverifikasi Ketua RW / disetujui Dukuh tidak boleh diaktifkan akunnya.
+  return isVerifiedRw(user)
+}
+
 export default function RtUserManagementPage() {
   const [users, setUsers] = useState([])
   const [myWilayahName, setMyWilayahName] = useState('')
@@ -208,6 +217,16 @@ export default function RtUserManagementPage() {
       ),
     },
     {
+      key: 'verifikasi',
+      label: 'Verifikasi Warga',
+      render: (value, row) => {
+        const sv = row.citizen?.status_verifikasi
+        if (sv === 'VERIFIED_RW') return <Badge variant="success">Terverifikasi RW</Badge>
+        if (sv === 'APPROVED_DUKUH') return <Badge variant="success">Disetujui Dukuh</Badge>
+        return <Badge variant="warning">Belum Verifikasi RW</Badge>
+      },
+    },
+    {
       key: 'role_assign',
       label: 'Tunjuk Peran',
       render: (value, row) => {
@@ -243,7 +262,8 @@ export default function RtUserManagementPage() {
           <Button
             variant={row.status === 'ACTIVE' ? 'danger' : 'success'}
             size="sm"
-            disabled={processingId === row.id_users}
+            disabled={processingId === row.id_users || (row.status !== 'ACTIVE' && !canActivate(row))}
+            title={row.status !== 'ACTIVE' && !canActivate(row) ? 'Akun belum dapat diaktifkan sebelum warga diverifikasi Ketua RW / disetujui Dukuh' : ''}
             onClick={(e) => { e.stopPropagation(); handleToggleStatus(row) }}
           >
             {row.status === 'ACTIVE' ? 'Suspend' : 'Aktifkan'}

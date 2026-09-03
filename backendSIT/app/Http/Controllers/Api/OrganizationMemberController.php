@@ -141,6 +141,15 @@ class OrganizationMemberController extends BaseApiController
             return;
         }
 
+        // Selaraskan data warga pengurus ke node jabatan (mis. Ketua RT diangkat
+        // jadi node RT, bukan tempat dia dicatat di Dukuh/Kelurahan). Supaya data
+        // warga & RBAC scope user konsisten dengan node penugasannya.
+        if ($member->shouldSyncUserRole() && !empty($member->id_wilayah)) {
+            \App\Models\Citizen::where('id_citizen', $member->id_citizen)
+                ->where('id_wilayah', '!=', $member->id_wilayah)
+                ->update(['id_wilayah' => $member->id_wilayah]);
+        }
+
         $roleCode = $member->getRoleCode();
         if (!$roleCode) {
             return;

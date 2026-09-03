@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Concerns\ResolvesActorWilayah;
 use App\Models\Citizen;
+use App\Models\Role;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -61,10 +63,70 @@ class CitizenService
     {
         $data = $this->stripSensitiveInputIfUnauthorized($data, $actor);
         $data['id_wilayah'] = $this->resolveActorWilayah($actor);
+        // Data warga baru selalu menunggu verifikasi RW (Zero Trust: abaikan
+        // input klien). Tidak ada jalur "langsung aktif" dari RT/Sekretaris.
+        $data['status_verifikasi'] = 'PENDING';
 
-        return DB::transaction(function () use ($data) {
-            return Citizen::create($data);
+        return DB::transaction(function () use ($data, $actor) {
+            $citizen = Citizen::create($data);
+            $this->autoCreateUserAccount($citizen, $actor);
+
+            return $citizen;
         });
+    }
+
+    /**
+     * Saat warga baru ditambahkan (oleh Ketua RT/Sekretaris), buat akun login
+     * (tabel users) sekaligus peran WARGA supaya warga bisa masuk. Password
+     * default "123456". Status akun default PENDING_VERIFICATION — login baru
+     * bisa setelah diaktifkan lewat Menu User Management.
+     */
+    private function autoCreateUserAccount(Citizen $citizen, User $actor): void
+    {
+        if (! $citizen->email || ! $citizen->no_hp) {
+            return;
+        }
+
+        // Email duplikat di tabel users → tolak (bukan diam-diam dilewati),
+        // biar persoalan akun login yang bentrok terlihat jelas.
+        if (User::where('email', $citizen->email)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => ['Email sudah digunakan akun lain.'],
+            ]);
+        }
+
+        $user = User::create([
+            'nama_users' => $citizen->nama_lengkap,
+            'email' => $citizen->email,
+            'no_hp' => $citizen->no_hp,
+            'password_hash' => '123456',
+            'auth_provider' => 'EMAIL',
+            'status' => 'PENDING_VERIFICATION',
+            'id_citizen' => $citizen->id_citizen,
+        ]);
+
+        $wargaRole = Role::where('kode', 'WARGA')->first();
+        if (! $wargaRole) {
+            return;
+        }
+
+        $existingActive = UserRole::where('id_users', $user->id_users)
+            ->where('id_role', $wargaRole->id_role)
+            ->where('id_wilayah', $citizen->id_wilayah)
+            ->where('status', 'ACTIVE')
+            ->exists();
+
+        if (! $existingActive) {
+            UserRole::create([
+                'id_users' => $user->id_users,
+                'id_role' => $wargaRole->id_role,
+                'id_wilayah' => $citizen->id_wilayah,
+                'periode_mulai' => now()->toDateString(),
+                'status' => 'ACTIVE',
+                'assigned_by' => $actor->id_users,
+                'assigned_at' => now(),
+            ]);
+        }
     }
 
     public function update(Citizen $citizen, array $data, User $actor): Citizen
@@ -76,6 +138,13 @@ class CitizenService
         // mempertahankan wilayah lama. Perpindahan RT = workflow riwayat
         // terpisah (PRD 6.2.1), bukan sekadar edit field.
         unset($data['id_wilayah']);
+
+        // Hanya aktor berhak verify (Ketua RW) yang boleh mengubah
+        // status_verifikasi. Edit biasa (RT/Sekretaris) mempertahankan status
+        // lama — tidak di-reset ke PENDING (Zero Trust).
+        if (isset($data['status_verifikasi']) && ! app(RbacService::class)->can($actor, 'WARGA', 'VERIFY')) {
+            unset($data['status_verifikasi']);
+        }
 
         DB::transaction(function () use ($citizen, $data) {
             $citizen->update($data);

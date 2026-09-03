@@ -15,6 +15,18 @@ class FeedbackController extends BaseApiController
 
         $query = Feedback::query()->with('pengirim')->latest();
 
+        // Batasi lingkup: warga hanya pesan sendiri; RT/Sekretaris pesan dari
+        // warganya dalam lingkup wilayah.
+        $scope = $this->rbac->scopeFor($this->requestUser(), 'PESAN', 'VIEW');
+        if ($scope === \App\Services\RbacService::SCOPE_OWN) {
+            $query->where('id_pengirim_user', $this->requestUser()->id_users);
+        } else {
+            $scopeIds = $this->rbac->wilayahScopeIds($this->requestUser(), 'PESAN', 'VIEW');
+            if ($scopeIds !== null) {
+                $query->whereHas('pengirim.citizen', fn ($q) => $q->whereIn('id_wilayah', $scopeIds));
+            }
+        }
+
         if ($request->has('status')) {
             $query->where('status', $request->query('status'));
         }

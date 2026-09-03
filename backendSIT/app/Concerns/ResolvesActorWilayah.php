@@ -17,17 +17,23 @@ trait ResolvesActorWilayah
 {
     protected function resolveActorWilayah(User $actor): string
     {
+        // Prefer role dengan level terkecil (paling struktural, mis. RT level 4
+        // lebih diutamakan daripada WARGA level 5) supaya warga yang dibuat
+        // Ketua RT terletak di node RT-nya, bukan ikut role WARGA lama di Dukuh.
         $activeUserRole = $actor->userRoles()
-            ->where('status', 'ACTIVE')
+            ->join('role', 'role.id_role', '=', 'user_role.id_role')
+            ->where('user_role.status', 'ACTIVE')
             ->where(function ($q) {
-                $q->whereNull('periode_mulai')
-                  ->orWhereDate('periode_mulai', '<=', now());
+                $q->whereNull('user_role.periode_mulai')
+                  ->orWhereDate('user_role.periode_mulai', '<=', now());
             })
             ->where(function ($q) {
-                $q->whereNull('periode_selesai')
-                  ->orWhereDate('periode_selesai', '>=', now());
+                $q->whereNull('user_role.periode_selesai')
+                  ->orWhereDate('user_role.periode_selesai', '>=', now());
             })
-            ->first();
+            ->orderBy('role.level')
+            ->orderBy('role.kode')
+            ->first(['user_role.*']);
 
         if (! $activeUserRole) {
             throw ValidationException::withMessages([

@@ -103,16 +103,18 @@ export default function RtCitizenPage() {
     const approved = await confirm({
       title: editingData ? 'Konfirmasi Perubahan' : 'Konfirmasi Simpan',
       message: editingData
-        ? `Simpan perubahan data warga atas nama "${formData.nama_lengkap}" dan ajukan ulang verifikasi ke RW?`
+        ? `Simpan perubahan data warga atas nama "${formData.nama_lengkap}"? Status verifikasi akan dipertahankan.`
         : `Yakin ingin menambahkan warga baru atas nama "${formData.nama_lengkap}"? Data akan berstatus Pending untuk diverifikasi RW.`,
       confirmLabel: 'Ya, Simpan',
     })
     if (!approved) return
     try {
-      const payload = { ...formData, status_verifikasi: 'PENDING' }
+      const payload = editingData
+        ? { ...formData } // edit: pertahankan status_verifikasi lama (jangan reset)
+        : { ...formData, status_verifikasi: 'PENDING' }
       if (editingData) {
         await updateCitizen(editingData.id_citizen, payload)
-        showToast('Data warga berhasil diperbarui dan diajukan ulang ke RW.')
+        showToast('Data warga berhasil diperbarui.')
       } else {
         await createCitizen(payload)
         showToast('Warga baru berhasil ditambahkan dengan status Pending.')

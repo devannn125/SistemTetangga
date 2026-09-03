@@ -100,4 +100,27 @@ class BaseApiController extends Controller
     {
         return request()->user();
     }
+
+    /**
+     * Paksa id_wilayah pada payload = wilayah operasional aktor (Zero Trust).
+     * Dipakai utk role bertingkat warga (SISKAMLING/PKK/KARANG_TARUNA) supaya
+     * saat menambah data, wilayah tidak bisa diarahkan ke RT lain lewat input.
+     * Scope ALL (admin/dukuh/lurah) dibiarkan memilih wilayah bebas.
+     */
+    protected function pinActorWilayah(array $data, string $moduleCode, string $action = 'CREATE'): array
+    {
+        $user = $this->requestUser();
+        $scope = $this->rbac->scopeFor($user, $moduleCode, $action);
+
+        if ($scope === RbacService::SCOPE_ALL) {
+            return $data;
+        }
+
+        $anchor = $this->rbac->anchorWilayahId($user);
+        if ($anchor) {
+            $data['id_wilayah'] = $anchor;
+        }
+
+        return $data;
+    }
 }

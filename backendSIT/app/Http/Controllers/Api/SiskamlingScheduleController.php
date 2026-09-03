@@ -14,6 +14,7 @@ class SiskamlingScheduleController extends BaseApiController
         $this->authorizeModule('SISKAMLING', 'VIEW');
 
         $query = SiskamlingSchedule::query()->with(['petugas', 'checkins'])->latest('tanggal_jadwal');
+        $this->scopeQuery($query, 'SISKAMLING', 'VIEW');
 
         if ($request->has('id_wilayah')) {
             $query->where('id_wilayah', $request->query('id_wilayah'));
@@ -35,7 +36,8 @@ class SiskamlingScheduleController extends BaseApiController
     {
         $this->authorizeModule('SISKAMLING', 'CREATE');
 
-        $schedule = SiskamlingSchedule::create($request->validated());
+        $data = $this->pinActorWilayah($request->validated(), 'SISKAMLING', 'CREATE');
+        $schedule = SiskamlingSchedule::create($data);
 
         $this->audit('SISKAMLING', 'CREATE', 'siskamling_schedule', $schedule->id_siskamling_schedule);
 
@@ -55,7 +57,8 @@ class SiskamlingScheduleController extends BaseApiController
 
         $schedule = SiskamlingSchedule::findOrFail($id);
         $old = $schedule->toArray();
-        $schedule->update($request->validated());
+        $data = $this->pinActorWilayah($request->validated(), 'SISKAMLING', 'UPDATE');
+        $schedule->update($data);
 
         $this->audit('SISKAMLING', 'UPDATE', 'siskamling_schedule', $schedule->id_siskamling_schedule, $old, $schedule->toArray());
 

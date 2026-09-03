@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\NotificationSubscriptionController;
 use App\Http\Controllers\Api\OrganizationMemberController;
 use App\Http\Controllers\Api\PermissionActionController;
 use App\Http\Controllers\Api\PermissionOverrideController;
+use App\Http\Controllers\Api\PosyanduScheduleController;
 use App\Http\Controllers\Api\RegulationController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\RolePermissionController;
@@ -45,6 +46,7 @@ Route::get('/dashboard', DashboardController::class);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
     Route::get('/me', [AuthController::class, 'me']);
 
     // Kependudukan & Keluarga.
@@ -72,6 +74,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('siskamling-schedules', SiskamlingScheduleController::class);
     Route::apiResource('siskamling-checkins', SiskamlingCheckinController::class);
     Route::apiResource('siskamling-incidents', SiskamlingIncidentController::class);
+
+    // Posyandu.
+    Route::apiResource('posyandu-schedules', PosyanduScheduleController::class);
 
     // Organisasi & Regulasi.
     Route::apiResource('organization-members', OrganizationMemberController::class);

@@ -81,27 +81,60 @@ class AdditionalRolesSeeder extends Seeder
             }
         }
 
-        $siskamlingRoleId = $roles['SISKAMLING'];
-        $siskamlingModuleId = DB::table('module')->where('kode_module', 'SISKAMLING')->value('id_module');
-        $createActionId = $actions['CREATE'] ?? null;
+        // Ibu PKK: boleh mengatur jadwal posyandu di RT-nya sendiri (CRUD @RT),
+        // menimpa baseline Warga yang hanya VIEW.
+        $this->grantActions($roles, $actions, $max, 'PKK', 'POSYANDU', ['VIEW', 'CREATE', 'UPDATE', 'DELETE']);
 
-        if ($siskamlingModuleId && $createActionId) {
+        // Pengurus Siskamling: full CRUD jadwal ronda di RT-nya sendiri.
+        // Upgrade grant SISKAMLING yang sebelumnya OWN (baseline Warga) jadi RT,
+        // supaya satu set scope utk create/update/delete. Idempotent.
+        $siskHdr = ['kode' => 'SISKAMLING', 'module' => 'SISKAMLING'];
+        $siskRoleId = $roles[$siskHdr['kode']] ?? null;
+        $siskModuleId = DB::table('module')->where('kode_module', $siskHdr['module'])->value('id_module');
+        if ($siskRoleId && $siskModuleId) {
+            DB::table('role_permission')
+                ->where('id_role', $siskRoleId)
+                ->where('id_module', $siskModuleId)
+                ->whereIn('scope_level', ['OWN'])
+                ->delete();
+        }
+        $this->grantActions($roles, $actions, $max, 'SISKAMLING', 'SISKAMLING', ['VIEW', 'CREATE', 'UPDATE', 'DELETE']);
+
+        // Karang Taruna: boleh menambah/mengubah/menghapus pengumuman di RT-nya.
+        $this->grantActions($roles, $actions, $max, 'KARANG_TARUNA', 'PENGUMUMAN', ['CREATE', 'UPDATE', 'DELETE']);
+    }
+
+    /**
+     * Beri grant role x module utk daftar action, semua @RT. Idempotent.
+     */
+    private function grantActions(\Illuminate\Support\Collection $roles, $actions, int &$max, string $roleKode, string $moduleKode, array $actionList): void
+    {
+        $roleId = $roles[$roleKode] ?? null;
+        $moduleId = DB::table('module')->where('kode_module', $moduleKode)->value('id_module');
+        if (! $roleId || ! $moduleId) {
+            return;
+        }
+
+        foreach ($actionList as $action) {
+            $actionId = $actions[$action] ?? null;
+            if (! $actionId) {
+                continue;
+            }
             $exists = DB::table('role_permission')
-                ->where('id_role', $siskamlingRoleId)
-                ->where('id_module', $siskamlingModuleId)
-                ->where('id_permission_action', $createActionId)
+                ->where('id_role', $roleId)
+                ->where('id_module', $moduleId)
+                ->where('id_permission_action', $actionId)
                 ->where('resource_scope', '*')
                 ->exists();
-
             if (! $exists) {
                 $max++;
                 DB::table('role_permission')->insert([
                     'id_role_permission' => 'RP-'.str_pad((string) $max, 3, '0', STR_PAD_LEFT),
-                    'id_role' => $siskamlingRoleId,
-                    'id_module' => $siskamlingModuleId,
-                    'id_permission_action' => $createActionId,
+                    'id_role' => $roleId,
+                    'id_module' => $moduleId,
+                    'id_permission_action' => $actionId,
                     'resource_scope' => '*',
-                    'scope_level' => 'OWN',
+                    'scope_level' => 'RT',
                 ]);
             }
         }

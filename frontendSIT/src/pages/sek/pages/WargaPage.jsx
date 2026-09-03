@@ -3,7 +3,7 @@ import { getCitizens, createCitizen, updateCitizen, getFamilies, createFamily, u
 import { PageShell } from '@/components/layout/PageShell'
 import { DataTable } from '@/components/ui/DataTable'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
+import { Badge, StatusBadge } from '@/components/ui/Badge'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 import WargaFormModal from '@/pages/sek/pages/WargaFormModal'
@@ -233,6 +233,11 @@ export default function WargaPage() {
           ]}
         />
       ),
+    },
+    {
+      key: 'status_verifikasi',
+      label: 'Verifikasi',
+      render: (v) => <StatusBadge status={v || 'PENDING'} />,
     },
     {
       key: 'family',

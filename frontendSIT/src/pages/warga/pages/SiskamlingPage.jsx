@@ -1,11 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
-import { getSiskamlingSchedules, createSiskamlingCheckin } from '@/services/api'
-import { getAuthData } from '@/services/authService'
+import { getSiskamlingSchedules, createSiskamlingCheckin, createSiskamlingSchedule, updateSiskamlingSchedule, deleteSiskamlingSchedule, getCitizens } from '@/services/api'
+import { getAuthData, getAuthRole } from '@/services/authService'
 import { useToast } from '@/components/ui/ToastContext'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { Input } from '@/components/ui/Input'
+import { Label } from '@/components/ui/Label'
 import { PageShell } from '@/components/layout/PageShell'
+import { useConfirm } from '@/components/ui/ConfirmContext'
 
 function CalendarWidget({ schedules, selectedDate, onSelectDate }) {
   const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
@@ -73,7 +77,23 @@ export default function WargaSiskamlingPage() {
   const canvasRef = useRef(null)
   
   const authUser = getAuthData()
+  const isPengurus = getAuthRole() === 'SISKAMLING'
   const { showToast } = useToast()
+
+  const [citizens, setCitizens] = useState([])
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editingSchedule, setEditingSchedule] = useState(null)
+  const [form, setForm] = useState({ tanggal_jadwal: initialTodayStr, shift: 'MALAM', id_petugas_citizen: '' })
+  const confirm = useConfirm()
+
+  useEffect(() => {
+    if (!isPengurus) return
+    getCitizens({ per_page: 200 }).then((res) => {
+      const arr = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+      setCitizens(arr)
+      if (arr.length > 0) setForm((f) => ({ ...f, id_petugas_citizen: arr[0].id_citizen }))
+    }).catch(() => {})
+  }, [isPengurus])
 
   async function loadData() {
     setLoading(true)
@@ -165,6 +185,61 @@ export default function WargaSiskamlingPage() {
     }
   }
 
+  function openCreate() {
+    setEditingSchedule(null)
+    setForm({ tanggal_jadwal: selectedDate, shift: 'MALAM', id_petugas_citizen: citizens[0]?.id_citizen || '' })
+    setEditModalOpen(true)
+  }
+
+  function openEdit(schedule) {
+    setEditingSchedule(schedule)
+    setForm({ tanggal_jadwal: schedule.tanggal_jadwal, shift: schedule.shift, id_petugas_citizen: schedule.id_petugas_citizen })
+    setEditModalOpen(true)
+  }
+
+  async function handleScheduleSubmit(e) {
+    e.preventDefault()
+    const approved = await confirm({
+      title: editingSchedule ? 'Konfirmasi Perubahan' : 'Konfirmasi Jadwal',
+      message: editingSchedule
+        ? `Simpan perubahan jadwal ronda tanggal ${form.tanggal_jadwal}?`
+        : `Yakin ingin menambahkan jadwal ronda pada tanggal ${form.tanggal_jadwal} (shift ${form.shift})?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!approved) return
+    try {
+      const payload = { tanggal_jadwal: form.tanggal_jadwal, shift: form.shift, id_petugas_citizen: form.id_petugas_citizen }
+      if (editingSchedule) {
+        await updateSiskamlingSchedule(editingSchedule.id_siskamling_schedule, payload)
+        showToast('Jadwal ronda berhasil diperbarui.')
+      } else {
+        await createSiskamlingSchedule(payload)
+        showToast('Jadwal ronda baru berhasil ditambahkan.')
+      }
+      setEditModalOpen(false)
+      loadData()
+    } catch (err) {
+      console.error(err)
+      showToast('Gagal menyimpan jadwal: ' + (err.response?.data?.message || err.message), 'error')
+    }
+  }
+
+  async function handleDeleteSchedule(schedule) {
+    const approved = await confirm({
+      title: 'Konfirmasi Hapus',
+      message: 'Yakin ingin menghapus jadwal ronda ini?',
+      confirmLabel: 'Ya, Hapus',
+    })
+    if (!approved) return
+    try {
+      await deleteSiskamlingSchedule(schedule.id_siskamling_schedule)
+      showToast('Jadwal ronda berhasil dihapus.')
+      loadData()
+    } catch (err) {
+      showToast('Gagal menghapus: ' + err.message, 'error')
+    }
+  }
+
   const logRiwayat = schedules.filter(s => {
     const d = new Date(s.tanggal_jadwal)
     return d.getMonth() < 7
@@ -196,6 +271,11 @@ export default function WargaSiskamlingPage() {
             >
               Log Riwayat
             </button>
+            {isPengurus && (
+              <Button size="sm" className="ml-auto" onClick={openCreate}>
+                + Tambah Jadwal
+              </Button>
+            )}
           </div>
 
           {activeTab === 'kalender' ? (
@@ -210,9 +290,17 @@ export default function WargaSiskamlingPage() {
                       <p className="text-sm font-extrabold text-black">{log.tanggal_jadwal}</p>
                       <p className="text-xs text-neutral-600 mt-1">Petugas: {log.petugas?.nama_lengkap || 'Unknown'}</p>
                     </div>
-                    <Badge variant={log.shift === 'MALAM' ? 'info' : log.shift === 'PAGI' ? 'success' : 'default'}>
-                      Shift {log.shift}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={log.shift === 'MALAM' ? 'info' : log.shift === 'PAGI' ? 'success' : 'default'}>
+                        Shift {log.shift}
+                      </Badge>
+                      {isPengurus && (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => openEdit(log)}>Edit</Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteSchedule(log)}>Hapus</Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -299,6 +387,47 @@ export default function WargaSiskamlingPage() {
               <Button onClick={handleCapture}>Jepret Foto</Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingSchedule ? 'Edit Jadwal Ronda' : 'Tambah Jadwal Ronda'}</DialogTitle>
+            <DialogDescription>Isi detail jadwal ronda (wilayah diisi otomatis mengikuti RT Anda).</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleScheduleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="tanggal_jadwal" className="text-sm font-bold text-black">Tanggal <span className="text-red-500">*</span></Label>
+              <Input id="tanggal_jadwal" type="date" required value={form.tanggal_jadwal} onChange={(e) => setForm({ ...form, tanggal_jadwal: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-black">Shift <span className="text-red-500">*</span></Label>
+              <Select value={form.shift} onValueChange={(v) => setForm({ ...form, shift: v })}>
+                <SelectTrigger><SelectValue placeholder="Pilih shift" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PAGI">Pagi</SelectItem>
+                  <SelectItem value="SORE">Sore</SelectItem>
+                  <SelectItem value="MALAM">Malam</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-black">Petugas <span className="text-red-500">*</span></Label>
+              <Select value={form.id_petugas_citizen} onValueChange={(v) => setForm({ ...form, id_petugas_citizen: v })}>
+                <SelectTrigger><SelectValue placeholder="Pilih petugas" /></SelectTrigger>
+                <SelectContent>
+                  {citizens.map((c) => (
+                    <SelectItem key={c.id_citizen} value={c.id_citizen}>{c.nama_lengkap}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter className="flex-col sm:flex-row gap-3">
+              <Button type="button" variant="outline" onClick={() => setEditModalOpen(false)}>Batal</Button>
+              <Button type="submit">Simpan Jadwal</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </PageShell>

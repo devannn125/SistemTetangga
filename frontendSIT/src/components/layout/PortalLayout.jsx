@@ -3,6 +3,7 @@ import { useConfirm } from '@/components/ui/ConfirmContext'
 import { clearAuthData, getAuthData } from '@/services/authService'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton'
 
 /**
  * PortalSidebar â€” sidebar navigasi portal dengan item aktif + hover.
@@ -111,8 +112,8 @@ function PortalFooter({ label }) {
   return (
     <footer className="border-t border-neutral-100 bg-white px-6 py-4 text-xs text-neutral-400">
       <div className="flex justify-between gap-4 max-sm:flex-col">
-        <span>Â© 2024 Kenaran &mdash; {label}</span>
-        <span>Kontak Pengurus Â· Bantuan Â· Kebijakan Privasi</span>
+        <span>© 2024 Kenaran &mdash; {label}</span>
+        <span>Kontak Pengurus · Bantuan · Kebijakan Privasi</span>
       </div>
     </footer>
   )
@@ -163,6 +164,7 @@ export function PortalLayout({
         <div className="flex-1">{children}</div>
         <PortalFooter label={footerLabel} />
       </section>
+      <FloatingWhatsAppButton />
     </div>
   )
 }

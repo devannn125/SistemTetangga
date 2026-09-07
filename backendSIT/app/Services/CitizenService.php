@@ -50,6 +50,13 @@ class CitizenService
             $query->active();
         }
 
+        if (! empty($filters['exclude_admin'])) {
+            $query->whereDoesntHave('users.userRoles', function ($q) {
+                $q->where('status', 'ACTIVE')
+                    ->whereHas('role', fn ($r) => $r->where('kode', 'ADMIN'));
+            });
+        }
+
         return $query->orderBy('nama_lengkap')->paginate($perPage);
     }
 

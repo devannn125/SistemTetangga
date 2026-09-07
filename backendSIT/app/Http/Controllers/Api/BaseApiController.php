@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Module;
+use App\Models\User;
 use App\Services\RbacService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -73,14 +74,15 @@ class BaseApiController extends Controller
         string $entityType,
         ?string $entityId = null,
         array $oldValues = [],
-        array $newValues = []
+        array $newValues = [],
+        ?User $actor = null
     ): void {
         if (! Schema::hasTable('audit_log')) {
             return;
         }
 
         AuditLog::create([
-            'id_users' => $this->requestUser()?->id_users,
+            'id_users' => ($actor ?? $this->requestUser())?->id_users,
             'id_module' => $this->moduleId($moduleCode),
             'id_permission_action' => $action,
             'entity_type' => $entityType,

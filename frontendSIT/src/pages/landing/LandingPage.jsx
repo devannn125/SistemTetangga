@@ -1,5 +1,5 @@
 ﻿import { Icon } from '@/components/ui/Icon'
-import { Button } from '@/components/ui/Button'
+import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton'
 import { landingData } from './landingData'
 
 const heroImage =
@@ -160,6 +160,7 @@ export function LandingPage() {
           </nav>
         </div>
       </footer>
+      <FloatingWhatsAppButton />
     </main>
   )
 }

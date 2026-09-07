@@ -24,7 +24,7 @@ const sekMenus = [
   { label: 'Iuran', path: '/sek/iuran', icon: 'receipt' },
   { label: 'Surat Keterangan', path: '/sek/surat', icon: 'file' },
   { label: 'Siskamling', path: '/sek/siskamling', icon: 'shield' },
-  { label: 'Informasi & Statistik', path: '/sek/statistik', icon: 'chart' },
+  { label: 'Informasi & Statistik', path: '/sek/statistik', icon: 'trendingUp' },
   { label: 'Peraturan', path: '/sek/peraturan', icon: 'scroll' },
   { label: 'Struktur Organisasi', path: '/sek/organisasi', icon: 'building' },
   { label: 'Pesan & Kesan', path: '/sek/pesan', icon: 'message' },

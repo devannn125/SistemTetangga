@@ -12,8 +12,14 @@ class AuditLogController extends BaseApiController
     {
         $this->authorizeModule('AUDIT', 'VIEW');
 
-        $query = AuditLog::query()->with('module')->latest();
+        $query = AuditLog::query()->with(['module', 'user'])->latest();
 
+        if ($request->has('from')) {
+            $query->whereDate('created_at', '>=', $request->query('from'));
+        }
+        if ($request->has('to')) {
+            $query->whereDate('created_at', '<=', $request->query('to'));
+        }
         if ($request->has('id_users')) {
             $query->where('id_users', $request->query('id_users'));
         }
@@ -31,6 +37,6 @@ class AuditLogController extends BaseApiController
     {
         $this->authorizeModule('AUDIT', 'VIEW');
 
-        return new AuditLogResource(AuditLog::with('module')->findOrFail($id));
+        return new AuditLogResource(AuditLog::with(['module', 'user'])->findOrFail($id));
     }
 }

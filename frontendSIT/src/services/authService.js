@@ -77,7 +77,3 @@ export function clearAuthData() {
   localStorage.removeItem('authNik')
   localStorage.removeItem('authToken')
 }
-
-export function isAuthenticated() {
-  return Boolean(localStorage.getItem('authRole') || localStorage.getItem('authUser'))
-}

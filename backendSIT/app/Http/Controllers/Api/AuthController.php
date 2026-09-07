@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\LogoutRequest;
 use App\Http\Resources\UserResource;
@@ -13,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
-class AuthController extends Controller
+class AuthController extends BaseApiController
 {
     /**
      * POST /api/auth/login
@@ -103,6 +102,8 @@ class AuthController extends Controller
 
         $user->forceFill(['last_login_at' => now()])->save();
 
+        $this->audit('USER', 'LOGIN', 'user', $user->id_users, [], [], $user);
+
         // Lampirkan data turunan (bukan kolom asli tabel users) ke model
         // supaya bisa dibaca oleh UserResource.
         $user->setAttribute('nik', $user->citizen->nik ?? null);
@@ -140,6 +141,8 @@ class AuthController extends Controller
 
         $user->forceFill(['password_hash' => $data['new_password']])->save();
 
+        $this->audit('USER', 'CHANGE_PASSWORD', 'user', $user->id_users);
+
         return response()->json([
             'message' => 'Password berhasil diubah.',
         ]);
@@ -151,7 +154,11 @@ class AuthController extends Controller
      */
     public function logout(LogoutRequest $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+
+        $this->audit('USER', 'LOGOUT', 'user', $user->id_users);
+
+        $user->currentAccessToken()->delete();
 
         return response()->json([
             'message' => 'Logout berhasil.',

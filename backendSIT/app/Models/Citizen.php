@@ -107,6 +107,11 @@ class Citizen extends Model
         return $this->belongsTo(Family::class, 'id_family', 'id_family');
     }
 
+    public function users()
+    {
+        return $this->hasMany(User::class, 'id_citizen', 'id_citizen');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status_aktif', 1);

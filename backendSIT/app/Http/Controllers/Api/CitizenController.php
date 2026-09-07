@@ -27,7 +27,7 @@ class CitizenController extends BaseApiController
     {
         $this->authorizeModule('WARGA', 'VIEW');
 
-        $filters = $request->only(['search', 'id_wilayah', 'status_warga', 'status_aktif']);
+        $filters = $request->only(['search', 'id_wilayah', 'status_warga', 'status_aktif', 'exclude_admin']);
 
         $scope = $this->rbac->scopeFor($request->user(), 'WARGA', 'VIEW');
 

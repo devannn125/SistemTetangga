@@ -16,7 +16,7 @@ class HouseController extends BaseApiController
     {
         $this->authorizeModule('PERUMAHAN', 'VIEW');
 
-        $query = House::query()->with(['pemilik', 'wilayah', 'photos', 'rooms']);
+        $query = House::query()->with(['pemilik', 'wilayah', 'kategoriKos', 'photos', 'rooms']);
 
         $this->scopeQuery($query, 'PERUMAHAN', 'VIEW');
 
@@ -41,7 +41,7 @@ class HouseController extends BaseApiController
 
         $this->audit('PERUMAHAN', 'CREATE', 'house', $house->id_house);
 
-        return (new HouseResource($house->load(['pemilik', 'wilayah'])))->response()->setStatusCode(201);
+        return (new HouseResource($house->load(['pemilik', 'wilayah', 'kategoriKos'])))->response()->setStatusCode(201);
     }
 
     /**
@@ -60,7 +60,7 @@ class HouseController extends BaseApiController
         $houseIds = House::idsAccessibleByCitizen($user->id_citizen);
 
         $houses = House::query()
-            ->with(['pemilik', 'wilayah', 'photos', 'rooms'])
+            ->with(['pemilik', 'wilayah', 'kategoriKos', 'photos', 'rooms'])
             ->whereIn('id_house', $houseIds)
             ->where('status_aktif', 1)
             ->latest()
@@ -73,7 +73,7 @@ class HouseController extends BaseApiController
     {
         $this->authorizeModule('PERUMAHAN', 'VIEW');
 
-        return new HouseResource(House::with(['pemilik', 'wilayah', 'photos', 'rooms'])->findOrFail($id));
+        return new HouseResource(House::with(['pemilik', 'wilayah', 'kategoriKos', 'photos', 'rooms'])->findOrFail($id));
     }
 
     public function update(HouseRequest $request, string $id)
@@ -89,7 +89,7 @@ class HouseController extends BaseApiController
 
         $this->audit('PERUMAHAN', 'UPDATE', 'house', $house->id_house, $old, $house->toArray());
 
-        return new HouseResource($house->load(['pemilik', 'wilayah']));
+        return new HouseResource($house->load(['pemilik', 'wilayah', 'kategoriKos']));
     }
 
     public function destroy(string $id)

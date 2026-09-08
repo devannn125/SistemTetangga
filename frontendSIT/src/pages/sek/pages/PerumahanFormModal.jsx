@@ -54,6 +54,7 @@ export default function PerumahanFormModal({
     status_kepemilikan: 'MILIK_SENDIRI',
     id_kategori_kos: '',
     jumlah_kamar: '',
+    jumlah_penghuni: '',
     status_pajak: 'LUNAS',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -72,6 +73,7 @@ export default function PerumahanFormModal({
           status_kepemilikan: initialData.status_kepemilikan || 'MILIK_SENDIRI',
           id_kategori_kos: initialData.id_kategori_kos || '',
           jumlah_kamar: initialData.jumlah_kamar || '',
+          jumlah_penghuni: initialData.jumlah_penghuni ?? '',
           status_pajak: initialData.status_pajak || 'LUNAS',
         })
       } else {
@@ -84,6 +86,7 @@ export default function PerumahanFormModal({
           status_kepemilikan: 'MILIK_SENDIRI',
           id_kategori_kos: '',
           jumlah_kamar: '',
+          jumlah_penghuni: '',
           status_pajak: 'LUNAS',
         })
       }
@@ -97,6 +100,7 @@ export default function PerumahanFormModal({
         status_kepemilikan: 'MILIK_SENDIRI',
         id_kategori_kos: '',
         jumlah_kamar: '',
+        jumlah_penghuni: '',
         status_pajak: 'LUNAS',
       })
     }
@@ -111,8 +115,7 @@ export default function PerumahanFormModal({
     if (value === 'NON_KOS') {
       updateForm('id_kategori_kos', '')
       updateForm('jumlah_kamar', '')
-    } else {
-      updateForm('status_kepemilikan', '')
+      updateForm('jumlah_penghuni', '')
     }
   }
 
@@ -144,8 +147,7 @@ export default function PerumahanFormModal({
       if (form.tipe === 'NON_KOS') {
         payload.id_kategori_kos = null
         payload.jumlah_kamar = null
-      } else {
-        payload.status_kepemilikan = null
+        payload.jumlah_penghuni = null
       }
       await onSubmit(payload)
       onClose()
@@ -318,6 +320,18 @@ export default function PerumahanFormModal({
                     onChange={(e) => updateForm('jumlah_kamar', e.target.value)}
                     required
                     placeholder="4"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="jumlah_penghuni" className="text-sm font-bold text-black">Jumlah Penghuni <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="jumlah_penghuni"
+                    type="number"
+                    min="0"
+                    value={form.jumlah_penghuni}
+                    onChange={(e) => updateForm('jumlah_penghuni', e.target.value)}
+                    required
+                    placeholder="12"
                   />
                 </div>
               </div>

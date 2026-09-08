@@ -52,12 +52,11 @@ export default function PerumahanPage() {
   async function handlePerumahanSubmit(payload) {
     if (perumahanModal.mode === 'edit') {
       await updateHouse(perumahanModal.data.id_house, payload)
-      setHouses((prev) => prev.map(h => h.id_house === perumahanModal.data.id_house ? { ...h, ...payload } : h))
     } else {
-      const response = await createHouse(payload)
-      const created = response?.data || response
-      setHouses((prev) => [created, ...prev])
+      await createHouse(payload)
     }
+    const res = await getHouses({ per_page: 200 })
+    setHouses(toRows(res))
   }
 
   async function handleDelete(id) {
@@ -105,7 +104,7 @@ export default function PerumahanPage() {
     { key: 'alamat', label: 'Alamat' },
     { key: 'id_wilayah', label: 'RT', render: (v) => getWilayahName(wilayah, v) },
     { key: 'id_pemilik_citizen', label: 'Pemilik', render: (v) => getPemilikName(citizens, v) },
-    { key: 'status_kepemilikan', label: 'Kepemilikan', render: (v, row) => row.tipe === 'NON_KOS' ? (v || '-') : '-' },
+    { key: 'status_kepemilikan', label: 'Kepemilikan', render: (v) => (v || '-') },
     { key: 'id_kategori_kos', label: 'Kategori Kos', render: (v, row) => row.tipe === 'KOS' ? getKategoriKosName(masterData, v) : '-' },
     { key: 'jumlah_kamar', label: 'Kamar', render: (v, row) => row.tipe === 'KOS' ? (v || '-') : '-' },
     { key: 'jumlah_penghuni', label: 'Penghuni', render: (v, row) => row.tipe === 'KOS' ? v : '-' },

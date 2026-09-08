@@ -17,6 +17,7 @@ class HouseResource extends JsonResource
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'id_pemilik_citizen' => $this->id_pemilik_citizen,
+            'id_kategori_kos' => $this->id_kategori_kos,
             'status_kepemilikan' => $this->status_kepemilikan,
             'jumlah_kamar' => $this->jumlah_kamar,
             'jumlah_penghuni' => $this->jumlah_penghuni,
@@ -24,6 +25,7 @@ class HouseResource extends JsonResource
             'status_aktif' => (bool) $this->status_aktif,
             'pemilik' => $this->whenLoaded('pemilik', fn () => new CitizenResource($this->pemilik)),
             'wilayah' => $this->whenLoaded('wilayah', fn () => new WilayahResource($this->wilayah)),
+            'kategoriKos' => $this->whenLoaded('kategoriKos', fn () => new MasterDataResource($this->kategoriKos)),
             'photos' => $this->whenLoaded('photos', fn () => HousePhotoResource::collection($this->photos)),
             'rooms' => $this->whenLoaded('rooms', fn () => KosRoomResource::collection($this->rooms)),
         ];

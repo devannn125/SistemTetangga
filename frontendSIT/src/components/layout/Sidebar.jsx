@@ -45,7 +45,7 @@ export function Sidebar({ items, user }) {
         <span>Tetangga</span>
       </div>
 
-      <nav className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto p-3 max-md:grid max-md:max-h-none max-md:grid-cols-2 max-md:overflow-visible" aria-label="Menu utama">
+      <nav className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto p-3 max-md:grid max-md:max-h-none max-md:grid-cols-1 max-md:overflow-visible" aria-label="Menu utama">
         {items.map((item) => {
           const isOpen = openMenus.includes(item.id)
 
@@ -71,7 +71,7 @@ export function Sidebar({ items, user }) {
 
               {item.children && (
                 <div
-                  className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out max-md:hidden ${
+                  className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
                     isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                   }`}
                 >

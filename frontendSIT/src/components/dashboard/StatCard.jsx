@@ -8,10 +8,10 @@ const iconStyles = {
 
 export function StatCard({ item }) {
   return (
-    <article className="group flex min-h-[118px] justify-between gap-4 rounded-xl border border-neutral-300 bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-sky-500 hover:bg-sky-50 hover:shadow-md">
-      <div>
-        <p className="mb-2 text-sm text-neutral-700">{item.title}</p>
-        <strong className="block text-2xl leading-tight text-black group-hover:text-sky-700">{item.value}</strong>
+    <article className="group flex min-h-[118px] min-w-0 justify-between gap-4 rounded-xl border border-neutral-300 bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:border-sky-500 hover:bg-sky-50 hover:shadow-md">
+      <div className="min-w-0">
+        <p className="mb-2 text-sm text-neutral-700 truncate">{item.title}</p>
+        <strong className="block text-xl sm:text-2xl leading-tight text-black group-hover:text-sky-700 break-words">{item.value}</strong>
         <p className={`mt-2.5 text-[13px] ${item.positive ? 'text-green-600' : 'text-neutral-700'}`}>
           {item.note}
         </p>

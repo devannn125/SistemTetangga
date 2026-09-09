@@ -202,7 +202,7 @@ export default function RtAnnouncementPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="kategori" className="text-sm font-bold text-black">Kategori</Label>
                 <Select value={formData.kategori} onValueChange={(value) => setFormData({ ...formData, kategori: value })}>

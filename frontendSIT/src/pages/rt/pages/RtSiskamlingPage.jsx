@@ -74,10 +74,10 @@ function CalendarWidget({ schedules, selectedDate, onSelectDate, currentMonth, c
         <h3 className="text-center font-extrabold text-black text-lg">${monthNames[currentMonth]} ${currentYear}</h3>
         <button onClick={() => onChangeMonth(1)} className="px-3 py-1 font-extrabold border-2 border-transparent hover:border-black rounded-lg transition">Next &gt;</button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-neutral-400 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-xs font-bold text-neutral-400 mb-2">
         <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
       </div>
-      <div className="grid grid-cols-7 gap-2 flex-grow">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 flex-grow">
         {days.map((d, i) => {
           if (!d) return <div key={`empty-${i}`} />
           const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
@@ -402,7 +402,7 @@ export default function RtSiskamlingPage() {
                   </>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-y-2 text-sm border-t pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm border-t pt-4">
                 <span className="text-neutral-500 font-medium">Petugas</span>
                 <span className="font-bold text-black">{selectedAbsensi.petugas?.nama_lengkap}</span>
                 

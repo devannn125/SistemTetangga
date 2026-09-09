@@ -33,7 +33,7 @@ export function BendaharaDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm flex flex-col justify-center items-center text-center">
             <h3 className="text-2xl font-black text-blue-600">{iuranTerkumpulStr}</h3>
             <p className="text-xs font-bold text-neutral-500 mt-1">Lunas</p>

@@ -60,16 +60,18 @@ export function DemographyCharts({ summary }) {
       {profesi.length > 0 && (
         <div className="border border-neutral-200 bg-white p-5 lg:col-span-2">
           <h3 className="text-sm font-extrabold text-black">Distribusi Profesi</h3>
-          <div className="h-52 mt-3">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={profesi} layout="vertical" margin={{ left: 8, right: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="total" fill="#7c3aed" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-52 mt-3 overflow-x-auto">
+            <div className="min-w-[320px] h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={profesi} layout="vertical" margin={{ left: 8, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} tickFormatter={(v) => String(v).slice(0, 12)} />
+                  <Tooltip />
+                  <Bar dataKey="total" fill="#7c3aed" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}

@@ -81,7 +81,7 @@ export function LurahDashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               {complaintsData.map((entry, index) => (
                 <div key={entry.label} className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />

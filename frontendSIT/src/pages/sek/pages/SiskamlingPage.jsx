@@ -95,7 +95,8 @@ function formatDateOnly(value) {
             ) : schedules.length === 0 ? (
               <div className="p-8 text-center text-sm text-neutral-500">Belum ada jadwal ronda.</div>
             ) : (
-              <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm min-w-[520px]">
                 <thead className="bg-neutral-50 border-b">
                   <tr>
                     <th className="px-4 py-3 font-semibold text-neutral-600">Tanggal</th>
@@ -117,6 +118,7 @@ function formatDateOnly(value) {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </div>

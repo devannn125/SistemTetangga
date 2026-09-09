@@ -28,12 +28,12 @@ function CalendarWidget({ schedules, selectedDate, onSelectDate }) {
   return (
     <div className="border border-neutral-200 p-6 rounded-2xl bg-white shadow-sm">
       <h3 className="text-center font-extrabold text-black mb-6">{monthNames[month]} {year}</h3>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-neutral-400 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-xs font-bold text-neutral-400 mb-2">
         <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {days.map((d, idx) => {
-          if (!d) return <div key={idx} className="h-14"></div>
+          if (!d) return <div key={idx} className="h-12 sm:h-14"></div>
           
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
           const daySchedules = schedules.filter(s => s.tanggal_jadwal === dateStr)
@@ -321,7 +321,7 @@ export default function WargaSiskamlingPage() {
                   <img 
                     src={todaySchedule.checkins[0].foto_url.startsWith('http') || todaySchedule.checkins[0].foto_url.startsWith('data:') ? todaySchedule.checkins[0].foto_url : `http://localhost:8000/storage/${todaySchedule.checkins[0].foto_url}`} 
                     alt="Bukti Check-in" 
-                    className="w-full h-auto object-cover opacity-90"
+                    className="w-full h-auto max-h-64 object-cover opacity-90"
                   />
                 </div>
                 <p className="text-xs font-bold text-emerald-600 bg-emerald-100 py-2 rounded-md">
@@ -359,7 +359,7 @@ export default function WargaSiskamlingPage() {
             <DialogTitle>Kamera Aktif - Bukti Check-in</DialogTitle>
             <DialogDescription>Arahkan wajah ke kamera untuk mengambil bukti presensi kehadiran.</DialogDescription>
           </DialogHeader>
-          <div className="w-full h-72 bg-black rounded-lg flex items-center justify-center relative overflow-hidden">
+          <div className="w-full h-56 sm:h-72 bg-black rounded-lg flex items-center justify-center relative overflow-hidden">
             {photo ? (
               <img src={photo} alt="Bukti Kehadiran" className="w-full h-full object-cover" />
             ) : (

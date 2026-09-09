@@ -34,7 +34,7 @@ export function Topbar() {
       <h1 className="text-lg font-bold text-neutral-950">Dashboard</h1>
 
       <div className="flex items-center gap-3 max-md:grid max-md:grid-cols-[1fr_36px_36px]">
-        <label className={`flex h-9 w-[min(312px,36vw)] items-center gap-2.5 rounded-lg bg-neutral-100 px-3 text-neutral-500 transition max-md:w-auto ${searchOpen ? 'ring-2 ring-sky-500/20' : ''}`}>
+        <label className={`flex h-9 w-[min(312px,36vw)] max-md:w-full flex-1 min-w-0 items-center gap-2.5 rounded-lg bg-neutral-100 px-3 text-neutral-500 transition ${searchOpen ? 'ring-2 ring-sky-500/20' : ''}`}>
           <Icon name="search" className="h-[18px] w-[18px]" />
           <Input
             className="min-w-0 flex-1 border-0 bg-transparent text-sm text-neutral-800 outline-0"

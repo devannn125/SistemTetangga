@@ -39,7 +39,7 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
 
       {/* Navigation */}
       <nav
-        className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-3 max-md:grid max-md:grid-cols-2 max-md:overflow-visible"
+        className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-3 max-md:grid max-md:grid-cols-1 max-md:overflow-visible"
         aria-label="Menu portal"
       >
         {menuItems.map((item) => {

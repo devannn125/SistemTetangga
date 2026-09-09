@@ -210,7 +210,7 @@ export default function PerumahanFormModal({
               <p className="text-xs font-normal text-neutral-500">
                 Klik peta untuk menandai lokasi rumah, lalu geser pin bila perlu penyesuaian.
               </p>
-              <div className="relative z-0 h-72 w-full overflow-hidden rounded-xl border border-neutral-300">
+              <div className="relative z-0 h-56 sm:h-72 w-full overflow-hidden rounded-xl border border-neutral-300">
                 <MapContainer
                   center={hasCoordinate ? [latitude, longitude] : DEFAULT_CENTER}
                   zoom={16}
@@ -236,8 +236,8 @@ export default function PerumahanFormModal({
                 </MapContainer>
               </div>
               {hasCoordinate ? (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neutral-100 px-4 py-2.5 text-xs font-semibold text-neutral-700">
-                  <span>Latitude: {form.latitude} &middot; Longitude: {form.longitude}</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neutral-100 px-4 py-2.5 text-xs font-semibold text-neutral-700 break-all">
+                  <span class="break-all">Latitude: {form.latitude} &middot; Longitude: {form.longitude}</span>
                   <Button
                     type="button"
                     variant="outline"

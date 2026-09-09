@@ -90,7 +90,7 @@ export default function AdminDashboardPage() {
       title='Beranda Sistem'
       description='Pemantauan statistik dan aktivitas sistem secara real-time.'
     >
-      <div className='mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4'>
+      <div className='mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
         <StatCard item={{ title: 'Total Warga', value: loading ? '...' : stats.warga, icon: 'users', accent: 'blue' }} />
         <StatCard item={{ title: 'Total RT', value: loading ? '...' : stats.rt, icon: 'map', accent: 'amber' }} />
         <StatCard item={{ title: 'Total RW', value: loading ? '...' : stats.rw, icon: 'map', accent: 'green' }} />

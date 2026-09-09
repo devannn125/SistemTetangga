@@ -211,7 +211,7 @@ export function DataTable({
 
         {/* Header Actions (tombol tambah, export, dll) */}
         {headerActions && (
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
             {headerActions}
           </div>
         )}
@@ -285,7 +285,7 @@ export function DataTable({
 
       {/* Pagination */}
       {!loading && !error && filtered.length > 0 && (
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
           <span className="text-xs text-neutral-500">
             Halaman {safePage} dari {totalPages} · {filtered.length} data
           </span>

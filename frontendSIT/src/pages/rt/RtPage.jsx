@@ -1,25 +1,26 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { PortalLayout } from '@/components/layout/PortalLayout'
 import { PageShell } from '@/components/layout/PageShell'
 import { getAuthData } from '@/services/authService'
 import { getInventoryPurchases, updateInventoryPurchase } from '@/services/api'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
-import ApprovalGuestPage from '@/pages/rt/pages/ApprovalGuestPage'
-import ApprovalLetterPage from '@/pages/rt/pages/ApprovalLetterPage'
-import RtComplaintPage from '@/pages/rt/pages/RtComplaintPage'
-import RtFeeBillPage from '@/pages/rt/pages/RtFeeBillPage'
-import RtFinancePage from '@/pages/rt/pages/RtFinancePage'
-import RtRegulationPage from '@/pages/rt/pages/RtRegulationPage'
-import RtCitizenPage from '@/pages/sek/pages/WargaPage'
-import RtSiskamlingPage from '@/pages/rt/pages/RtSiskamlingPage'
-import RtAnnouncementPage from '@/pages/rt/pages/RtAnnouncementPage'
-import RtUserManagementPage from '@/pages/rt/pages/RtUserManagementPage'
-import RtHousingPage from '@/pages/sek/pages/PerumahanPage'
-import RtMessagePage from '@/pages/rt/pages/RtMessagePage'
-import RtStatisticsPage from '@/pages/rt/pages/RtStatisticsPage'
-import { RtDashboard } from '@/components/dashboard/roles/RtDashboard'
-import StrukturOrganisasi from '@/components/StrukturOrganisasi'
+
+const ApprovalGuestPage = lazy(() => import('@/pages/rt/pages/ApprovalGuestPage'))
+const ApprovalLetterPage = lazy(() => import('@/pages/rt/pages/ApprovalLetterPage'))
+const RtComplaintPage = lazy(() => import('@/pages/rt/pages/RtComplaintPage'))
+const RtFeeBillPage = lazy(() => import('@/pages/rt/pages/RtFeeBillPage'))
+const RtFinancePage = lazy(() => import('@/pages/rt/pages/RtFinancePage'))
+const RtRegulationPage = lazy(() => import('@/pages/rt/pages/RtRegulationPage'))
+const RtCitizenPage = lazy(() => import('@/pages/sek/pages/WargaPage'))
+const RtSiskamlingPage = lazy(() => import('@/pages/rt/pages/RtSiskamlingPage'))
+const RtAnnouncementPage = lazy(() => import('@/pages/rt/pages/RtAnnouncementPage'))
+const RtUserManagementPage = lazy(() => import('@/pages/rt/pages/RtUserManagementPage'))
+const RtHousingPage = lazy(() => import('@/pages/sek/pages/PerumahanPage'))
+const RtMessagePage = lazy(() => import('@/pages/rt/pages/RtMessagePage'))
+const RtStatisticsPage = lazy(() => import('@/pages/rt/pages/RtStatisticsPage'))
+const RtDashboard = lazy(() => import('@/components/dashboard/roles/RtDashboard').then((m) => ({ default: m.RtDashboard })))
+const StrukturOrganisasi = lazy(() => import('@/components/StrukturOrganisasi'))
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RT
 // (Dashboard full, Data Warga CRUD, Perumahan, Tamu approve, Keuangan read,
@@ -359,7 +360,9 @@ export function RtPage() {
       brandSubtitle="Panel Pengurus Lingkungan"
       footerLabel="Panel Ketua RT"
     >
-      {renderPage(activeMenu.path)}
+      <Suspense fallback={<div className="p-8 text-center text-sm text-neutral-500">Memuat...</div>}>
+        {renderPage(activeMenu.path)}
+      </Suspense>
     </PortalLayout>
   )
 }

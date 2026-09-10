@@ -1,20 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { PortalLayout } from '@/components/layout/PortalLayout'
-import StrukturOrganisasi from '@/components/StrukturOrganisasi'
 import { PageShell } from '@/components/layout/PageShell'
 import { getAuthData } from '@/services/authService'
 import { getCitizens, getComplaints, getLetterRequests } from '@/services/api'
-import { LurahDashboard } from '@/components/dashboard/roles/LurahDashboard'
-import {
-  DukuhCitizenPage,
-  DukuhHousingPage,
-  DukuhFinancePage,
-  DukuhStatisticsPage,
-  DukuhRegulationPage,
-  DukuhInventoryPage,
-} from '@/pages/dukuh/DukuhPage'
-import DataKepalaDukuhPage from '@/pages/kelurahan/pages/DataKepalaDukuhPage'
-import WilayahDukuhPage from '@/pages/kelurahan/pages/WilayahDukuhPage'
+
+const StrukturOrganisasi = lazy(() => import('@/components/StrukturOrganisasi'))
+const LurahDashboard = lazy(() => import('@/components/dashboard/roles/LurahDashboard').then((m) => ({ default: m.LurahDashboard })))
+const DukuhCitizenPage = lazy(() => import('@/pages/dukuh/pages/DukuhCitizenPage').then((m) => ({ default: m.DukuhCitizenPage })))
+const DukuhHousingPage = lazy(() => import('@/pages/dukuh/pages/DukuhHousingPage').then((m) => ({ default: m.DukuhHousingPage })))
+const DukuhFinancePage = lazy(() => import('@/pages/dukuh/pages/DukuhFinancePage').then((m) => ({ default: m.DukuhFinancePage })))
+const DukuhStatisticsPage = lazy(() => import('@/pages/dukuh/pages/DukuhStatisticsPage').then((m) => ({ default: m.DukuhStatisticsPage })))
+const DukuhRegulationPage = lazy(() => import('@/pages/dukuh/pages/DukuhRegulationPage').then((m) => ({ default: m.DukuhRegulationPage })))
+const DukuhInventoryPage = lazy(() => import('@/pages/dukuh/pages/DukuhInventoryPage').then((m) => ({ default: m.DukuhInventoryPage })))
+const DataKepalaDukuhPage = lazy(() => import('@/pages/kelurahan/pages/DataKepalaDukuhPage'))
+const WilayahDukuhPage = lazy(() => import('@/pages/kelurahan/pages/WilayahDukuhPage'))
 
 // Menu portal Kelurahan — hanya modul yang memiliki halaman & akses role LURAH.
 const KelurahanMenus = [
@@ -106,7 +105,9 @@ export function KelurahanPage() {
       brandSubtitle="Panel Kepala Lurah"
       footerLabel="Panel Kepala Lurah"
     >
-      {renderPage(activeMenu.path)}
+      <Suspense fallback={<div className="p-8 text-center text-sm text-neutral-500">Memuat...</div>}>
+        {renderPage(activeMenu.path)}
+      </Suspense>
     </PortalLayout>
   )
 }

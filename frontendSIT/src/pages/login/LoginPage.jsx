@@ -45,11 +45,6 @@ export function LoginPage() {
     setRequestMessage('')
   }
 
-  function fillDemoAccount(email, password) {
-    setForm({ email, password })
-    setError('')
-  }
-
   async function handleSubmit(event) {
     event.preventDefault()
 
@@ -224,36 +219,6 @@ export function LoginPage() {
                   </>
                 )}
               </Button>
-
-              {/* Quick Demo Accounts Helper */}
-              <div className="border border-neutral-200 bg-neutral-50 rounded-lg p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-600">
-                  Akun Uji Coba Cepat:
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {[
-                    { email: 'siti@example.com', password: 'password', label: 'Warga' },
-                    { email: 'admin@sukamaju.test', password: 'password', label: 'Admin' },
-                    { email: 'lurah@sukamaju.test', password: 'password', label: 'Kepala Lurah' },
-                    { email: 'budi@example.com', password: 'password', label: 'Ketua RT' },
-                    { email: 'dukuh@sukamaju.test', password: 'password', label: 'Kepala Dukuh' },
-                    { email: 'bendahara@example.com', password: 'password', label: 'Bendahara' },
-                    { email: 'sekretaris@example.com', password: 'password', label: 'Sekretaris' },
-                    { email: 'rudi@example.com', password: 'password', label: 'Ketua RW' },
-                  ].map((account) => (
-                    <Button
-                      key={account.label}
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                      onClick={() => fillDemoAccount(account.email, account.password)}
-                      type="button"
-                    >
-                      {account.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
 
               <div className="mt-6 border-t border-neutral-200 pt-5 text-center text-sm text-neutral-600">
                 Belum terdaftar?{' '}

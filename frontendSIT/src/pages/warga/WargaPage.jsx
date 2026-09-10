@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { Button } from '@/components/ui/Button'
 import { PortalLayout } from '@/components/layout/PortalLayout'
@@ -6,20 +6,21 @@ import { useConfirm } from '@/components/ui/ConfirmContext'
 import { useToast } from '@/components/ui/ToastContext'
 import { getAuthRole, getAuthData } from '@/services/authService'
 import { DemographyCharts } from '@/components/dashboard/DemographyCharts'
-import ComplaintPage from '@/pages/warga/pages/ComplaintPage'
-import FinancePage from '@/pages/warga/pages/FinancePage'
-import GuestPage from '@/pages/warga/pages/GuestPage'
-import IuranPage from '@/pages/warga/pages/IuranPage'
-import LetterPage from '@/pages/warga/pages/LetterPage'
-import SiskamlingPage from '@/pages/warga/pages/SiskamlingPage'
-import HealthPage from '@/pages/warga/pages/HealthPage'
-import PasswordPage from '@/pages/warga/pages/PasswordPage'
-import InventoryPage from '@/pages/warga/pages/InventoryPage'
-import RulesPage from '@/pages/warga/pages/RulesPage'
-import OrgPage from '@/pages/warga/pages/OrgPage'
-import StatisticsPage from '@/pages/warga/pages/StatisticsPage'
-import { WargaDashboard } from '@/components/dashboard/roles/WargaDashboard'
 import { PageShell } from '@/components/layout/PageShell'
+
+const ComplaintPage = lazy(() => import('@/pages/warga/pages/ComplaintPage'))
+const FinancePage = lazy(() => import('@/pages/warga/pages/FinancePage'))
+const GuestPage = lazy(() => import('@/pages/warga/pages/GuestPage'))
+const IuranPage = lazy(() => import('@/pages/warga/pages/IuranPage'))
+const LetterPage = lazy(() => import('@/pages/warga/pages/LetterPage'))
+const SiskamlingPage = lazy(() => import('@/pages/warga/pages/SiskamlingPage'))
+const HealthPage = lazy(() => import('@/pages/warga/pages/HealthPage'))
+const PasswordPage = lazy(() => import('@/pages/warga/pages/PasswordPage'))
+const InventoryPage = lazy(() => import('@/pages/warga/pages/InventoryPage'))
+const RulesPage = lazy(() => import('@/pages/warga/pages/RulesPage'))
+const OrgPage = lazy(() => import('@/pages/warga/pages/OrgPage'))
+const StatisticsPage = lazy(() => import('@/pages/warga/pages/StatisticsPage'))
+const WargaDashboard = lazy(() => import('@/components/dashboard/roles/WargaDashboard').then((m) => ({ default: m.WargaDashboard })))
 
 const wargaMenus = [
   { label: 'Beranda', path: '/warga', icon: 'home' },
@@ -497,7 +498,9 @@ export function WargaPage() {
       brandSubtitle="Layanan Digital Masyarakat"
       footerLabel="Kenaran"
     >
-      {renderPage(activeMenu.path)}
+      <Suspense fallback={<div className="p-8 text-center text-sm text-neutral-500">Memuat...</div>}>
+        {renderPage(activeMenu.path)}
+      </Suspense>
     </PortalLayout>
   )
 }

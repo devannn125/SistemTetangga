@@ -1,13 +1,15 @@
+import { lazy, Suspense } from 'react'
 import { PortalLayout } from '@/components/layout/PortalLayout'
-import StrukturOrganisasi from '@/components/StrukturOrganisasi'
-import HomePage from './pages/HomePage'
-import KeuanganPage from './pages/KeuanganPage'
-import IuranPage from './pages/IuranPage'
-import WargaReadPage from './pages/WargaReadPage'
-import PerumahanPage from './pages/PerumahanPage'
-import InventoryPage from './pages/InventoryPage'
-import { BendaharaDashboard } from '@/components/dashboard/roles/BendaharaDashboard'
 import { PageShell } from '@/components/layout/PageShell'
+
+const StrukturOrganisasi = lazy(() => import('@/components/StrukturOrganisasi'))
+const HomePage = lazy(() => import('./pages/HomePage'))
+const KeuanganPage = lazy(() => import('./pages/KeuanganPage'))
+const IuranPage = lazy(() => import('./pages/IuranPage'))
+const WargaReadPage = lazy(() => import('./pages/WargaReadPage'))
+const PerumahanPage = lazy(() => import('./pages/PerumahanPage'))
+const InventoryPage = lazy(() => import('./pages/InventoryPage'))
+const BendaharaDashboard = lazy(() => import('@/components/dashboard/roles/BendaharaDashboard').then((m) => ({ default: m.BendaharaDashboard })))
 
 const benMenus = [
   { label: 'Beranda', path: '/ben', icon: 'home' },
@@ -50,7 +52,9 @@ export function BendaharaPage() {
       brandSubtitle="Panel Keuangan RT"
       footerLabel="Panel Bendahara"
     >
-      {renderPage(activeMenu.path)}
+      <Suspense fallback={<div className="p-8 text-center text-sm text-neutral-500">Memuat...</div>}>
+        {renderPage(activeMenu.path)}
+      </Suspense>
     </PortalLayout>
   )
 }

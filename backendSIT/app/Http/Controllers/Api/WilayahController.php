@@ -45,13 +45,24 @@ class WilayahController extends BaseApiController
         $validated = $request->validated();
         $user = $this->requestUser();
 
+        // ADMIN: boleh buat tipe apa saja (KELURAHAN/DUKUH/RW/RT) — bypass LURAH
+        if ($this->rbac->hasAnyRole($user, ['ADMIN'])) {
+            if (empty($validated['kode_wilayah'])) {
+                throw ValidationException::withMessages([
+                    'kode_wilayah' => ['Kode wilayah wajib diisi.'],
+                ]);
+            }
+            $wilayah = Wilayah::create($validated);
+            $this->audit('MASTER', 'CREATE', 'wilayah', $wilayah->id_wilayah);
+            return (new WilayahResource($wilayah))->response()->setStatusCode(201);
+        }
+
         // Kepala Lurah: hanya berwenang membuat node DUKUH di bawah kelurahan
         // yang menjadi lingkupnya, dengan kode_wilayah auto-generate (DUK##).
         if ($this->rbac->hasAnyRole($user, ['LURAH'])) {
             return response()->json($this->storeDukuh($request, $validated), 201);
         }
 
-        // Non-LURAH (mis. ADMIN): kode_wilayah wajib diisi.
         if (empty($validated['kode_wilayah'])) {
             throw ValidationException::withMessages([
                 'kode_wilayah' => ['Kode wilayah wajib diisi.'],

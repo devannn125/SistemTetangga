@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/Input'
 import { clearAuthData } from '@/services/authService'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 
-export function Topbar() {
+export function Topbar({ onMenuClick, menuOpen }) {
   const [searchOpen, setSearchOpen] = useState(false)
   const confirm = useConfirm()
 
@@ -31,7 +31,20 @@ export function Topbar() {
 
   return (
     <header className="flex h-16 items-center justify-between gap-5 border-b border-neutral-200 bg-neutral-50 px-6 max-md:h-auto max-md:flex-col max-md:items-stretch max-md:p-4">
-      <h1 className="text-lg font-bold text-neutral-950">Dashboard</h1>
+      <div className="flex w-full items-center justify-between gap-3 md:w-auto">
+        <h1 className="text-lg font-bold text-neutral-950">Dashboard</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 md:hidden"
+          onClick={onMenuClick}
+          aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'}
+          aria-expanded={menuOpen}
+          aria-controls="admin-sidebar"
+        >
+          <Icon name={menuOpen ? 'x' : 'menu'} className="h-5 w-5" />
+        </Button>
+      </div>
 
       <div className="flex items-center gap-3 max-md:grid max-md:grid-cols-[1fr_36px_36px]">
         <label className={`flex h-9 w-[min(312px,36vw)] max-md:w-full flex-1 min-w-0 items-center gap-2.5 rounded-lg bg-neutral-100 px-3 text-neutral-500 transition ${searchOpen ? 'ring-2 ring-sky-500/20' : ''}`}>

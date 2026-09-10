@@ -1,11 +1,13 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { dashboardData as fallbackData } from '@/data/dashboardData'
 
 const COLORS = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6']
 
-export function LurahDashboard() {
-  const { data, isLoading } = useDashboardData()
+export function LurahDashboard({ data: propData }) {
+  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
+  const data = propData || fetched || fallbackData
 
   if (isLoading || !data) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>

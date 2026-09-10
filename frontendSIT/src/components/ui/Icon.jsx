@@ -40,6 +40,8 @@ const paths = {
   book: <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />,
   award: <g><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></g>,
   briefcase: <g><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></g>,
+  menu: <g><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></g>,
+  x: <path d="M18 6 6 18M6 6l12 12" />,
 }
 
 export function Icon({ name, className = 'h-4 w-4' }) {

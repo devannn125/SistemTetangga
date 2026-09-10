@@ -1,19 +1,21 @@
+import { lazy, Suspense } from 'react'
 import { PortalLayout } from '@/components/layout/PortalLayout'
-import HomePage from '@/pages/sek/pages/HomePage'
-import WargaPage from '@/pages/sek/pages/WargaPage'
-import LetterPage from '@/pages/sek/pages/LetterPage'
-import InventoryPage from '@/pages/sek/pages/InventoryPage'
-import PerumahanPage from '@/pages/sek/pages/PerumahanPage'
-import InformasiStatistikPage from '@/pages/sek/pages/InformasiStatistikPage'
-import GuestPage from '@/pages/sek/pages/GuestPage'
-import FinancePage from '@/pages/sek/pages/FinancePage'
-import FeeBillPage from '@/pages/sek/pages/FeeBillPage'
-import SiskamlingPage from '@/pages/sek/pages/SiskamlingPage'
-import RegulationPage from '@/pages/sek/pages/RegulationPage'
-import OrganizationPage from '@/pages/sek/pages/OrganizationPage'
-import MessagePage from '@/pages/sek/pages/MessagePage'
-import { SekretarisDashboard } from '@/components/dashboard/roles/SekretarisDashboard'
 import { PageShell } from '@/components/layout/PageShell'
+
+const HomePage = lazy(() => import('@/pages/sek/pages/HomePage'))
+const WargaPage = lazy(() => import('@/pages/sek/pages/WargaPage'))
+const LetterPage = lazy(() => import('@/pages/sek/pages/LetterPage'))
+const InventoryPage = lazy(() => import('@/pages/sek/pages/InventoryPage'))
+const PerumahanPage = lazy(() => import('@/pages/sek/pages/PerumahanPage'))
+const InformasiStatistikPage = lazy(() => import('@/pages/sek/pages/InformasiStatistikPage'))
+const GuestPage = lazy(() => import('@/pages/sek/pages/GuestPage'))
+const FinancePage = lazy(() => import('@/pages/sek/pages/FinancePage'))
+const FeeBillPage = lazy(() => import('@/pages/sek/pages/FeeBillPage'))
+const SiskamlingPage = lazy(() => import('@/pages/sek/pages/SiskamlingPage'))
+const RegulationPage = lazy(() => import('@/pages/sek/pages/RegulationPage'))
+const OrganizationPage = lazy(() => import('@/pages/sek/pages/OrganizationPage'))
+const MessagePage = lazy(() => import('@/pages/sek/pages/MessagePage'))
+const SekretarisDashboard = lazy(() => import('@/components/dashboard/roles/SekretarisDashboard').then((m) => ({ default: m.SekretarisDashboard })))
 
 const sekMenus = [
   { label: 'Beranda', path: '/sek', icon: 'home' },
@@ -68,7 +70,9 @@ export function SekretarisPage() {
       brandSubtitle="Panel Administrasi RT"
       footerLabel="Panel Sekretaris"
     >
-      {renderPage(activeMenu.path)}
+      <Suspense fallback={<div className="p-8 text-center text-sm text-neutral-500">Memuat...</div>}>
+        {renderPage(activeMenu.path)}
+      </Suspense>
     </PortalLayout>
   )
 }

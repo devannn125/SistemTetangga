@@ -1,11 +1,13 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, Legend } from 'recharts'
 import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { dashboardData as fallbackData } from '@/data/dashboardData'
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#6366F1', '#EC4899', '#8B5CF6']
 
-export function RwDashboard() {
-  const { data, isLoading } = useDashboardData()
+export function RwDashboard({ data: propData }) {
+  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
+  const data = propData || fetched || fallbackData
 
   if (isLoading || !data) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>

@@ -74,12 +74,13 @@ const JABATAN = {
 
 export default function StrukturOrganisasi() {
   const role = getAuthRole()
+  const isAdmin = role === 'ADMIN'
   const isDukuh = role === 'DUKUH'
   const isLurah = role === 'LURAH'
   const isRtRole = role === 'RT'
-  const canManageSekBen = isRtRole
-  const canManageDukuh = isLurah
-  const canManageRw = isDukuh
+  const canManageSekBen = isRtRole && !isAdmin
+  const canManageDukuh = isLurah && !isAdmin
+  const canManageRw = isDukuh && !isAdmin
 
   const [members, setMembers] = useState([])
   const [wilayahs, setWilayahs] = useState([])
@@ -90,6 +91,7 @@ export default function StrukturOrganisasi() {
 
   const [addModal, setAddModal] = useState({ type: null, open: false })
   const [selectedDukuhId, setSelectedDukuhId] = useState(null)
+  const [adminActiveKelurahanId, setAdminActiveKelurahanId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [form, setForm] = useState({
@@ -147,9 +149,12 @@ export default function StrukturOrganisasi() {
   useEffect(() => { loadData() }, [loadData])
 
   const tree = useMemo(() => {
-    if (wilayahs.length === 0) return { kelurahan: null, dukuhList: [] }
-    const kelurahan = wilayahs.find((w) => w.tipe === 'KELURAHAN')
-    if (!kelurahan) return { kelurahan: null, dukuhList: [] }
+    if (wilayahs.length === 0) return { kelurahan: null, dukuhList: [], kelurahanList: [] }
+    const kelurahanList = wilayahs
+      .filter((w) => w.tipe === 'KELURAHAN')
+      .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))
+    const kelurahan = kelurahanList[0] || null
+    if (!kelurahan) return { kelurahan: null, dukuhList: [], kelurahanList }
 
     const dukuhList = wilayahs
       .filter((w) => w.parent_id === kelurahan.id_wilayah && w.tipe === 'DUKUH')
@@ -167,8 +172,40 @@ export default function StrukturOrganisasi() {
           })),
       }))
 
-    return { kelurahan, dukuhList }
+    return { kelurahan, dukuhList, kelurahanList }
   }, [wilayahs])
+
+  const adminKelurahanList = useMemo(() => {
+    if (!isAdmin) return []
+    return tree.kelurahanList || []
+  }, [isAdmin, tree.kelurahanList])
+
+  useEffect(() => {
+    if (isAdmin && adminKelurahanList.length > 0 && !adminActiveKelurahanId) {
+      setAdminActiveKelurahanId(adminKelurahanList[0].id_wilayah)
+    }
+  }, [isAdmin, adminKelurahanList, adminActiveKelurahanId])
+
+  const adminDukuhList = useMemo(() => {
+    if (!isAdmin) return []
+    const kelId = adminActiveKelurahanId || tree.kelurahan?.id_wilayah
+    if (!kelId) return []
+    return wilayahs
+      .filter((w) => w.parent_id === kelId && w.tipe === 'DUKUH')
+      .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))
+      .map((d) => ({
+        ...d,
+        rws: wilayahs
+          .filter((w) => w.parent_id === d.id_wilayah && w.tipe === 'RW')
+          .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))
+          .map((rw) => ({
+            ...rw,
+            rts: wilayahs
+              .filter((w) => w.parent_id === rw.id_wilayah && w.tipe === 'RT')
+              .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah)),
+          })),
+      }))
+  }, [isAdmin, adminActiveKelurahanId, tree.kelurahan, wilayahs])
 
   const myDukuhId = useMemo(() => {
     const active = authRoles.find((r) => (r.kode === 'DUKUH' || r.role?.kode_role === 'DUKUH') && r.status === 'ACTIVE')
@@ -209,11 +246,12 @@ export default function StrukturOrganisasi() {
     ? (selectedDukuhId || tree.dukuhList[0]?.id_wilayah)
     : null
 
-  const scopeRwOnly = useMemo(() => !isDukuh && !isLurah && (isRwRole || Boolean(myRtId)), [isDukuh, isLurah, isRwRole, myRtId])
+  const scopeRwOnly = useMemo(() => !isAdmin && !isDukuh && !isLurah && (isRwRole || Boolean(myRtId)), [isAdmin, isDukuh, isLurah, isRwRole, myRtId])
 
   // Role berbasis wilayah (RW/RT/SEK/BEN/Warga) hanya melihat RW miliknya sendiri;
-  // Dukuh & Lurah melihat semua RW utk keperluan kelola.
+  // Dukuh & Lurah melihat semua RW utk keperluan kelola. Admin (view-only) lihat per tab kelurahan.
   const visibleDukuhs = useMemo(() => {
+    if (isAdmin) return adminDukuhList
     if (isDukuh) return currentDukuh ? [currentDukuh] : []
     if (isLurah) {
       const sel = tree.dukuhList.find((d) => d.id_wilayah === activeDukuhId)
@@ -221,7 +259,7 @@ export default function StrukturOrganisasi() {
     }
     if (myRwId) return tree.dukuhList.filter((d) => d.rws.some((rw) => rw.id_wilayah === myRwId))
     return []
-  }, [isDukuh, isLurah, currentDukuh, tree.dukuhList, myRwId, activeDukuhId])
+  }, [isAdmin, adminDukuhList, isDukuh, isLurah, currentDukuh, tree.dukuhList, myRwId, activeDukuhId])
 
   const getRwMembers = (rwId) => members.filter((m) => m.id_wilayah === rwId)
   const getRtMembers = (rtId) => members.filter((m) => m.id_wilayah === rtId)
@@ -230,16 +268,23 @@ export default function StrukturOrganisasi() {
   // Node target utk mengangkat jabatan tertentu
   const targetNodes = useCallback((type) => {
     if (type === 'dukuh') return tree.dukuhList
-    if (type === 'rw') return currentDukuh?.rws || []
-    if (type === 'rt') return (currentDukuh?.rws || []).flatMap((rw) =>
-      (rw.rts || []).map((rt) => ({ ...rt, _rwLabel: rw.nama_wilayah }))
-    )
+    if (type === 'rw') {
+      if (isAdmin) return tree.dukuhList.flatMap((d) => d.rws.map((rw) => ({ ...rw, _dukuhLabel: d.nama_wilayah })))
+      return currentDukuh?.rws || []
+    }
+    if (type === 'rt') {
+      if (isAdmin) return tree.dukuhList.flatMap((d) => d.rws.flatMap((rw) => rw.rts.map((rt) => ({ ...rt, _rwLabel: rw.nama_wilayah, _dukuhLabel: d.nama_wilayah }))))
+      return (currentDukuh?.rws || []).flatMap((rw) =>
+        (rw.rts || []).map((rt) => ({ ...rt, _rwLabel: rw.nama_wilayah }))
+      )
+    }
     if (type === 'sek' || type === 'ben') {
+      if (isAdmin) return tree.dukuhList.flatMap((d) => d.rws.flatMap((rw) => rw.rts.map((rt) => ({ ...rt, _rwLabel: rw.nama_wilayah }))))
       const rt = myRtId ? wilayahs.find((w) => w.id_wilayah === myRtId) : null
       return rt ? [{ id_wilayah: rt.id_wilayah, nama_wilayah: rt.nama_wilayah }] : []
     }
     return []
-  }, [tree.dukuhList, currentDukuh, myRtId, wilayahs])
+  }, [isAdmin, tree.dukuhList, currentDukuh, myRtId, wilayahs])
 
   const openAdd = (type) => {
     const nodes = targetNodes(type)
@@ -290,19 +335,13 @@ export default function StrukturOrganisasi() {
     }
   }
 
-  if (loading) {
-    return (
-      <PageShell eyebrow="Struktur Organisasi" title="Struktur Organisasi & Kepengurusan" description="">
-        <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">Memuat data struktur organisasi...</div>
-      </PageShell>
-    )
-  }
-
-  const desc = isDukuh
-    ? 'Susunan kepengurusan dari Kepala Lurah hingga RT. Anda dapat membuat data lalu mengangkat Ketua RW / Ketua RT di dukuh Anda.'
-    : isLurah
-      ? 'Susunan kepengurusan seluruh kelurahan. Anda dapat membuat data lalu mengangkat Kepala Dukuh.'
-      : 'Susunan kepengurusan di lingkungan Anda, dari Kepala Lurah hingga RT.'
+  const desc = isAdmin
+    ? 'Susunan kepengurusan penuh — kelurahan, dukuh, RW, RT, sekretaris & bendahara. Admin melihat semua wilayah (view-only).'
+    : isDukuh
+      ? 'Susunan kepengurusan dari Kepala Lurah hingga RT. Anda dapat membuat data lalu mengangkat Ketua RW / Ketua RT di dukuh Anda.'
+      : isLurah
+        ? 'Susunan kepengurusan seluruh kelurahan. Anda dapat membuat data lalu mengangkat Kepala Dukuh.'
+        : 'Susunan kepengurusan di lingkungan Anda, dari Kepala Lurah hingga RT.'
 
   const addJabatan = addModal.type ? JABATAN[addModal.type] : ''
   const addNodes = addModal.type ? targetNodes(addModal.type) : []
@@ -321,22 +360,58 @@ export default function StrukturOrganisasi() {
     return c.id_wilayah === form.id_wilayah;
   }) : []
 
+  const adminLurahForTab = useMemo(() => {
+    if (!isAdmin) return lurah
+    const m = members.find((x) => x.jabatan?.toLowerCase().includes('kepala lurah') && x.id_wilayah === adminActiveKelurahanId)
+    return m ? { nama_users: m.citizen?.nama_lengkap || 'Kepala Lurah' } : null
+  }, [isAdmin, lurah, members, adminActiveKelurahanId])
+
+  if (loading) {
+    return (
+      <PageShell eyebrow="Struktur Organisasi" title="Struktur Organisasi & Kepengurusan" description="">
+        <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">Memuat data struktur organisasi...</div>
+      </PageShell>
+    )
+  }
+
   return (
     <PageShell
       eyebrow="Struktur Organisasi"
       title="Struktur Organisasi & Kepengurusan"
-      description={desc}
+      description={isAdmin ? 'View-only — tab per wilayah Lurah, tiap tab memuat struktur kelurahan tersebut.' : desc}
     >
       <section className="mx-auto mt-6 max-w-4xl space-y-6">
-
-        {/* Kepala Lurah */}
-        <div className="flex justify-center">
-          <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-neutral-300 bg-white px-8 py-6 shadow-sm">
-            <Avatar member={lurah ? { citizen: { nama_lengkap: lurah.nama_users } } : {}} size="lg" />
-            <p className="mt-3 text-base font-bold text-black">{lurah?.nama_users || 'Kepala Lurah'}</p>
-            <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700">Kepala Lurah</span>
+        {isAdmin && adminKelurahanList.length > 0 && (
+          <div className="flex flex-wrap gap-2 border-b border-neutral-200 pb-3" role="tablist" aria-label="Wilayah Lurah">
+            {adminKelurahanList.map((kel) => (
+              <button
+                key={kel.id_wilayah}
+                role="tab"
+                aria-selected={adminActiveKelurahanId === kel.id_wilayah}
+                onClick={() => setAdminActiveKelurahanId(kel.id_wilayah)}
+                className={`rounded-full border px-5 py-2 text-xs font-extrabold transition ${
+                  adminActiveKelurahanId === kel.id_wilayah
+                    ? 'border-black bg-black text-white'
+                    : 'border-neutral-300 bg-white text-neutral-700 hover:border-black hover:bg-neutral-100'
+                }`}
+              >
+                {kel.nama_wilayah}
+              </button>
+            ))}
           </div>
-        </div>
+        )}
+
+        {/* Kepala Lurah — sembunyikan jika belum diangkat */}
+        {adminLurahForTab && (
+          <div className="flex justify-center">
+            <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-neutral-300 bg-white px-8 py-6 shadow-sm">
+              <Avatar member={{ citizen: { nama_lengkap: adminLurahForTab.nama_users } }} size="lg" />
+              <p className="mt-3 text-base font-bold text-black">{adminLurahForTab.nama_users}</p>
+              <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700">Kepala Lurah</span>
+              {isAdmin && <p className="mt-1 text-xs text-neutral-400">{wilayahs.find((w) => w.id_wilayah === adminActiveKelurahanId)?.nama_wilayah || ''}</p>}
+            </div>
+          </div>
+        )}
 
         {/* Pilih Dukuh (LURAH) + tombol Tambah Kepala Dukuh sejajar */}
         {isLurah && (

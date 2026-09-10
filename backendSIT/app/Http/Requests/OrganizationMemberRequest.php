@@ -4,6 +4,8 @@ namespace App\Http\Requests;
 
 use App\Models\Citizen;
 use App\Models\OrganizationMember;
+use App\Models\UserRole;
+use App\Models\Wilayah;
 use Illuminate\Foundation\Http\FormRequest;
 
 class OrganizationMemberRequest extends FormRequest
@@ -27,10 +29,18 @@ class OrganizationMemberRequest extends FormRequest
                         return;
                     }
 
-                    // Calon diinput di node dukuh (calon_jabatan membedakan jenis),
-                    // lalu diangkat ke RT/RW mana pun di bawah dukuh tsb. Jadi cukup
-                    // pastikan target penugasan berada dalam subtree yang berakar di
-                    // wilayah warga calon (atau sama dengan wilayah calon).
+                    // Admin bypass: boleh angkat warga mana saja jadi apa saja
+                    $user = $this->user();
+                    if ($user) {
+                        $isAdmin = UserRole::where('id_users', $user->id_users)
+                            ->where('status', 'ACTIVE')
+                            ->whereHas('role', fn ($q) => $q->where('kode', 'ADMIN'))
+                            ->exists();
+                        if ($isAdmin) {
+                            return;
+                        }
+                    }
+
                     $citizenWilayahId = Citizen::query()
                         ->where('id_citizen', $value)
                         ->value('id_wilayah');
@@ -39,10 +49,20 @@ class OrganizationMemberRequest extends FormRequest
                         return;
                     }
 
-                    $target = \App\Models\Wilayah::find($idWilayah);
+                    // Fix: cek dua arah — target ancestor dari citizen (RT -> KEL) ATAU citizen ancestor dari target (DUKUH -> RT)
+                    // Sebelumnya hanya cek citizen ancestor dari target, sehingga RT -> KEL (Kepala Lurah) selalu fail
+                    $cur = Wilayah::find($citizenWilayahId);
+                    while ($cur) {
+                        if ($cur->id_wilayah === $idWilayah) {
+                            return; // target adalah ancestor dari citizen (mis: Astro RT01 -> KEL01)
+                        }
+                        $cur = $cur->parent;
+                    }
+
+                    $target = Wilayah::find($idWilayah);
                     while ($target) {
                         if ($target->id_wilayah === $citizenWilayahId) {
-                            return;
+                            return; // citizen adalah ancestor dari target (mis: Dukuh -> RT di bawahnya)
                         }
                         $target = $target->parent;
                     }

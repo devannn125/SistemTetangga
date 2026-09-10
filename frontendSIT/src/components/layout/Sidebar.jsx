@@ -4,8 +4,9 @@ import { useConfirm } from '@/components/ui/ConfirmContext'
 import { clearAuthData, getAuthData } from '@/services/authService'
 import { navigate } from '@/services/router'
 import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
 
-export function Sidebar({ items, user }) {
+export function Sidebar({ items, user, open, onClose }) {
   const [openMenus, setOpenMenus] = useState(['warga'])
   const confirm = useConfirm()
   const authUser = getAuthData()
@@ -37,7 +38,14 @@ export function Sidebar({ items, user }) {
   }
 
   return (
-    <aside className="sticky top-0 flex h-screen flex-col border-r border-neutral-200 bg-neutral-50 max-md:static max-md:h-auto max-md:border-r-0 max-md:border-b">
+    <aside
+      id="admin-sidebar"
+      className={cn(
+        'sticky top-0 flex h-screen flex-col border-r border-neutral-200 bg-neutral-50',
+        'max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:h-[100dvh] max-md:w-[280px] max-md:max-w-[84vw] max-md:border-r max-md:transition-transform max-md:duration-200',
+        open ? 'max-md:translate-x-0' : 'max-md:-translate-x-full',
+      )}
+    >
       <div className="flex h-16 shrink-0 items-center gap-3 border-b border-neutral-200 px-[18px] text-lg font-bold text-black max-md:h-14">
         <span className="grid h-8 w-8 place-items-center rounded-[9px] bg-sky-600 text-white">
           <Icon name="building" className="h-[17px] w-[17px]" />
@@ -45,7 +53,7 @@ export function Sidebar({ items, user }) {
         <span>Tetangga</span>
       </div>
 
-      <nav className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto p-3 max-md:grid max-md:max-h-none max-md:grid-cols-1 max-md:overflow-visible" aria-label="Menu utama">
+      <nav className="flex min-h-0 flex-1 flex-col gap-[3px] overflow-y-auto overscroll-contain p-3 touch-pan-y" aria-label="Menu utama">
         {items.map((item) => {
           const isOpen = openMenus.includes(item.id)
 
@@ -94,6 +102,7 @@ export function Sidebar({ items, user }) {
                             key={child.path}
                             onClick={(event) => {
                               event.preventDefault()
+                              onClose?.()
                               navigate(child.path)
                             }}
                           >

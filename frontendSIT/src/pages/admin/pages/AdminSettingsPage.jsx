@@ -4,6 +4,8 @@ import { Label } from '@/components/ui/Label'
 import { Input } from '@/components/ui/Input'
 import { Icon } from '@/components/ui/Icon'
 import { request } from '@/services/api'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 
 export default function AdminSettingsPage() {
   const [profile, setProfile] = useState({
@@ -12,9 +14,11 @@ export default function AdminSettingsPage() {
     kodepos: '55581',
     telepon: '081234567890'
   })
-  
+
   const [isSaving, setIsSaving] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('sistem_tetangga_profil')
@@ -27,27 +31,38 @@ export default function AdminSettingsPage() {
     setProfile(p => ({ ...p, [e.target.name]: e.target.value }))
   }
 
-  function handleSave() {
+  async function handleSave() {
+    const ok = await confirm({
+      title: 'Simpan Profil Desa',
+      message: `Simpan perubahan profil ${profile.nama}?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!ok) return
     setIsSaving(true)
     setTimeout(() => {
       localStorage.setItem('sistem_tetangga_profil', JSON.stringify(profile))
       setIsSaving(false)
-      alert('Profil berhasil disimpan!')
+      showToast('Profil berhasil disimpan.')
     }, 600)
   }
 
   async function handleDownloadBackup() {
+    const ok = await confirm({
+      title: 'Download Backup',
+      message: 'Unduh backup data warga dalam format CSV?',
+      confirmLabel: 'Ya, Unduh',
+    })
+    if (!ok) return
     setIsDownloading(true)
     try {
-      // Simulasikan download dengan mengambil semua data warga dari API
       const res = await request('/citizens?per_page=1000')
       const citizens = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : [])
-      
+
       let csv = 'NIK,Nama Lengkap,Jenis Kelamin,Status\n'
       citizens.forEach(c => {
         csv += `${c.nik},${c.nama_lengkap},${c.jenis_kelamin},${c.status_warga}\n`
       })
-      
+
       const blob = new Blob([csv], { type: 'text/csv' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -55,8 +70,9 @@ export default function AdminSettingsPage() {
       a.download = `backup_warga_${new Date().toISOString().slice(0, 10)}.csv`
       a.click()
       window.URL.revokeObjectURL(url)
+      showToast('Backup berhasil diunduh.')
     } catch (err) {
-      alert('Gagal mengunduh backup.')
+      showToast(err.message || 'Gagal mengunduh backup.', 'error')
     } finally {
       setIsDownloading(false)
     }

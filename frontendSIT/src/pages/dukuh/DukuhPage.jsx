@@ -1,15 +1,18 @@
+import { lazy, Suspense } from 'react'
 import { PortalLayout } from '@/components/layout/PortalLayout'
-import StrukturOrganisasi from '@/components/StrukturOrganisasi'
-import DataPengurusPage from './pages/DataPengurusPage'
-import HomePage from './pages/HomePage'
-import { DukuhCitizenPage } from './pages/DukuhCitizenPage'
-import { DukuhHousingPage } from './pages/DukuhHousingPage'
-import { DukuhFinancePage } from './pages/DukuhFinancePage'
-import { DukuhStatisticsPage } from './pages/DukuhStatisticsPage'
-import { DukuhRegulationPage } from './pages/DukuhRegulationPage'
-import { DukuhInventoryPage } from './pages/DukuhInventoryPage'
-import { LurahDashboard } from '@/components/dashboard/roles/LurahDashboard'
 import { PageShell } from '@/components/layout/PageShell'
+
+const StrukturOrganisasi = lazy(() => import('@/components/StrukturOrganisasi'))
+const DataPengurusPage = lazy(() => import('./pages/DataPengurusPage'))
+const DukuhCitizenPage = lazy(() => import('./pages/DukuhCitizenPage').then((m) => ({ default: m.DukuhCitizenPage })))
+const DukuhHousingPage = lazy(() => import('./pages/DukuhHousingPage').then((m) => ({ default: m.DukuhHousingPage })))
+const DukuhFinancePage = lazy(() => import('./pages/DukuhFinancePage').then((m) => ({ default: m.DukuhFinancePage })))
+const DukuhStatisticsPage = lazy(() => import('./pages/DukuhStatisticsPage').then((m) => ({ default: m.DukuhStatisticsPage })))
+const DukuhRegulationPage = lazy(() => import('./pages/DukuhRegulationPage').then((m) => ({ default: m.DukuhRegulationPage })))
+const DukuhInventoryPage = lazy(() => import('./pages/DukuhInventoryPage').then((m) => ({ default: m.DukuhInventoryPage })))
+const LurahDashboard = lazy(() => import('@/components/dashboard/roles/LurahDashboard').then((m) => ({ default: m.LurahDashboard })))
+
+
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua Dukuh
 // Dashboard (read), Data Warga (verify), Keuangan (monitor), Surat Keterangan (read),
@@ -59,15 +62,9 @@ export function DukuhPage() {
       brandSubtitle="Panel Kepala Dukuh"
       footerLabel="Panel Kepala Dukuh"
     >
-      {renderPage(activeMenu.path)}
+      <Suspense fallback={<div className="p-8 text-center text-sm text-neutral-500">Memuat...</div>}>
+        {renderPage(activeMenu.path)}
+      </Suspense>
     </PortalLayout>
   )
 }
-
-// Re-export utk KelurahanPage yang mengimpor sub-page dari file ini.
-export { DukuhCitizenPage } from './pages/DukuhCitizenPage'
-export { DukuhHousingPage } from './pages/DukuhHousingPage'
-export { DukuhFinancePage } from './pages/DukuhFinancePage'
-export { DukuhStatisticsPage } from './pages/DukuhStatisticsPage'
-export { DukuhRegulationPage } from './pages/DukuhRegulationPage'
-export { DukuhInventoryPage } from './pages/DukuhInventoryPage'

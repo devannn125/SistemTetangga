@@ -157,7 +157,16 @@ class OrganizationMemberController extends BaseApiController
 
         $role = Role::where('kode', $roleCode)->first();
         if (!$role) {
-            return;
+            // Auto-create role bila belum ada di DB dump lama (mis. LURAH)
+            $levelMap = ['ADMIN' => 0, 'LURAH' => 1, 'DUKUH' => 2, 'RW' => 3, 'RT' => 4, 'SEKRETARIS' => 4, 'BENDAHARA' => 4, 'WARGA' => 5, 'SISKAMLING' => 5, 'PKK' => 5, 'KARANG_TARUNA' => 5];
+            $strategicMap = ['ADMIN' => true, 'LURAH' => true, 'DUKUH' => true, 'RW' => false, 'RT' => true, 'SEKRETARIS' => true, 'BENDAHARA' => true, 'WARGA' => false, 'SISKAMLING' => false, 'PKK' => false, 'KARANG_TARUNA' => false];
+            $role = Role::create([
+                'kode' => $roleCode,
+                'nama_role' => $roleCode === 'LURAH' ? 'Kepala Lurah' : $roleCode,
+                'level' => $levelMap[$roleCode] ?? 5,
+                'is_strategic' => $strategicMap[$roleCode] ?? false,
+                'deskripsi' => $roleCode,
+            ]);
         }
 
         if ($oldJabatan && $oldJabatan !== $member->jabatan) {
@@ -194,6 +203,18 @@ class OrganizationMemberController extends BaseApiController
                 'assigned_at' => now(),
             ]);
         }
+
+        // Jika sudah di-assign perangkat, role harus berubah sesuai assign.
+        // Akhiri semua role aktif lain (mis. WARGA) agar login berikutnya langsung jadi LURAH/RW/dll.
+        if ($member->status_aktif) {
+            $otherActiveRoles = UserRole::where('id_users', $user->id_users)
+                ->where('status', 'ACTIVE')
+                ->where('id_role', '!=', $role->id_role)
+                ->get();
+            foreach ($otherActiveRoles as $other) {
+                $this->endUserRole($user, $other->id_role, $other->id_wilayah, 'ENDED');
+            }
+        }
     }
 
     private function revokeUserRole(OrganizationMember $member, string $jabatan): void
@@ -222,19 +243,19 @@ class OrganizationMemberController extends BaseApiController
      * baris non-aktif lama untuk kombinasi yang sama dihapus dulu, jejak
      * lengkapnya tetap tersimpan di audit_log.
      */
-    private function endUserRole(User $user, string $roleId, string $idWilayah, string $status): void
+    private function endUserRole(User $user, string $roleId, ?string $idWilayah, string $status): void
     {
-        UserRole::where('id_users', $user->id_users)
+        $qDel = UserRole::where('id_users', $user->id_users)
             ->where('id_role', $roleId)
-            ->where('id_wilayah', $idWilayah)
-            ->where('status', '!=', 'ACTIVE')
-            ->delete();
+            ->where('status', '!=', 'ACTIVE');
+        if ($idWilayah === null) $qDel->whereNull('id_wilayah'); else $qDel->where('id_wilayah', $idWilayah);
+        $qDel->delete();
 
-        UserRole::where('id_users', $user->id_users)
+        $qUpd = UserRole::where('id_users', $user->id_users)
             ->where('id_role', $roleId)
-            ->where('id_wilayah', $idWilayah)
-            ->where('status', 'ACTIVE')
-            ->update(['status' => $status, 'periode_selesai' => now()->toDateString()]);
+            ->where('status', 'ACTIVE');
+        if ($idWilayah === null) $qUpd->whereNull('id_wilayah'); else $qUpd->where('id_wilayah', $idWilayah);
+        $qUpd->update(['status' => $status, 'periode_selesai' => now()->toDateString()]);
     }
 }
 

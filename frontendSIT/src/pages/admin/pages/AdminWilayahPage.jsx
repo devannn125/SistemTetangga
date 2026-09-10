@@ -13,6 +13,8 @@ import {
 import { Label } from '@/components/ui/Label'
 import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 
 function WilayahNode({ node, icon, colorClass, onEdit, onDelete }) {
   const hasChildren = node.children && node.children.length > 0
@@ -81,6 +83,8 @@ function WilayahNode({ node, icon, colorClass, onEdit, onDelete }) {
 export default function AdminWilayahPage() {
   const [wilayahs, setWilayahs] = useState([])
   const [loading, setLoading] = useState(true)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -132,19 +136,33 @@ export default function AdminWilayahPage() {
   }
 
   async function handleDelete(node) {
-    if (confirm(`Yakin ingin menghapus ${node.tipe} ${node.nama_wilayah}?`)) {
-      try {
-        await request(`/wilayah/${node.id_wilayah}`, { method: 'DELETE' })
-        loadData()
-      } catch (err) {
-        alert('Gagal menghapus wilayah. Pastikan tidak ada data yang terikat (warga/pengurus).')
-      }
+    const ok = await confirm({
+      title: `Hapus ${node.tipe}`,
+      message: `Yakin ingin menghapus ${node.tipe} ${node.nama_wilayah}?`,
+      confirmLabel: 'Ya, Hapus',
+    })
+    if (!ok) return
+    try {
+      await request(`/wilayah/${node.id_wilayah}`, { method: 'DELETE' })
+      showToast(`${node.tipe} ${node.nama_wilayah} berhasil dihapus.`)
+      loadData()
+    } catch (err) {
+      showToast(err.message || 'Gagal menghapus wilayah. Pastikan tidak ada data yang terikat (warga/pengurus).', 'error')
     }
   }
 
   async function handleSave() {
-    if (!form.nama_wilayah || !form.tipe) return alert('Nama & tipe wajib diisi')
-    
+    if (!form.nama_wilayah || !form.tipe) {
+      showToast('Nama & tipe wajib diisi.', 'error')
+      return
+    }
+    const ok = await confirm({
+      title: editingId ? 'Simpan Perubahan Wilayah' : 'Tambah Wilayah',
+      message: `${editingId ? 'Simpan perubahan' : 'Tambah'} wilayah ${form.nama_wilayah} (${form.tipe})?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!ok) return
+
     const payload = { ...form }
     if (!payload.parent_id) delete payload.parent_id
 
@@ -155,9 +173,10 @@ export default function AdminWilayahPage() {
         await request('/wilayah', { method: 'POST', body: JSON.stringify(payload) })
       }
       setIsModalOpen(false)
+      showToast(editingId ? 'Wilayah berhasil diperbarui.' : 'Wilayah berhasil ditambahkan.')
       loadData()
     } catch (err) {
-      alert(err.message || 'Gagal menyimpan wilayah')
+      showToast(err.message || 'Gagal menyimpan wilayah', 'error')
     }
   }
 

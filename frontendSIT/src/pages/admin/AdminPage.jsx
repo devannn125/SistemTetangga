@@ -1,13 +1,18 @@
+import { lazy, Suspense } from 'react'
 import { PortalLayout } from '@/components/layout/PortalLayout'
-import { PageShell } from '@/components/layout/PageShell'
-import AdminDashboardPage from './pages/AdminDashboardPage'
-import AdminMasterDataPage from './pages/AdminMasterDataPage'
-import AdminWilayahPage from './pages/AdminWilayahPage'
-import AdminUsersPage from './pages/AdminUsersPage'
-import AdminSettingsPage from './pages/AdminSettingsPage'
+
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
+const AdminMasterDataPage = lazy(() => import('./pages/AdminMasterDataPage'))
+const AdminWilayahPage = lazy(() => import('./pages/AdminWilayahPage'))
+const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'))
+const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'))
+const AdminPerangkatPage = lazy(() => import('./pages/AdminPerangkatPage'))
+const AdminStrukturPage = lazy(() => import('@/components/StrukturOrganisasi'))
 
 const AdminMenus = [
   { label: 'Beranda Sistem', path: '/admin', icon: 'server' },
+  { label: 'Struktur Organisasi', path: '/admin/struktur', icon: 'building' },
+  { label: 'Perangkat Desa', path: '/admin/perangkat', icon: 'users' },
   { label: 'Master Data', path: '/admin/master-data', icon: 'database' },
   { label: 'Manajemen Wilayah', path: '/admin/wilayah', icon: 'map' },
   { label: 'Manajemen Pengguna', path: '/admin/users', icon: 'users' },
@@ -20,6 +25,8 @@ function getCurrentMenu() {
 }
 
 function renderPage(activePath) {
+  if (activePath === '/admin/struktur') return <AdminStrukturPage />
+  if (activePath === '/admin/perangkat') return <AdminPerangkatPage />
   if (activePath === '/admin/master-data') return <AdminMasterDataPage />
   if (activePath === '/admin/wilayah') return <AdminWilayahPage />
   if (activePath === '/admin/users') return <AdminUsersPage />
@@ -39,7 +46,9 @@ export function AdminPage() {
       brandSubtitle='Administrator Sistem'
       footerLabel='Sistem Administrator'
     >
-      {renderPage(activeMenu.path)}
+      <Suspense fallback={<div className="p-8 text-center text-sm text-neutral-500">Memuat...</div>}>
+        {renderPage(activeMenu.path)}
+      </Suspense>
     </PortalLayout>
   )
 }

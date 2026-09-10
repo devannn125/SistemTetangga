@@ -1,16 +1,18 @@
+import { lazy, Suspense } from 'react'
 import { PortalLayout } from '@/components/layout/PortalLayout'
-import HomePage from './pages/HomePage'
-import RwCitizenPage from './pages/RwCitizenPage'
-import RwHousingPage from './pages/RwHousingPage'
-import RwComplaintPage from './pages/RwComplaintPage'
-import RwFinancePage from './pages/RwFinancePage'
-import RwLetterPage from './pages/RwLetterPage'
-import RwStatisticsPage from './pages/RwStatisticsPage'
-import RwRegulationPage from './pages/RwRegulationPage'
-import RwOrganizationPage from './pages/RwOrganizationPage'
-import RwInventoryPage from './pages/RwInventoryPage'
-import { RwDashboard } from '@/components/dashboard/roles/RwDashboard'
 import { PageShell } from '@/components/layout/PageShell'
+
+const HomePage = lazy(() => import('./pages/HomePage'))
+const RwCitizenPage = lazy(() => import('./pages/RwCitizenPage'))
+const RwHousingPage = lazy(() => import('./pages/RwHousingPage'))
+const RwComplaintPage = lazy(() => import('./pages/RwComplaintPage'))
+const RwFinancePage = lazy(() => import('./pages/RwFinancePage'))
+const RwLetterPage = lazy(() => import('./pages/RwLetterPage'))
+const RwStatisticsPage = lazy(() => import('./pages/RwStatisticsPage'))
+const RwRegulationPage = lazy(() => import('./pages/RwRegulationPage'))
+const RwOrganizationPage = lazy(() => import('./pages/RwOrganizationPage'))
+const RwInventoryPage = lazy(() => import('./pages/RwInventoryPage'))
+const RwDashboard = lazy(() => import('@/components/dashboard/roles/RwDashboard').then((m) => ({ default: m.RwDashboard })))
 
 // Menu disusun mengikuti tabel "Rekomendasi Struktur Sidebar per Role" untuk Ketua RW
 // Dashboard (read), Data Warga (verify), Keuangan (monitor), Surat Keterangan (read),
@@ -62,7 +64,9 @@ export function RwPage() {
       brandSubtitle="Panel Monitoring Wilayah"
       footerLabel="Panel Ketua RW"
     >
-      {renderPage(activeMenu.path)}
+      <Suspense fallback={<div className="p-8 text-center text-sm text-neutral-500">Memuat...</div>}>
+        {renderPage(activeMenu.path)}
+      </Suspense>
     </PortalLayout>
   )
 }

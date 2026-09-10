@@ -13,6 +13,8 @@ import {
   DialogFooter,
 } from '@/components/ui/Dialog'
 import { Label } from '@/components/ui/Label'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 
 const CATEGORIES = [
   { title: 'Agama', type: 'AGAMA', icon: 'book' },
@@ -26,6 +28,8 @@ export default function AdminMasterDataPage() {
   const [activeCategory, setActiveCategory] = useState(null)
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
+  const confirm = useConfirm()
+  const { showToast } = useToast()
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -48,6 +52,12 @@ export default function AdminMasterDataPage() {
   }
 
   async function handleSave() {
+    const ok = await confirm({
+      title: editingId ? 'Simpan Perubahan Master Data' : 'Tambah Master Data',
+      message: `${editingId ? 'Simpan perubahan' : 'Tambah'} data ${form.nama_master || form.kode_master}?`,
+      confirmLabel: 'Ya, Simpan',
+    })
+    if (!ok) return
     try {
       if (editingId) {
         await request(`/master-data/${editingId}`, { method: 'PUT', body: JSON.stringify({ ...form, tipe: activeCategory.type, is_active: true }) })
@@ -55,9 +65,10 @@ export default function AdminMasterDataPage() {
         await request('/master-data', { method: 'POST', body: JSON.stringify({ ...form, tipe: activeCategory.type, is_active: true }) })
       }
       setIsModalOpen(false)
+      showToast(editingId ? 'Master data berhasil diperbarui.' : 'Master data berhasil ditambahkan.')
       loadData()
     } catch (err) {
-      alert('Gagal menyimpan data')
+      showToast(err.message || 'Gagal menyimpan data', 'error')
     }
   }
 

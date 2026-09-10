@@ -1,11 +1,13 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts'
 import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { dashboardData as fallbackData } from '@/data/dashboardData'
 
 const GAUGE_COLORS = ['#10B981', '#E5E7EB'] // Green and Gray
 
-export function RtDashboard() {
-  const { data, isLoading } = useDashboardData()
+export function RtDashboard({ data: propData }) {
+  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
+  const data = propData || fetched || fallbackData
 
   if (isLoading || !data) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>

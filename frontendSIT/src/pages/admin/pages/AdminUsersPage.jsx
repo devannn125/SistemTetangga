@@ -1,39 +1,43 @@
 import { useEffect, useState } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
-import { request, getCitizens } from '@/services/api'
+import { request, getWilayah } from '@/services/api'
 import { DataTable } from '@/components/ui/DataTable'
-import { Icon } from '@/components/ui/Icon'
 import { Button } from '@/components/ui/Button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog'
 import { Label } from '@/components/ui/Label'
 import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { useConfirm } from '@/components/ui/ConfirmContext'
+import { useToast } from '@/components/ui/ToastContext'
 
 export default function AdminUsersPage() {
   const [data, setData] = useState([])
-  const [citizens, setCitizens] = useState([])
   const [loading, setLoading] = useState(true)
-  
+  const [wilayahs, setWilayahs] = useState([])
+  const confirm = useConfirm()
+  const { showToast } = useToast()
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form, setForm] = useState({
     nama_users: '',
     email: '',
     no_hp: '',
     password: '',
-    id_citizen: '',
-    status: 'ACTIVE',
-    auth_provider: 'EMAIL',
-    role: 'WARGA'
+    nik: '',
+    jenis_kelamin: 'L',
+    id_wilayah: '',
   })
 
   async function loadData() {
     setLoading(true)
     try {
-      const res = await request('/users?per_page=200')
+      const [res, resWil] = await Promise.all([
+        request('/users?per_page=200'),
+        getWilayah({ per_page: 500, all: 1 }).catch(() => ({ data: [] })),
+      ])
       setData(Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [])
-      
-      const citRes = await getCitizens({ per_page: 500 })
-      setCitizens(Array.isArray(citRes?.data) ? citRes.data : [])
+      const arrWil = Array.isArray(resWil?.data) ? resWil.data : Array.isArray(resWil) ? resWil : []
+      setWilayahs(arrWil)
     } catch (err) {
       console.error(err)
     } finally {
@@ -46,62 +50,72 @@ export default function AdminUsersPage() {
   }, [])
 
   function openCreate() {
+    const firstRt = wilayahs.find((w) => w.tipe === 'RT')?.id_wilayah || ''
     setForm({
       nama_users: '',
       email: '',
       no_hp: '',
       password: '',
-      id_citizen: '',
-      status: 'ACTIVE',
-      auth_provider: 'EMAIL',
-      role: 'WARGA'
+      nik: '',
+      jenis_kelamin: 'L',
+      id_wilayah: firstRt,
     })
     setIsModalOpen(true)
   }
 
   async function handleSave() {
-    if (!form.id_citizen && form.role === 'WARGA') {
-      return alert('Untuk role WARGA, Anda wajib menghubungkan akun ini dengan data warga (Pilih Warga).')
+    if (!form.nama_users.trim() || !form.email.trim() || !form.no_hp.trim() || !form.password.trim() || !form.nik.trim() || !form.id_wilayah) {
+      showToast('Nama, email, no HP, password, NIK, dan domisili RT wajib diisi.', 'error')
+      return
+    }
+    if (!/^[0-9]{16}$/.test(form.nik)) {
+      showToast('NIK harus 16 digit angka saja.', 'error')
+      return
+    }
+    if (form.password.length < 6) {
+      showToast('Password minimal 6 karakter.', 'error')
+      return
     }
 
+    const ok = await confirm({
+      title: 'Buat Akun WARGA',
+      message: `Buat akun ${form.nama_users} dengan NIK ${form.nik}? Data citizen akan dibuat otomatis dan terbaca di Perangkat Desa.`,
+      confirmLabel: 'Ya, Buat',
+    })
+    if (!ok) return
+
     try {
-      // 1. Create User
-      const userRes = await request('/users', {
+      await request('/users', {
         method: 'POST',
         body: JSON.stringify({
           nama_users: form.nama_users,
           email: form.email,
           no_hp: form.no_hp,
           password: form.password,
-          id_citizen: form.id_citizen || null,
-          status: form.status,
-          auth_provider: form.auth_provider,
+          nik: form.nik,
+          jenis_kelamin: form.jenis_kelamin,
+          id_wilayah: form.id_wilayah,
+          status: 'ACTIVE',
+          auth_provider: 'EMAIL',
+          role: 'WARGA',
         })
       })
-      
-      const newUserId = userRes.data?.id_users || userRes.id_users
-      
-      // 2. Assign Role if a citizen is linked
-      if (newUserId && form.id_citizen) {
-        await request(`/users/${newUserId}/role`, {
-          method: 'POST',
-          body: JSON.stringify({ role: form.role })
-        })
-      }
-      
+
       setIsModalOpen(false)
       loadData()
-      alert('Akun berhasil dibuat dan role telah diberikan!')
+      showToast('Akun WARGA + data citizen berhasil dibuat.')
     } catch (err) {
-      alert(err.message || 'Gagal membuat akun')
+      showToast(err.message || 'Gagal membuat akun', 'error')
     }
   }
+
+  const wilayahRtOptions = wilayahs.filter((w) => w.tipe === 'RT')
 
   return (
     <PageShell
       eyebrow='Pengaturan Sistem'
       title='Manajemen Pengguna'
-      description='Kelola seluruh akun yang terdaftar di sistem. Buat akun baru, hubungkan ke data warga, atau blokir akun.'
+      description='Kelola seluruh akun. Buat akun baru — otomatis jadi data warga (NIK angka 16 + domisili RT) dan terbaca di Perangkat Desa.'
     >
       <div className='mt-6 mb-4'>
         <Button onClick={openCreate}>Tambah Pengguna Baru</Button>
@@ -142,18 +156,6 @@ export default function AdminUsersPage() {
               <Label>Nama Pengguna (Display Name)</Label>
               <Input value={form.nama_users} onChange={e => setForm({...form, nama_users: e.target.value})} placeholder="Contoh: Budi Santoso" />
             </div>
-            <div className='space-y-2'>
-              <Label>Hubungkan dengan Data Warga</Label>
-              <Select value={form.id_citizen} onValueChange={val => setForm({...form, id_citizen: val})}>
-                <SelectTrigger><SelectValue placeholder="Pilih Warga (Opsional tapi wajib untuk role WARGA)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value=''>-- Tanpa Relasi Warga --</SelectItem>
-                  {citizens.map(c => (
-                    <SelectItem key={c.id_citizen} value={c.id_citizen}>{c.nik} - {c.nama_lengkap}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className='grid gap-4 sm:grid-cols-2'>
               <div className='space-y-2'>
                 <Label>Email</Label>
@@ -166,25 +168,57 @@ export default function AdminUsersPage() {
             </div>
             <div className='grid gap-4 sm:grid-cols-2'>
               <div className='space-y-2'>
-                <Label>Role Awal</Label>
-                <Select value={form.role} onValueChange={val => setForm({...form, role: val})}>
+                <Label>NIK <span className="text-red-500">*</span></Label>
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={16}
+                  value={form.nik}
+                  onChange={(e) => setForm({ ...form, nik: e.target.value.replace(/\D/g, '').slice(0, 16) })}
+                  placeholder="16 digit angka"
+                />
+                <p className="text-xs text-neutral-500">{form.nik.length}/16 angka</p>
+              </div>
+              <div className='space-y-2'>
+                <Label>Jenis Kelamin <span className="text-red-500">*</span></Label>
+                <Select value={form.jenis_kelamin} onValueChange={(v) => setForm({ ...form, jenis_kelamin: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='WARGA'>WARGA</SelectItem>
-                    <SelectItem value='SISKAMLING'>SISKAMLING</SelectItem>
-                    <SelectItem value='PKK'>PKK</SelectItem>
+                    <SelectItem value="L">Laki-laki</SelectItem>
+                    <SelectItem value="P">Perempuan</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className='grid gap-4 sm:grid-cols-2'>
               <div className='space-y-2'>
-                <Label>Password (Min. 6 Karakter)</Label>
-                <Input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
+                <Label>Domisili RT <span className="text-red-500">*</span></Label>
+                <Select value={form.id_wilayah} onValueChange={(v) => setForm({ ...form, id_wilayah: v })}>
+                  <SelectTrigger><SelectValue placeholder="Pilih RT domisili" /></SelectTrigger>
+                  <SelectContent>
+                    {wilayahRtOptions.length === 0 ? (
+                      <SelectItem value="__none__" disabled>Belum ada RT</SelectItem>
+                    ) : wilayahRtOptions.map((w) => (
+                      <SelectItem key={w.id_wilayah} value={w.id_wilayah}>{w.nama_wilayah} — {w.id_wilayah}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-neutral-500">Pastikan data RT telah ada</p>
               </div>
+              <div className='space-y-2'>
+                <Label>Role Awal</Label>
+                <Input value="WARGA" disabled />
+                <p className="text-xs text-neutral-500">Role ditentukan secara otomatis</p>
+              </div>
+            </div>
+            <div className='space-y-2'>
+              <Label>Password (Min. 6 Karakter)</Label>
+              <Input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
             </div>
           </div>
           <DialogFooter>
             <Button variant='outline' onClick={() => setIsModalOpen(false)}>Batal</Button>
-            <Button onClick={handleSave}>Simpan & Berikan Role</Button>
+            <Button onClick={handleSave}>Buat Akun WARGA</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

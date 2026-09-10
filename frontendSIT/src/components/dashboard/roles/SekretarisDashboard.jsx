@@ -1,6 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { dashboardData as fallbackData } from '@/data/dashboardData'
 
 const mockSuratMingguan = [
   { day: 'Sen', masuk: 12, selesai: 10 },
@@ -11,8 +12,9 @@ const mockSuratMingguan = [
   { day: 'Sab', masuk: 5, selesai: 5 },
 ]
 
-export function SekretarisDashboard() {
-  const { data, isLoading } = useDashboardData()
+export function SekretarisDashboard({ data: propData }) {
+  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
+  const data = propData || fetched || fallbackData
   
   if (isLoading || !data) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\UserManagementRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Citizen;
 use App\Models\OrganizationMember;
 use App\Models\Role;
 use App\Models\User;
@@ -65,6 +66,11 @@ class UserManagementController extends BaseApiController
         $this->authorizeModule('USER', 'CREATE');
 
         $data = $request->validated();
+        $roleKode = $data['role'] ?? null;
+        $nik = $data['nik'] ?? null;
+        $jenisKelamin = $data['jenis_kelamin'] ?? null;
+        $idWilayah = $data['id_wilayah'] ?? null;
+        unset($data['role'], $data['nik'], $data['jenis_kelamin'], $data['id_wilayah']);
         $data = $this->fillEmailFromCitizen($data);
 
         if (! empty($data['password'])) {
@@ -72,11 +78,51 @@ class UserManagementController extends BaseApiController
         }
         unset($data['password']);
 
-        $user = User::create($data);
+        // Auto citizen: warga awal langsung dibuatkan data citizen agar terbaca di /admin/perangkat
+        // NIK angka 16 + wilayah RT wajib, citizen.id_wilayah = RT domisili (bukan null)
+        $user = null;
+        $citizen = null;
+        DB::transaction(function () use (&$user, &$citizen, $data, $roleKode, $nik, $jenisKelamin, $idWilayah, $request) {
+            $citizen = Citizen::create([
+                'nik' => $nik,
+                'nama_lengkap' => $data['nama_users'],
+                'jenis_kelamin' => $jenisKelamin,
+                'id_wilayah' => $idWilayah,
+                'no_hp' => $data['no_hp'],
+                'email' => $data['email'],
+                'status_warga' => 'TETAP',
+                'kewarganegaraan' => 'WNI',
+                'status_ekonomi' => 'MAMPU',
+                'penerima_bansos' => false,
+                'tanggal_masuk_rt' => now()->toDateString(),
+                'alamat_kk_luar_rt' => false,
+                'berdomisili_luar_rt' => false,
+                'status_hidup' => 'HIDUP',
+                'status_aktif' => true,
+                'status_verifikasi' => 'PENDING',
+            ]);
 
-        $this->audit('USER', 'CREATE', 'users', $user->id_users);
+            $data['id_citizen'] = $citizen->id_citizen;
+            $user = User::create($data);
 
-        return new UserResource($user->load(['userRoles.role', 'citizen']));
+            if ($roleKode === 'WARGA') {
+                $role = Role::where('kode', 'WARGA')->firstOrFail();
+                UserRole::create([
+                    'id_users' => $user->id_users,
+                    'id_role' => $role->id_role,
+                    'id_wilayah' => $idWilayah,
+                    'periode_mulai' => now()->toDateString(),
+                    'status' => 'ACTIVE',
+                    'assigned_by' => $request->user()?->id_users,
+                    'assigned_at' => now(),
+                ]);
+            }
+        });
+
+        $this->audit('USER', 'CREATE', 'users', $user->id_users, [], ['role' => $roleKode, 'id_wilayah' => $idWilayah, 'id_citizen' => $citizen->id_citizen]);
+        $this->audit('WARGA', 'CREATE', 'citizen', $citizen->id_citizen, [], $citizen->toArray());
+
+        return new UserResource($user->load(['userRoles.role', 'citizen', 'citizen.wilayah']));
     }
 
     public function show(string $id)

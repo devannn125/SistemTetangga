@@ -1,9 +1,11 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { dashboardData as fallbackData } from '@/data/dashboardData'
 
-export function BendaharaDashboard() {
-  const { data, isLoading } = useDashboardData()
+export function BendaharaDashboard({ data: propData }) {
+  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
+  const data = propData || fetched || fallbackData
 
   if (isLoading || !data) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>

@@ -19,12 +19,25 @@ class DashboardService
     {
     }
 
+    /**
+     * Entry point aman: dari auth user (Bearer Sanctum). Anti-spoof role/user_id query.
+     */
+    public function summaryForUser(User $user): array
+    {
+        $user->loadMissing(['userRoles.role', 'citizen']);
+        $activeCodes = $this->rbac->activeRoleCodes($user);
+        // pilih role strategis prioritas tertinggi (level kecil + is_strategic)
+        $roleCode = $this->resolvePrimaryRole($user, $activeCodes) ?: 'WARGA';
+
+        return $this->buildSummary($roleCode, $user);
+    }
+
     public function summary(?string $role = null, ?string $userId = null): array
     {
         $roleCode = strtoupper(trim((string) $role));
         $hasComplaints = Schema::hasTable('complaint');
 
-        // Resolve user
+        // Resolve user (fallback legacy query param — dipakai route publik tanpa auth)
         $userObj = null;
         if ($userId) {
             $userObj = User::where('id_users', $userId)->first();
@@ -38,10 +51,39 @@ class DashboardService
                 ->where('user_role.status', 'ACTIVE')
                 ->select('users.*')
                 ->first();
+            if ($userObj) $userObj->loadMissing(['userRoles.role', 'citizen']);
         }
 
-        // Lingkup wilayah operasional user (null = global untuk admin/dukuh).
+        if ($userObj) {
+            // jika user ditemukan, pakai role aktualnya (bukan param)
+            $codes = $this->rbac->activeRoleCodes($userObj);
+            $roleCode = $this->resolvePrimaryRole($userObj, $codes) ?: $roleCode;
+            return $this->buildSummary($roleCode, $userObj);
+        }
+
+        // tanpa user: fallback publik global
+        return $this->buildSummary($roleCode ?: 'WARGA', null);
+    }
+
+    private function resolvePrimaryRole(User $user, array $activeCodes): ?string
+    {
+        if (empty($activeCodes)) return null;
+        $roles = $user->userRoles->filter(fn ($ur) => in_array($ur->role?->kode, $activeCodes, true))
+            ->sortBy(fn ($ur) => [($ur->role?->is_strategic ? 0 : 1), $ur->role?->level ?? 99])
+            ->pluck('role.kode')->filter()->values();
+        return $roles->first() ?: $activeCodes[0];
+    }
+
+    private function buildSummary(string $roleCode, ?User $userObj): array
+    {
+        $roleCode = strtoupper($roleCode);
+        $hasComplaints = Schema::hasTable('complaint');
+
+        // Lingkup wilayah operasional user (null = global untuk admin).
         $scopeIds = $this->rbac->operationalScopeIds($userObj);
+        if ($roleCode === 'ADMIN') $scopeIds = null;
+        // Untuk WARGA/SISKAMLING/PKK/KARANG_TARUNA, operasional = RT node (mis. [WIL-004]).
+        // Tetap pakai itu untuk agregat transparansi; own-data dihitung terpisah.
 
         $citizens = Citizen::query();
         if ($scopeIds !== null) {
@@ -73,16 +115,24 @@ class DashboardService
         $escalatedComplaints = $complaints ? (clone $complaints)->where('status', 'ESKALASI')->count() : 0;
         $resolvedComplaints = $complaints ? (clone $complaints)->where('status', 'SELESAI')->count() : 0;
 
-        $totalRw = Schema::hasTable('wilayah') ? DB::table('wilayah')->where('tipe', 'RW')->count() : 0;
-        $totalRt = Schema::hasTable('wilayah') ? DB::table('wilayah')->where('tipe', 'RT')->count() : 0;
+        // Scoped counts — jangan hitung global bila scope terbatas
+        $totalRw = Schema::hasTable('wilayah')
+            ? DB::table('wilayah')->when($scopeIds !== null, fn ($q) => $q->whereIn('id_wilayah', $scopeIds))->where('tipe', 'RW')->count()
+            : 0;
+        $totalRt = Schema::hasTable('wilayah')
+            ? DB::table('wilayah')->when($scopeIds !== null, fn ($q) => $q->whereIn('id_wilayah', $scopeIds))->where('tipe', 'RT')->count()
+            : 0;
         $kelurahanName = Schema::hasTable('wilayah')
-            ? (DB::table('wilayah')->where('tipe', 'KELURAHAN')->value('nama_wilayah') ?: 'Kelurahan Sukamaju')
+            ? (DB::table('wilayah')->when($scopeIds !== null, fn ($q) => $q->whereIn('id_wilayah', $scopeIds))->where('tipe', 'KELURAHAN')->value('nama_wilayah')
+                ?: DB::table('wilayah')->where('tipe', 'KELURAHAN')->value('nama_wilayah')
+                ?: 'Kelurahan Sukamaju')
             : 'Kelurahan Sukamaju';
 
         $isDukuh = in_array($roleCode, ['DUKUH', 'KELURAHAN', 'LURAH']);
 
-        $userName = $userObj->nama_users ?? ($isDukuh ? 'Pengelola Wilayah Sukamaju' : 'Administrator');
-        $userRoleName = $isDukuh ? ($roleCode === 'LURAH' ? 'Kepala Lurah' : 'Kepala Dukuh') : ($roleCode === 'ADMIN' ? 'Administrator' : 'Ketua RT');
+        $userName = $userObj?->nama_users ?? ($isDukuh ? 'Pengelola Wilayah Sukamaju' : 'Administrator');
+        $roleNameMap = ['LURAH' => 'Kepala Lurah', 'DUKUH' => 'Kepala Dukuh', 'ADMIN' => 'Administrator', 'RW' => 'Ketua RW', 'RT' => 'Ketua RT', 'SEKRETARIS' => 'Sekretaris', 'BENDAHARA' => 'Bendahara', 'WARGA' => 'Warga', 'SISKAMLING' => 'Siskamling', 'PKK' => 'PKK', 'KARANG_TARUNA' => 'Karang Taruna'];
+        $userRoleName = $roleNameMap[$roleCode] ?? ($isDukuh ? ($roleCode === 'LURAH' ? 'Kepala Lurah' : 'Kepala Dukuh') : ($roleCode === 'ADMIN' ? 'Administrator' : 'Ketua RT'));
         $initial = strtoupper(substr($userName, 0, 1)) ?: 'D';
 
         $areaLabel = $isDukuh ? "{$kelurahanName} (Tingkat Wilayah)" : 'RT Digital';
@@ -143,13 +193,25 @@ class DashboardService
                 ['label' => 'Buat Pengumuman', 'icon' => 'megaphone'],
             ];
 
+        // Structured extras — frontend pakai ini, bukan parse string
+        $demografi = ['L' => $maleCitizens, 'P' => $femaleCitizens, 'total' => $totalCitizens];
+        $suratMingguan = $this->suratMingguan($scopeIds);
+        $sla = $this->sla($scopeIds);
+        $siskamling = $this->siskamlingStats($scopeIds);
+        $wargaOwn = null;
+        if (in_array($roleCode, ['WARGA','SISKAMLING','PKK','KARANG_TARUNA']) && $userObj) {
+            $wargaOwn = $this->wargaOwn($userObj);
+        }
+
         return [
             'user' => [
                 'name' => $userName,
                 'role' => $userRoleName,
                 'initial' => $initial,
+                'roleCode' => $roleCode,
             ],
             'area' => $areaLabel,
+            'kelurahanName' => $kelurahanName,
             'navigation' => $this->navigation($isDukuh),
             'summaryCards' => $summaryCards,
             'financeCards' => $financeCards,
@@ -157,6 +219,13 @@ class DashboardService
             'complaintsByCategory' => $this->complaintsByCategory($scopeIds),
             'activities' => $this->activities($scopeIds, $isDukuh),
             'quickActions' => $quickActions,
+            // extras
+            'demografi' => $demografi,
+            'suratMingguan' => $suratMingguan,
+            'sla' => $sla,
+            'siskamling' => $siskamling,
+            'wargaOwn' => $wargaOwn,
+            'scopeIds' => $scopeIds,
         ];
     }
 
@@ -202,11 +271,13 @@ class DashboardService
 
     private function cashflow(?array $scopeIds): array
     {
+        // kronologis asc lalu ambil 6 terakhir
         return $this->financeQuery($scopeIds)
             ->orderBy('tanggal')
             ->get()
             ->groupBy(fn ($row) => date('Y-m', strtotime((string) $row->tanggal)))
-            ->take(6)
+            ->sortKeys()
+            ->take(-6)
             ->map(function ($rows, $date) {
                 return [
                     'month' => date('M', strtotime($date)),
@@ -216,6 +287,78 @@ class DashboardService
             })
             ->values()
             ->all();
+    }
+
+    private function suratMingguan(?array $scopeIds): array
+    {
+        $days = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+        $labels = [1=>'Sen',2=>'Sel',3=>'Rab',4=>'Kam',5=>'Jum',6=>'Sab',7=>'Min'];
+        $weekStart = now()->startOfWeek(); // Senin
+        $rows = $this->letterQuery($scopeIds)
+            ->whereBetween('created_at', [$weekStart, now()->endOfWeek()])
+            ->get()
+            ->groupBy(fn ($r) => (int) date('N', strtotime((string) $r->created_at)));
+        $weekly = [];
+        foreach (range(1,7) as $n) {
+            $grp = $rows->get($n, collect());
+            $weekly[] = [
+                'day' => $labels[$n],
+                'masuk' => $grp->count(),
+                'selesai' => $grp->where('status','TERBIT')->count() + $grp->where('status','DITANDATANGANI')->count(),
+            ];
+        }
+        return $weekly;
+    }
+
+    private function sla(?array $scopeIds): array
+    {
+        if (! Schema::hasTable('complaint')) return ['percent'=>0,'total'=>0,'resolved'=>0];
+        $q = $this->complaintQuery($scopeIds);
+        $total = (clone $q)->count();
+        if ($total === 0) return ['percent'=>100,'total'=>0,'resolved'=>0];
+        // SLA: SELESAI dalam 3 hari
+        $resolved = DB::table('complaint')
+            ->when($scopeIds !== null, function ($qq) use ($scopeIds) {
+                // filter via pengirim.citizen.id_wilayah
+                $qq->whereIn('id_pengirim_user', function ($sub) use ($scopeIds) {
+                    $sub->select('id_users')->from('users')->whereIn('id_citizen', function ($sub2) use ($scopeIds) {
+                        $sub2->select('id_citizen')->from('citizen')->whereIn('id_wilayah', $scopeIds);
+                    });
+                });
+            })
+            ->where('status','SELESAI')->count();
+        $percent = (int) round($resolved / $total * 100);
+        return ['percent'=>$percent,'total'=>$total,'resolved'=>$resolved];
+    }
+
+    private function siskamlingStats(?array $scopeIds): array
+    {
+        if (! Schema::hasTable('siskamling_schedule')) return ['jadwal'=>0,'incidents'=>0,'checkins'=>0];
+        $q = DB::table('siskamling_schedule');
+        if ($scopeIds !== null) $q->whereIn('id_wilayah', $scopeIds);
+        $jadwal = (clone $q)->count();
+        $incQ = DB::table('siskamling_incident');
+        if ($scopeIds !== null) $incQ->whereIn('id_wilayah', $scopeIds);
+        $incidents = $incQ->count();
+        $checkins = Schema::hasTable('siskamling_checkin') ? DB::table('siskamling_checkin')->count() : 0;
+        return ['jadwal'=>$jadwal,'incidents'=>$incidents,'checkins'=>$checkins];
+    }
+
+    private function wargaOwn(User $user): array
+    {
+        $citizenId = $user->id_citizen;
+        $userId = $user->id_users;
+        $complaints = Schema::hasTable('complaint')
+            ? Complaint::where('id_pengirim_user',$userId)->count() : 0;
+        $activeComplaints = Schema::hasTable('complaint')
+            ? Complaint::where('id_pengirim_user',$userId)->whereIn('status',['PENDING','DIPROSES','ESKALASI'])->count() : 0;
+        $letters = $citizenId
+            ? LetterRequest::where('id_pemohon_citizen',$citizenId)->count()
+            : LetterRequest::where('id_wilayah', $user->citizen?->id_wilayah)->count();
+        $pendingLetters = $citizenId
+            ? LetterRequest::where('id_pemohon_citizen',$citizenId)->whereIn('status',['DIAJUKAN','DIVERIFIKASI'])->count()
+            : 0;
+        return ['complaints'=>$complaints,'activeComplaints'=>$activeComplaints,'letters'=>$letters,'pendingLetters'=>$pendingLetters];
     }
 
     private function complaintsByCategory(?array $scopeIds): array

@@ -114,15 +114,18 @@ class RolePermissionSeeder extends Seeder
                         continue;
                     }
 
-                    $exists = DB::table('role_permission')
+                    $existing = DB::table('role_permission')
                         ->where('id_role', $roleId)
                         ->where('id_module', $moduleId)
                         ->where('id_permission_action', $actionId)
                         ->where('resource_scope', $grant['scope'] ?? '*')
-                        ->where('scope_level', $grant['level'] ?? 'ALL')
-                        ->exists();
+                        ->first();
 
-                    if ($exists) {
+                    if ($existing) {
+                        if ($existing->scope_level !== ($grant['level'] ?? 'ALL')) {
+                            DB::table('role_permission')->where('id_role_permission', $existing->id_role_permission)
+                                ->update(['scope_level' => $grant['level'] ?? 'ALL']);
+                        }
                         continue;
                     }
 
@@ -254,6 +257,7 @@ class RolePermissionSeeder extends Seeder
             ],
 
             // Sekretaris RT: verifikasi data & surat, kelola tata tertib/pengumuman.
+            // ORGANISASI VIEW = KELURAHAN (read-only struktur lengkap), sejajar WARGA/RT — bukan RT saja.
             'SEKRETARIS' => [
                 'DASHBOARD' => $view('RT'),
                 'WARGA' => $crud('RT'),
@@ -266,7 +270,7 @@ class RolePermissionSeeder extends Seeder
                 'SISKAMLING' => $view('RT'),
                 'PENGUMUMAN' => $crud('RT'),
                 'PERATURAN' => $crud('RT'),
-                'ORGANISASI' => $view('RT'),
+                'ORGANISASI' => $view('KELURAHAN'),
                 'PESAN' => $view('RT'),
                 'PENGADUAN' => $view('RT'),
                 'INVENTARIS' => array_merge($view('RT'), [['action' => 'CREATE', 'level' => 'RT']]),
@@ -287,7 +291,7 @@ class RolePermissionSeeder extends Seeder
                 'SISKAMLING' => $view('RT'),
                 'PENGUMUMAN' => $view('RT'),
                 'PERATURAN' => $view('RT'),
-                'ORGANISASI' => $view('RT'),
+                'ORGANISASI' => $view('KELURAHAN'),
                 'PENGADUAN' => $view('RT'),
                 'INVENTARIS' => $view('RT'),
                 'STATISTIK' => $view('RT'),

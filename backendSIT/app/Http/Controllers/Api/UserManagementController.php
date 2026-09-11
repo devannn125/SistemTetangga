@@ -150,10 +150,26 @@ class UserManagementController extends BaseApiController
     {
         $this->authorizeModule('USER', 'UPDATE');
 
-        $user = User::findOrFail($id);
+        $user = User::with(['citizen', 'userRoles.role'])->findOrFail($id);
         $old = $user->toArray();
         $data = $request->validated();
         $data = $this->fillEmailFromCitizen($data);
+
+        // Guard scope: target harus dalam wilayah aktor (kecuali ADMIN ALL)
+        $scopeIds = $this->rbac->wilayahScopeIds($this->requestUser(), 'USER', 'UPDATE');
+        if ($scopeIds !== null && $user->citizen && ! in_array($user->citizen->id_wilayah, $scopeIds, true)) {
+            abort(403, 'Data pengguna di luar lingkup wilayah Anda.');
+        }
+        if (isset($data['id_wilayah']) && $scopeIds !== null && ! in_array($data['id_wilayah'], $scopeIds, true)) {
+            abort(403, 'Wilayah tujuan di luar lingkup wilayah Anda.');
+        }
+        // Wil. target harus RT bila diisi
+        if (isset($data['id_wilayah'])) {
+            $tipe = DB::table('wilayah')->where('id_wilayah', $data['id_wilayah'])->value('tipe');
+            if (strtoupper((string) $tipe) !== 'RT') {
+                abort(422, 'Domisili harus wilayah bertipe RT.');
+            }
+        }
 
         // Aktivasi akun (PENDING -> ACTIVE) hanya boleh utk warga yang sudah
         // diverifikasi Ketua RW (citizen.status_verifikasi = VERIFIED_RW).
@@ -168,9 +184,57 @@ class UserManagementController extends BaseApiController
         }
         unset($data['password']);
 
-        $user->update($data);
+        $citizenPayload = [];
+        if (array_key_exists('nama_users', $data)) $citizenPayload['nama_lengkap'] = $data['nama_users'];
+        if (array_key_exists('email', $data)) $citizenPayload['email'] = $data['email'];
+        if (array_key_exists('no_hp', $data)) $citizenPayload['no_hp'] = $data['no_hp'];
+        if (array_key_exists('nik', $data)) $citizenPayload['nik'] = $data['nik'];
+        if (array_key_exists('jenis_kelamin', $data)) $citizenPayload['jenis_kelamin'] = $data['jenis_kelamin'];
+        if (array_key_exists('id_wilayah', $data)) $citizenPayload['id_wilayah'] = $data['id_wilayah'];
 
+        $citizenOld = $user->citizen?->toArray() ?? [];
+        $oldWilayah = $user->citizen?->id_wilayah;
+
+        DB::transaction(function () use ($user, &$data, $citizenPayload) {
+            // Sync citizen bila ada
+            if ($user->citizen && ! empty($citizenPayload)) {
+                $user->citizen->update($citizenPayload);
+            }
+            // Pisahkan field citizen-only dari users
+            $userData = collect($data)->except(['nik', 'jenis_kelamin', 'id_wilayah', 'role'])->toArray();
+            // id_wilayah di users tidak ada kolom — sudah di citizen; jangan update users dengan itu
+            if (! empty($userData)) {
+                $user->update($userData);
+            }
+            // Pindah wilayah → sinkron user_role WARGA ke RT baru (ponytail: satu wilayah aktif per user)
+            if (isset($citizenPayload['id_wilayah']) && $citizenPayload['id_wilayah'] !== ($user->citizen?->id_wilayah ?? null)) {
+                // catatan: citizen sudah ter-update, ambil new vs old
+            }
+        });
+
+        // Sinkron user_role WARGA bila pindah RT
+        if (isset($citizenPayload['id_wilayah']) && $oldWilayah && $citizenPayload['id_wilayah'] !== $oldWilayah) {
+            $wargaRole = Role::where('kode', 'WARGA')->first();
+            if ($wargaRole) {
+                $existing = UserRole::where('id_users', $user->id_users)
+                    ->where('id_role', $wargaRole->id_role)
+                    ->where('status', 'ACTIVE')
+                    ->first();
+                if ($existing && $existing->id_wilayah !== $citizenPayload['id_wilayah']) {
+                    $existing->update(['status' => 'ENDED', 'periode_selesai' => now()->toDateString()]);
+                    UserRole::updateOrCreate(
+                        ['id_users' => $user->id_users, 'id_role' => $wargaRole->id_role, 'id_wilayah' => $citizenPayload['id_wilayah']],
+                        ['status' => 'ACTIVE', 'periode_mulai' => now()->toDateString(), 'assigned_by' => $this->requestUser()?->id_users, 'assigned_at' => now()]
+                    );
+                }
+            }
+        }
+
+        $user->refresh();
         $this->audit('USER', 'UPDATE', 'users', $user->id_users, $old, $user->toArray());
+        if (! empty($citizenPayload) && $user->citizen) {
+            $this->audit('WARGA', 'UPDATE', 'citizen', $user->citizen->id_citizen, $citizenOld, $user->citizen->toArray());
+        }
 
         return new UserResource($user->load(['userRoles.role', 'citizen.wilayah']));
     }
@@ -331,17 +395,45 @@ class UserManagementController extends BaseApiController
     {
         $this->authorizeModule('USER', 'DELETE');
 
-        $user = User::findOrFail($id);
+        $user = User::with(['citizen', 'userRoles.role'])->findOrFail($id);
 
         if ($user->id_users === $this->requestUser()?->id_users) {
             return response()->json(['message' => 'Tidak dapat menonaktifkan akun sendiri.'], 422);
         }
 
-        $user->update(['status' => 'INACTIVE']);
+        // Guard: pengurus strategis dikelola via Struktur Organisasi
+        $activeCodes = $user->userRoles->filter(fn ($ur) => $ur->status === 'ACTIVE')->pluck('role.kode')->filter();
+        if ($activeCodes->intersect(self::PROTECTED_ROLES)->isNotEmpty()) {
+            return response()->json(['message' => 'Akun pengurus strategis (LURAH/DUKUH/RW/RT/SEKRETARIS/BENDAHARA) dinonaktifkan via Struktur Organisasi (cabut jabatan).'], 422);
+        }
+
+        // Scope guard
+        $scopeIds = $this->rbac->wilayahScopeIds($this->requestUser(), 'USER', 'DELETE');
+        if ($scopeIds !== null && $user->citizen && ! in_array($user->citizen->id_wilayah, $scopeIds, true)) {
+            abort(403, 'Data pengguna di luar lingkup wilayah Anda.');
+        }
+
+        DB::transaction(function () use ($user) {
+            $user->update(['status' => 'INACTIVE']);
+            if ($user->citizen) {
+                $user->citizen->update(['status_aktif' => false]);
+            }
+            // Akhiri role WARGA / custom aktif
+            foreach ($user->userRoles()->where('status', 'ACTIVE')->get() as $ur) {
+                $ur->update(['status' => 'ENDED', 'periode_selesai' => now()->toDateString()]);
+            }
+            // Nonaktifkan organization_member custom (SISKAMLING/PKK/KARANG_TARUNA/WARGA) di wilayah tersebut
+            if ($user->citizen) {
+                OrganizationMember::where('id_citizen', $user->citizen->id_citizen)
+                    ->where('status_aktif', true)
+                    ->whereIn('jabatan', array_values(self::ORG_JABATAN))
+                    ->update(['status_aktif' => false, 'periode_selesai' => now()->toDateString()]);
+            }
+        });
 
         $this->audit('USER', 'DELETE', 'users', $user->id_users);
 
-        return response()->json(['message' => 'Akun dinonaktifkan.']);
+        return response()->json(['message' => 'Akun dinonaktifkan (soft delete).']);
     }
 
     /**

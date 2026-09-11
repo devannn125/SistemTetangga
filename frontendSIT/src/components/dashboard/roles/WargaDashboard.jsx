@@ -17,14 +17,12 @@ export function WargaDashboard({ role, data: propData }) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>
   }
 
-  // Gunakan data dari backend (meskipun backend belum menyediakan alokasi per-kategori, kita tampilkan yang ada di data agregat)
-  // Misal untuk Warga, kita map financeCards untuk ditampilkan
   const financeCards = data.financeCards || []
-  
-  // Karena WargaDashboard membutuhkan informasi tracking pengaduan/surat dari user tersebut,
-  // untuk saat ini kita menggunakan fallback jika backend tidak spesifik.
-  const activeComplaints = data.summaryCards?.[1]?.value || 0
-  const letterCount = data.summaryCards?.[3]?.value || 0
+  const wargaOwn = data.wargaOwn || null
+  const activeComplaints = wargaOwn ? wargaOwn.activeComplaints : (data.summaryCards?.[1]?.value || 0)
+  const letterCount = wargaOwn ? wargaOwn.pendingLetters : (data.summaryCards?.[3]?.value || 0)
+  const totalComplaintsOwn = wargaOwn ? wargaOwn.complaints : null
+  const totalLettersOwn = wargaOwn ? wargaOwn.letters : null
 
   return (
     <div className="space-y-6">
@@ -89,17 +87,17 @@ export function WargaDashboard({ role, data: propData }) {
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-neutral-800">Pengaduan Anda ({activeComplaints})</span>
+                  <span className="text-xs font-bold text-neutral-800">Pengaduan Anda ({totalComplaintsOwn ?? activeComplaints}{wargaOwn ? ` • ${activeComplaints} aktif` : ''})</span>
                   <span className="text-[10px] font-bold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full">Proses</span>
                 </div>
-                <div className="w-full bg-neutral-100 rounded-full h-1.5"><div className="bg-amber-500 h-1.5 rounded-full w-[30%]"></div></div>
+                <div className="w-full bg-neutral-100 rounded-full h-1.5"><div className="bg-amber-500 h-1.5 rounded-full" style={{width: totalComplaintsOwn ? `${Math.min(100, Math.round(activeComplaints/Math.max(1,totalComplaintsOwn)*100))}%` : '30%'}}></div></div>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-neutral-800">Surat Pengantar ({letterCount})</span>
+                  <span className="text-xs font-bold text-neutral-800">Surat Pengantar ({totalLettersOwn ?? letterCount}{wargaOwn ? ` • ${letterCount} pending` : ''})</span>
                   <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">Verifikasi RT</span>
                 </div>
-                <div className="w-full bg-neutral-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full w-[60%]"></div></div>
+                <div className="w-full bg-neutral-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{width: totalLettersOwn ? `${Math.min(100, Math.round(letterCount/Math.max(1,totalLettersOwn)*100))}%` : '60%'}}></div></div>
               </div>
             </div>
           </div>

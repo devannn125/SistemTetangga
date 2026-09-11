@@ -1,5 +1,4 @@
-import { dashboardData } from '../data/dashboardData'
-import { getAuthData, getAuthRole } from './authService'
+import { getAccessToken } from './authService'
 
 let cache = null
 let cacheAt = 0
@@ -12,31 +11,22 @@ export async function getDashboardData() {
   if (inflight) return inflight
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
-  const authUser = getAuthData()
-  const authRole = getAuthRole()
-
-  const params = new URLSearchParams()
-  if (authRole) params.append('role', authRole)
-  if (authUser?.id_users) params.append('user_id', authUser.id_users)
-
-  const url = `${apiUrl}/dashboard${params.toString() ? '?' + params.toString() : ''}`
+  const token = getAccessToken()
+  const url = `${apiUrl}/dashboard`
 
   inflight = (async () => {
     try {
-      const response = await fetch(url, {
-        headers: {
-          Accept: 'application/json',
-          'X-Role': authRole || '',
-          'X-User-Id': authUser?.id_users || '',
-        },
-      })
-      if (!response.ok) throw new Error('Gagal mengambil data dashboard')
+      const headers = { Accept: 'application/json' }
+      if (token) headers.Authorization = `Bearer ${token}`
+      const response = await fetch(url, { headers })
+      if (!response.ok) throw new Error('Gagal mengambil data dashboard: ' + response.status)
       const json = await response.json()
       cache = json
       cacheAt = Date.now()
       return json
-    } catch {
-      return cache || dashboardData
+    } catch (e) {
+      if (cache) return cache
+      throw e
     } finally {
       inflight = null
     }

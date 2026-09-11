@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { dashboardData as fallbackData } from '@/data/dashboardData'
@@ -15,21 +15,12 @@ export function RwDashboard({ data: propData }) {
 
   const complaintsData = data.complaintsByCategory || []
   const activeComplaints = data.summaryCards?.[1]?.value || 0
-  
-  // Create mock compliance from cashflow just to show something since backend doesn't return per-RT data yet
-  const mockKepatuhan = data.cashflow?.map(c => ({
+
+  const kepatuhanData = data.cashflow?.map(c => ({
     name: c.month,
     lunas: c.income,
     nunggak: c.expense
   })) || []
-
-  const mockKesehatanRt = [
-    { subject: 'Respon Cepat', rt01: 90, rt02: 60, fullMark: 100 },
-    { subject: 'Partisipasi Iuran', rt01: 80, rt02: 65, fullMark: 100 },
-    { subject: 'Update Data', rt01: 95, rt02: 70, fullMark: 100 },
-    { subject: 'Keamanan', rt01: 85, rt02: 80, fullMark: 100 },
-    { subject: 'Sosial', rt01: 70, rt02: 50, fullMark: 100 },
-  ]
 
   return (
     <div className="space-y-6">
@@ -64,7 +55,7 @@ export function RwDashboard({ data: propData }) {
           <h3 className="mb-4 text-sm font-bold text-neutral-700">Kepatuhan Iuran (Pemasukan vs Pengeluaran per Bulan)</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockKepatuhan}>
+              <BarChart data={kepatuhanData}>
                 <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{fill: '#f5f5f5'}} />

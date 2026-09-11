@@ -25,7 +25,7 @@ export function DashboardPage({ data, error, isLoading }) {
     else document.body.style.overflow = ''
     return () => { document.body.style.overflow = '' }
   }, [sidebarOpen])
-  const role = getAuthRole() || 'WARGA'
+  const role = data?.user?.roleCode || getAuthRole() || 'WARGA'
   const pathname = window.location.pathname
   const isWargaPath = pathname.startsWith('/dashboard/warga')
 

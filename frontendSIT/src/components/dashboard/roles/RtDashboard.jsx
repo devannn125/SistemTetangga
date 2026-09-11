@@ -1,9 +1,9 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { dashboardData as fallbackData } from '@/data/dashboardData'
 
-const GAUGE_COLORS = ['#10B981', '#E5E7EB'] // Green and Gray
+const GAUGE_COLORS = ['#10B981', '#E5E7EB']
 
 export function RtDashboard({ data: propData }) {
   const { data: fetched, isLoading } = useDashboardData({ enabled: false })
@@ -13,30 +13,22 @@ export function RtDashboard({ data: propData }) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>
   }
 
-  // Real data mapping
   const saldoKas = data.summaryCards?.[2]?.value || 'Rp 0'
   const saldoNote = data.summaryCards?.[2]?.note || '+Rp0 pemasukan'
   const pendingLetters = data.summaryCards?.[3]?.value || 0
   const letterDetail = data.summaryCards?.[3]?.note || '0 disetujui'
 
-  // Demography mapping from summary card string "12 L, 15 P" (This is a simplified parse, backend currently returns it as string)
-  const detailStr = data.summaryCards?.[0]?.detail || ''
-  let countL = 120; let countP = 135;
-  const match = detailStr.match(/(\d+)\sL,\s(\d+)\sP/)
-  if (match) {
-    countL = parseInt(match[1])
-    countP = parseInt(match[2])
-  }
+  const demografi = data.demografi || null
+  const countL = demografi ? demografi.L : (() => { const m = (data.summaryCards?.[0]?.detail || '').match(/(\d+)\sL,\s(\d+)\sP/); return m ? parseInt(m[1]) : 0 })()
+  const countP = demografi ? demografi.P : (() => { const m = (data.summaryCards?.[0]?.detail || '').match(/(\d+)\sL,\s(\d+)\sP/); return m ? parseInt(m[2]) : 0 })()
   const mockDemografi = [
     { name: 'Laki-laki', value: countL },
     { name: 'Perempuan', value: countP },
   ]
   const COLORS_DEMO = ['#3B82F6', '#EC4899']
 
-  const slaValue = 85 // Static for now, as backend SLA logic is complex
-  
-  // Use cashflow as a proxy for activity if Siskamling data is unavailable
-  const mockSiskamling = data.cashflow?.map(c => ({ day: c.month, insiden: c.expense > 0 ? 1 : 0 })) || []
+  const slaValue = data.sla?.percent ?? 85
+  const slaTotal = data.sla?.total ?? 0
 
   return (
     <div className="space-y-6">

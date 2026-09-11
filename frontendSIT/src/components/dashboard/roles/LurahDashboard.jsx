@@ -1,16 +1,18 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
-import { dashboardData as fallbackData } from '@/data/dashboardData'
 
 const COLORS = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6']
 
 export function LurahDashboard({ data: propData }) {
-  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
-  const data = propData || fetched || fallbackData
+  const { data: fetched, isLoading } = useDashboardData({ enabled: !propData })
+  const data = propData || fetched
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>
+  }
+  if (!data) {
+    return <div className="p-6 text-center text-sm text-red-600">Gagal memuat dashboard.</div>
   }
 
   // Fallbacks if data doesn't perfectly match

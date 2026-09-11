@@ -3,25 +3,24 @@ import { Icon } from '@/components/ui/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { dashboardData as fallbackData } from '@/data/dashboardData'
 
-const mockSuratMingguan = [
-  { day: 'Sen', masuk: 12, selesai: 10 },
-  { day: 'Sel', masuk: 8, selesai: 9 },
-  { day: 'Rab', masuk: 15, selesai: 15 },
-  { day: 'Kam', masuk: 10, selesai: 8 },
-  { day: 'Jum', masuk: 20, selesai: 18 },
-  { day: 'Sab', masuk: 5, selesai: 5 },
-]
-
 export function SekretarisDashboard({ data: propData }) {
   const { data: fetched, isLoading } = useDashboardData({ enabled: false })
   const data = propData || fetched || fallbackData
-  
+
   if (isLoading || !data) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>
   }
 
   const pendingLetters = data.summaryCards?.[3]?.value || 0
-  const activeComplaints = data.summaryCards?.[1]?.value || 0
+  const suratMingguan = data.suratMingguan || [
+    { day: 'Sen', masuk: 0, selesai: 0 },
+    { day: 'Sel', masuk: 0, selesai: 0 },
+    { day: 'Rab', masuk: 0, selesai: 0 },
+    { day: 'Kam', masuk: 0, selesai: 0 },
+    { day: 'Jum', masuk: 0, selesai: 0 },
+    { day: 'Sab', masuk: 0, selesai: 0 },
+    { day: 'Min', masuk: 0, selesai: 0 },
+  ]
 
   return (
     <div className="space-y-6">
@@ -53,7 +52,7 @@ export function SekretarisDashboard({ data: propData }) {
           <h3 className="mb-4 text-sm font-bold text-neutral-700">Volume Pengajuan Surat (Mingguan)</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockSuratMingguan}>
+              <BarChart data={suratMingguan}>
                 <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{fill: '#f5f5f5'}} />

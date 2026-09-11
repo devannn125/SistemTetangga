@@ -22,7 +22,13 @@ class UserResource extends JsonResource
             'id_citizen' => $this->id_citizen,
             'citizen' => $this->whenLoaded('citizen', fn () => [
                 'id_citizen' => $this->citizen->id_citizen,
+                'nik' => $this->citizen->nik,
                 'nama_lengkap' => $this->citizen->nama_lengkap,
+                'jenis_kelamin' => $this->citizen->jenis_kelamin,
+                'no_hp' => $this->citizen->no_hp,
+                'email' => $this->citizen->email,
+                'id_wilayah' => $this->citizen->id_wilayah,
+                'status_aktif' => $this->citizen->status_aktif,
                 'status_verifikasi' => $this->citizen->status_verifikasi,
                 'wilayah' => $this->whenLoaded('citizen.wilayah', fn () => new WilayahResource($this->citizen->wilayah)),
             ]),

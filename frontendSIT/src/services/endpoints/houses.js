@@ -32,6 +32,11 @@ export function getWilayah(params = {}) {
   return request(`/wilayah${query ? `?${query}` : ''}`)
 }
 
+export function getPublicWilayah(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/public/wilayah${query ? `?${query}` : ''}`)
+}
+
 export function createWilayah(payload) {
   return request('/wilayah', {
     method: 'POST',

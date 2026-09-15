@@ -13,6 +13,20 @@ use Illuminate\Support\Facades\DB;
 
 class OrganizationMemberController extends BaseApiController
 {
+    public function publicIndex(Request $request)
+    {
+        $query = OrganizationMember::query()->with(['citizen', 'wilayah'])->where('status_aktif', true);
+
+        if ($request->has('id_wilayah')) {
+            $query->where('id_wilayah', $request->query('id_wilayah'));
+        }
+        if ($request->has('jabatan')) {
+            $query->where('jabatan', $request->query('jabatan'));
+        }
+
+        return OrganizationMemberResource::collection($query->paginate($request->query('per_page', 200)));
+    }
+
     public function index(Request $request)
     {
         $this->authorizeModule('ORGANISASI', 'VIEW');

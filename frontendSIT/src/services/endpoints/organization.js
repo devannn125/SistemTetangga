@@ -5,6 +5,11 @@ export function getOrganizationMembers(params = {}) {
   return request(`/organization-members${query ? `?${query}` : ''}`)
 }
 
+export function getPublicOrganizationMembers(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request(`/public/organization-members${query ? `?${query}` : ''}`)
+}
+
 export function createOrganizationMember(payload) {
   if (payload instanceof FormData) {
     return request('/organization-members', { method: 'POST', body: payload })

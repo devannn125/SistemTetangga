@@ -44,6 +44,10 @@ Route::post('/login', [AuthController::class, 'login']);
 // Dashboard agregat statistik (publik, dipakai halaman login/landing).
 Route::get('/dashboard', DashboardController::class);
 
+// Publik untuk landing: struktur organisasi & wilayah (hanya data aktif, tanpa auth).
+Route::get('/public/organization-members', [OrganizationMemberController::class, 'publicIndex']);
+Route::get('/public/wilayah', [WilayahController::class, 'publicIndex']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);

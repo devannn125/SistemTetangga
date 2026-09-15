@@ -13,6 +13,20 @@ use Illuminate\Validation\ValidationException;
 
 class WilayahController extends BaseApiController
 {
+    public function publicIndex(Request $request)
+    {
+        $query = Wilayah::query()->with('children');
+        if ($request->has('tipe')) {
+            $query->where('tipe', $request->query('tipe'));
+        }
+        if ($request->has('parent_id')) {
+            $query->where('parent_id', $request->query('parent_id'));
+        } elseif (! filter_var($request->query('all'), FILTER_VALIDATE_BOOLEAN)) {
+            $query->whereNull('parent_id');
+        }
+        return WilayahResource::collection($query->orderBy('tipe')->get());
+    }
+
     public function index(Request $request)
     {
         // Struktur organisasi (read-only utk RW/Sekretaris/Bendahara/Warga)

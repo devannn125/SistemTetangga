@@ -110,7 +110,6 @@ export default function AdminPerangkatPage() {
           (c.nama_lengkap || '').toLowerCase().includes(calonSearch.toLowerCase()) ||
           (c.nik || '').toLowerCase().includes(calonSearch.toLowerCase()),
         )
-    // tampilkan yang belum assign dulu, lalu yang sudah
     return [...list].sort((a, b) => {
       const aAssigned = assignedMap.has(a.id_citizen) ? 1 : 0
       const bAssigned = assignedMap.has(b.id_citizen) ? 1 : 0
@@ -118,14 +117,41 @@ export default function AdminPerangkatPage() {
     }).slice(0, 80)
   }, [calonCitizens, calonSearch, assignedMap])
 
+  // Single flat grouped select: filter by jabatan tipe, show full path
+  const getWilayahPath = useCallback((id) => {
+    const chain = []
+    let cur = wilayahById[id]
+    let guard = 0
+    while (cur && guard < 10) {
+      chain.push(`${cur.tipe} ${cur.nama_wilayah}`)
+      if (!cur.parent_id) break
+      cur = wilayahById[cur.parent_id]
+      guard++
+    }
+    return chain.reverse().join(' › ')
+  }, [wilayahById])
+
   const wilayahOptions = useMemo(() => {
     const tipe = JABATAN_SUBSET.find((j) => j.value === form.jabatan)?.tipe || 'RT'
-    return wilayahs.filter((w) => w.tipe === tipe).map((w) => ({ value: w.id_wilayah, label: w.nama_wilayah }))
-  }, [wilayahs, form.jabatan])
+    const parentExpect = { RT: 'RW', RW: 'DUKUH', DUKUH: 'KELURAHAN' }[tipe]
+    return wilayahs
+      .filter((w) => w.tipe === tipe)
+      .filter((w) => {
+        if (!parentExpect) return true // KELURAHAN no parent needed
+        if (!w.parent_id) return false
+        const parent = wilayahById[w.parent_id]
+        return parent?.tipe === parentExpect
+      })
+      .map((w) => ({
+        value: w.id_wilayah,
+        label: getWilayahPath(w.id_wilayah) || `${w.tipe} ${w.nama_wilayah}`,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [wilayahs, form.jabatan, getWilayahPath, wilayahById])
 
   const openAdd = () => {
     const tipe = JABATAN_SUBSET.find((j) => j.value === form.jabatan)?.tipe || 'RT'
-    const firstWil = wilayahs.find((w) => w.tipe === tipe)?.id_wilayah || ''
+    const firstWil = wilayahs.filter((w) => w.tipe === tipe).sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))[0]?.id_wilayah || ''
     setForm({
       id_citizen: '',
       jabatan: 'Ketua RT',
@@ -138,7 +164,7 @@ export default function AdminPerangkatPage() {
 
   const handleJabatanChange = (val) => {
     const tipe = JABATAN_SUBSET.find((j) => j.value === val)?.tipe || 'RT'
-    const firstWil = wilayahs.find((w) => w.tipe === tipe)?.id_wilayah || ''
+    const firstWil = wilayahs.filter((w) => w.tipe === tipe).sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))[0]?.id_wilayah || ''
     setForm((f) => ({ ...f, jabatan: val, id_wilayah: firstWil }))
   }
 
@@ -162,7 +188,6 @@ export default function AdminPerangkatPage() {
         const warungNull = users.find((u) => !u.id_citizen && u.email && u.email.toLowerCase() === citizen.email.toLowerCase())
         if (warungNull) {
           try {
-            // UserManagementRequest butuh field wajib — kirim lengkap
             await updateUser(warungNull.id_users, {
               nama_users: warungNull.nama_users,
               email: warungNull.email,
@@ -176,8 +201,6 @@ export default function AdminPerangkatPage() {
           }
         }
       }
-      // Jika citizen tidak punya user sama sekali, backend syncUserRole akan skip — tetap buat organization_member
-      // Admin bisa buat akun WARGA dulu lalu hubungkan manual via updateUser jika perlu login
       await createOrganizationMember({
         id_citizen: form.id_citizen,
         jabatan: form.jabatan,
@@ -301,13 +324,29 @@ export default function AdminPerangkatPage() {
                 <SelectTrigger><SelectValue placeholder="Pilih wilayah" /></SelectTrigger>
                 <SelectContent>
                   {wilayahOptions.length === 0 ? (
-                    <SelectItem value="__none__" disabled>Belum ada wilayah tipe {JABATAN_SUBSET.find((j) => j.value === form.jabatan)?.tipe}</SelectItem>
+                    <SelectItem value="__none__" disabled>
+                      {(() => {
+                        const tipe = JABATAN_SUBSET.find((j) => j.value === form.jabatan)?.tipe
+                        if (tipe === 'RW') return 'Belum ada RW dengan induk Dukuh — buat di Manajemen Wilayah'
+                        if (tipe === 'RT') return 'Belum ada RT dengan induk RW — buat di Manajemen Wilayah'
+                        if (tipe === 'DUKUH') return 'Belum ada Dukuh dengan induk Kelurahan — buat di Manajemen Wilayah'
+                        return `Belum ada wilayah tipe ${tipe}`
+                      })()}
+                    </SelectItem>
                   ) : wilayahOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label} — {o.value}</SelectItem>
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-neutral-500">Hanya wilayah tipe {JABATAN_SUBSET.find((j) => j.value === form.jabatan)?.tipe} yang tampil.</p>
+              <p className="text-xs text-neutral-500">
+                {(() => {
+                  const tipe = JABATAN_SUBSET.find((j) => j.value === form.jabatan)?.tipe
+                  if (tipe === 'RW') return 'Ketua RW: hanya RW yang parent-nya Dukuh (hierarki lengkap ditampilkan).'
+                  if (tipe === 'RT') return 'Ketua RT / Sekretaris / Bendahara: hanya RT yang parent-nya RW.'
+                  if (tipe === 'DUKUH') return 'Kepala Dukuh: hanya Dukuh yang parent-nya Kelurahan.'
+                  return 'Kelurahan tidak butuh induk.'
+                })()}
+              </p>
             </div>
 
             <div className="space-y-2">

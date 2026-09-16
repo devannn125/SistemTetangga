@@ -106,6 +106,33 @@ export default function AdminWilayahPage() {
     loadData()
   }, [])
 
+  const wilayahById = useMemo(() => {
+    const m = {}
+    wilayahs.forEach((w) => { m[w.id_wilayah] = w })
+    return m
+  }, [wilayahs])
+
+  const getWilayahPath = (id) => {
+    const chain = []
+    let cur = wilayahById[id]
+    let guard = 0
+    while (cur && guard < 10) {
+      chain.push(`${cur.tipe} ${cur.nama_wilayah}`)
+      if (!cur.parent_id) break
+      cur = wilayahById[cur.parent_id]
+      guard++
+    }
+    return chain.reverse().join(' › ')
+  }
+
+  const parentOptions = useMemo(() => {
+    const need = { DUKUH: 'KELURAHAN', RW: 'DUKUH', RT: 'RW' }[form.tipe] || null
+    if (!need) return []
+    return wilayahs
+      .filter((w) => w.tipe === need)
+      .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))
+  }, [wilayahs, form.tipe])
+
   const tree = useMemo(() => {
     if (wilayahs.length === 0) return []
     const kelurahans = wilayahs.filter(w => w.tipe === 'KELURAHAN')
@@ -229,16 +256,22 @@ export default function AdminWilayahPage() {
               </Select>
             </div>
             <div className='space-y-2'>
-              <Label>Induk Wilayah (Parent)</Label>
+              <Label>Induk Wilayah (Parent) <span className="text-red-500">*</span></Label>
               <Select value={form.parent_id} onValueChange={val => setForm({...form, parent_id: val})}>
-                <SelectTrigger><SelectValue placeholder="Pilih Induk (Opsional)" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={form.tipe === 'KELURAHAN' ? '— Kelurahan tidak punya induk —' : parentOptions.length === 0 ? `Belum ada ${ ({ DUKUH: 'Kelurahan', RW: 'Dukuh', RT: 'RW' }[form.tipe] || 'induk')} — buat dulu` : 'Pilih Induk'} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value=''>-- Tidak Ada Induk --</SelectItem>
-                  {wilayahs.map(w => (
-                    <SelectItem key={w.id_wilayah} value={w.id_wilayah}>{w.tipe} - {w.nama_wilayah}</SelectItem>
+                  {form.tipe === 'KELURAHAN' ? (
+                    <SelectItem value='' disabled>Tidak butuh induk</SelectItem>
+                  ) : parentOptions.length === 0 ? (
+                    <SelectItem value="__none__" disabled>Belum ada wilayah tipe { ({ DUKUH: 'KELURAHAN', RW: 'DUKUH', RT: 'RW' }[form.tipe]) } — buat induk dulu</SelectItem>
+                  ) : parentOptions.map(w => (
+                    <SelectItem key={w.id_wilayah} value={w.id_wilayah}>{getWilayahPath(w.id_wilayah)} — {w.id_wilayah}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-neutral-500">
+                {form.tipe === 'KELURAHAN' ? 'Kelurahan adalah akar hierarki, tanpa induk.' : form.tipe === 'DUKUH' ? 'Dukuh harus di bawah Kelurahan.' : form.tipe === 'RW' ? 'RW harus di bawah Dukuh (parent_id → Dukuh).' : 'RT harus di bawah RW (parent_id → RW).'}
+              </p>
             </div>
             <div className='space-y-2'>
               <Label>Nama Wilayah</Label>

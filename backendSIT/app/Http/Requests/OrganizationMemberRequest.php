@@ -90,7 +90,61 @@ class OrganizationMemberRequest extends FormRequest
                     }
                 },
             ],
-            'id_wilayah' => ['required', 'exists:wilayah,id_wilayah'],
+            'id_wilayah' => [
+                'required',
+                'exists:wilayah,id_wilayah',
+                function ($attribute, $value, $fail) {
+                    // Validasi jabatan ↔ tipe wilayah + scope hierarki
+                    $jabatan = (string) $this->input('jabatan');
+                    $map = [
+                        'Kepala Lurah' => 'KELURAHAN',
+                        'Kepala Dukuh' => 'DUKUH',
+                        'Ketua RW' => 'RW',
+                        'Ketua RT' => 'RT',
+                        'Sekretaris' => 'RT',
+                        'Bendahara' => 'RT',
+                        'Pengurus Siskamling' => 'RT',
+                        'Ibu PKK' => 'RT',
+                        'Karang Taruna' => 'RT',
+                    ];
+                    $expected = $map[$jabatan] ?? null;
+                    if ($expected) {
+                        $target = Wilayah::find($value);
+                        if ($target && strtoupper($target->tipe) !== $expected) {
+                            $fail("Jabatan {$jabatan} harus ditempatkan di wilayah tipe {$expected}, bukan {$target->tipe}.");
+                            return;
+                        }
+                        // Cek parent tipe konsisten (RT→RW, RW→DUKUH, DUKUH→KELURAHAN)
+                        if ($target) {
+                            $parentExpect = ['RT' => 'RW', 'RW' => 'DUKUH', 'DUKUH' => 'KELURAHAN'];
+                            $need = $parentExpect[strtoupper($target->tipe)] ?? null;
+                            if ($need) {
+                                $parent = $target->parent;
+                                if (! $parent || strtoupper($parent->tipe) !== $need) {
+                                    $fail("Wilayah {$target->nama_wilayah} ({$target->tipe}) harus memiliki induk bertipe {$need}. Perbaiki hierarki parent_id di Manajemen Wilayah.");
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    // Zero-trust: target harus dalam lingkup ORGANISASI.CREATE aktor (kecuali ADMIN)
+                    $user = $this->user();
+                    if (! $user) return;
+                    $isAdmin = UserRole::where('id_users', $user->id_users)
+                        ->where('status', 'ACTIVE')
+                        ->whereHas('role', fn ($q) => $q->where('kode', 'ADMIN'))
+                        ->exists();
+                    if ($isAdmin) return;
+
+                    $rbac = app(\App\Services\RbacService::class);
+                    $scopeIds = $rbac->wilayahScopeIds($user, 'ORGANISASI', 'CREATE');
+                    if ($scopeIds === null) return; // ALL
+                    if (empty($scopeIds) || ! in_array($value, $scopeIds, true)) {
+                        $fail('Wilayah penugasan di luar lingkup kewenangan Anda. RT hanya bisa menugaskan di RT-nya (induk RW yang sama), RW di RW di bawah Dukuh-nya, Dukuh di bawah Kelurahan-nya.');
+                    }
+                },
+            ],
             'periode_mulai' => ['required', 'date'],
             'periode_selesai' => ['nullable', 'date', 'after_or_equal:periode_mulai'],
             'foto_url' => ['nullable', 'string', 'max:500'],

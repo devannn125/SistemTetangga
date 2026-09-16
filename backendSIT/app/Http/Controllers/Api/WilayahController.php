@@ -33,12 +33,52 @@ class WilayahController extends BaseApiController
         // butuh pohon wilayah via getWilayah. Role tsb punya ORGANISASI.VIEW tapi
         // bukan MASTER.VIEW — izinkan baca wilayah bila punya salah satu.
         $actor = $this->requestUser();
-        if (! $this->rbac->can($actor, 'ORGANISASI', 'VIEW')
-            && ! $this->rbac->can($actor, 'MASTER', 'VIEW')) {
+        $canOrg = $this->rbac->can($actor, 'ORGANISASI', 'VIEW');
+        $canMaster = $this->rbac->can($actor, 'MASTER', 'VIEW');
+        if (! $canOrg && ! $canMaster) {
             abort(403, 'Tidak memiliki akses ke modul ini.');
         }
 
         $query = Wilayah::query()->with('children');
+
+        // Zero-trust scope: non-ADMIN hanya lihat descendant dari anchor.
+        // Jika punya dua modul, ambil union (null = ALL berarti tanpa filter).
+        $scopeIdsOrg = $canOrg ? $this->rbac->wilayahScopeIds($actor, 'ORGANISASI', 'VIEW') : null;
+        $scopeIdsMaster = $canMaster ? $this->rbac->wilayahScopeIds($actor, 'MASTER', 'VIEW') : null;
+        $scopeIds = null;
+        if ($scopeIdsOrg !== null && $scopeIdsMaster !== null) {
+            // dua-duanya terbatas -> union
+            $scopeIds = array_values(array_unique(array_merge($scopeIdsOrg, $scopeIdsMaster)));
+        } elseif ($scopeIdsOrg !== null) {
+            $scopeIds = $scopeIdsOrg;
+        } elseif ($scopeIdsMaster !== null) {
+            $scopeIds = $scopeIdsMaster;
+        } else {
+            // salah satu ALL (null) -> tanpa filter
+            $scopeIds = null;
+        }
+
+        if ($scopeIds !== null) {
+            if (empty($scopeIds)) {
+                return WilayahResource::collection(collect([]));
+            }
+            // Sertakan ancestor sampai root agar tree KEL→DUKUH→RW→RT bisa dibangun
+            // meski scope terbatas (mis. DUKUH/RW hanya punya descendant, kelurahan induk tidak termasuk).
+            $allForAncestor = Wilayah::all(['id_wilayah', 'parent_id']);
+            $byId = $allForAncestor->keyBy('id_wilayah');
+            $ancestorIds = [];
+            foreach ($scopeIds as $sid) {
+                $cur = $byId->get($sid);
+                $guard = 0;
+                while ($cur && $cur->parent_id && $guard < 10) {
+                    $ancestorIds[] = $cur->parent_id;
+                    $cur = $byId->get($cur->parent_id);
+                    $guard++;
+                }
+            }
+            $scopeIds = array_values(array_unique(array_merge($scopeIds, $ancestorIds)));
+            $query->whereIn('id_wilayah', $scopeIds);
+        }
 
         if ($request->has('tipe')) {
             $query->where('tipe', $request->query('tipe'));

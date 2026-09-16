@@ -8,9 +8,11 @@ const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'))
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'))
 const AdminPerangkatPage = lazy(() => import('./pages/AdminPerangkatPage'))
 const AdminStrukturPage = lazy(() => import('@/components/StrukturOrganisasi'))
+const AdminPortalPage = lazy(() => import('./pages/AdminPortalPage'))
 
 const AdminMenus = [
   { label: 'Beranda Sistem', path: '/admin', icon: 'server' },
+  { label: 'Manajemen Portal', path: '/admin/portal', icon: 'globe' },
   { label: 'Struktur Organisasi', path: '/admin/struktur', icon: 'building' },
   { label: 'Perangkat Desa', path: '/admin/perangkat', icon: 'users' },
   { label: 'Master Data', path: '/admin/master-data', icon: 'database' },
@@ -31,6 +33,7 @@ function renderPage(activePath) {
   if (activePath === '/admin/wilayah') return <AdminWilayahPage />
   if (activePath === '/admin/users') return <AdminUsersPage />
   if (activePath === '/admin/settings') return <AdminSettingsPage />
+  if (activePath === '/admin/portal') return <AdminPortalPage />
   return <AdminDashboardPage />
 }
 
@@ -52,4 +55,5 @@ export function AdminPage() {
     </PortalLayout>
   )
 }
+
 

@@ -300,7 +300,7 @@ export default function StrukturOrganisasi() {
   // Dukuh & Lurah melihat semua RW utk keperluan kelola. Admin (view-only) lihat per tab kelurahan.
   // Fallback: bila tree kosong (orphan) tapi ada member, deduplicate via member wilayah.
   const visibleDukuhs = useMemo(() => {
-    if (isAdmin) return tree.dukuhList
+    if (isAdmin) return tree.dukuhList.filter((d) => d.parent_id === adminActiveKelurahanId)
     if (isDukuh) {
       if (currentDukuh) return [currentDukuh]
       // Orphan fallback: dukuh belum ada di wilayahs tapi myWilayah adalah DUKUH
@@ -341,8 +341,7 @@ export default function StrukturOrganisasi() {
     // ponytail: tampil semua dukuh sebagai fallback read-only; rapikan ke scope kelurahan saat RBAC matang
     if (authRoles.length > 0) return tree.dukuhList
     return []
-  }, [isAdmin, adminDukuhList, isDukuh, isLurah, currentDukuh, tree.dukuhList, myRwId, myRtId, myWilayah, wilayahs, activeDukuhId, lurahDukuhList, myDukuhFromWilayah, authRoles, members])
-
+  }, [isAdmin, adminActiveKelurahanId, adminDukuhList, isDukuh, isLurah, currentDukuh, tree.dukuhList, myRwId, myRtId, myWilayah, wilayahs, activeDukuhId, lurahDukuhList, myDukuhFromWilayah, authRoles, members])
   const getRwMembers = (rwId) => members.filter((m) => m.id_wilayah === rwId)
   const getRtMembers = (rtId) => members.filter((m) => m.id_wilayah === rtId)
   const getDukuhMember = (dukuhId) => members.find((m) => m.id_wilayah === dukuhId && m.jabatan?.toLowerCase().includes('dukuh'))
@@ -474,11 +473,13 @@ export default function StrukturOrganisasi() {
 
   const adminLurahAll = useMemo(() => {
     if (!isAdmin) return []
-    return tree.kelurahanList.map((kel) => {
+    return tree.kelurahanList
+      .filter((kel) => kel.id_wilayah === adminActiveKelurahanId)
+      .map((kel) => {
       const m = members.find((x) => x.jabatan?.toLowerCase().includes('kepala lurah') && x.id_wilayah === kel.id_wilayah)
       return m ? { nama_users: m.citizen?.nama_lengkap || 'Kepala Lurah', kelurahan: kel.nama_wilayah, kelurahanId: kel.id_wilayah } : null
     }).filter(Boolean)
-  }, [isAdmin, tree.kelurahanList, members])
+  }, [isAdmin, tree.kelurahanList, members, adminActiveKelurahanId])
 
   const adminLurahForTab = useMemo(() => {
     if (isAdmin) return null
@@ -573,22 +574,28 @@ export default function StrukturOrganisasi() {
           </div>
         )}
 
-        {/* Kepala Dukuh (list per dukuh) */}
+                {/* Struktur per Dukuh (Hierarchical) */}
         {visibleDukuhs.length > 0 && (
-          <>
-            <SectionHeading>Kepala Dukuh</SectionHeading>
-            <div className="space-y-4">
-              {visibleDukuhs.map((dk) => {
-                const dkMember = getDukuhMember(dk.id_wilayah)
-                return (
-                  <div key={dk.id_wilayah} className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Icon name="building" className="h-4 w-4 text-neutral-400" />
-                      <p className="text-sm font-extrabold text-black">{dk.nama_wilayah}</p>
+          <div className="space-y-8">
+            {visibleDukuhs.map((dk) => {
+              const dkMember = getDukuhMember(dk.id_wilayah)
+              const rwList = scopeRwOnly ? dk.rws.filter((rw) => rw.id_wilayah === myRwId) : dk.rws
+              return (
+                <div key={dk.id_wilayah} className="rounded-2xl border border-neutral-300 bg-white p-6 shadow-sm">
+                  {/* Header Dukuh */}
+                  <div className="mb-4 flex items-center justify-between border-b border-neutral-100 pb-3">
+                    <div className="flex items-center gap-3">
+                      <Icon name="mapPin" className="h-5 w-5 text-neutral-400" />
+                      <h3 className="text-lg font-black text-black uppercase">DUKUH: {dk.nama_wilayah}</h3>
                     </div>
-                    <div className="divide-y divide-neutral-200 rounded-lg bg-white px-4">
+                  </div>
+
+                  {/* Card Kepala Dukuh */}
+                  <div className="mb-6">
+                    <p className="mb-3 text-xs font-bold text-neutral-500 uppercase tracking-widest">Kepala Dukuh</p>
+                    <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
                       {dkMember ? (
-                        <div className="flex items-center gap-4 py-3">
+                        <div className="flex items-center gap-4">
                           <Avatar member={dkMember} size="lg" />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold text-black truncate">{dkMember.citizen?.nama_lengkap || 'Tidak Diketahui'}</p>
@@ -597,119 +604,70 @@ export default function StrukturOrganisasi() {
                           {canManageDukuh && (
                             <button
                               onClick={() => handleRemove(dkMember, 'Kepala Dukuh')}
-                              className="rounded-full bg-neutral-100 px-3 py-1 text-[10px] font-bold uppercase text-neutral-500 transition hover:bg-red-100 hover:text-red-600"
+                              className="rounded-full bg-neutral-200 px-3 py-1 text-[10px] font-bold uppercase text-neutral-600 transition hover:bg-red-100 hover:text-red-600"
                             >
                               Cabut
                             </button>
                           )}
                         </div>
                       ) : (
-                        <p className="py-3 text-xs text-neutral-400 italic">Kepala Dukuh belum ditunjuk</p>
+                        <p className="text-sm italic text-neutral-400">Belum ada Kepala Dukuh</p>
                       )}
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </>
-        )}
 
-        {/* Pengurus RW */}
-        {visibleDukuhs.length > 0 && (
-          <>
-            <SectionHeading>Pengurus RW</SectionHeading>
-            {canManageRw && (
-              <div className="flex flex-wrap justify-center gap-2">
-                <button
-                  onClick={() => openAdd('rw')}
-                  className="flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-xs font-extrabold uppercase tracking-wide text-white transition hover:bg-neutral-800"
-                >
-                  <Icon name="userPlus" className="h-4 w-4" />
-                  Tambah Ketua RW
-                </button>
-                <button
-                  onClick={() => openAdd('rt')}
-                  className="flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-5 py-2.5 text-xs font-extrabold uppercase tracking-wide text-neutral-700 transition hover:border-black hover:bg-neutral-100"
-                >
-                  <Icon name="userPlus" className="h-4 w-4" />
-                  Tambah Ketua RT
-                </button>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {visibleDukuhs.map((dk) => {
-                const rwList = scopeRwOnly ? dk.rws.filter((rw) => rw.id_wilayah === myRwId) : dk.rws
-                return (
-                <div key={dk.id_wilayah} className="space-y-3">
-                  {rwList.length === 0 && (
-                    <p className="rounded-xl border border-neutral-200 bg-white p-4 text-center text-xs text-neutral-400">Dukuh ini belum memiliki RW</p>
-                  )}
-                  {rwList.map((rw) => {
-                    const rwMembers = getRwMembers(rw.id_wilayah)
-                    return (
-                      <div key={rw.id_wilayah} className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-                        <div className="mb-3 flex items-center gap-2">
-                          <Icon name="building" className="h-4 w-4 text-neutral-400" />
-                          <p className="text-sm font-extrabold text-black">{rw.nama_wilayah}</p>
+                  {/* List RW di bawah Dukuh ini */}
+                  <div>
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Daftar RW & RT</p>
+                      {canManageRw && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openAdd('rw')}
+                            className="flex items-center gap-2 rounded-full bg-black px-4 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white transition hover:bg-neutral-800"
+                          >
+                            <Icon name="userPlus" className="h-3 w-3" />
+                            Tambah Ketua RW
+                          </button>
+                          <button
+                            onClick={() => openAdd('rt')}
+                            className="flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-[10px] font-extrabold uppercase tracking-wide text-neutral-700 transition hover:border-black hover:bg-neutral-100"
+                          >
+                            <Icon name="userPlus" className="h-3 w-3" />
+                            Tambah Ketua RT
+                          </button>
                         </div>
-                        <div className="divide-y divide-neutral-200 rounded-lg bg-white px-4">
-                          {rwMembers.length === 0 ? (
-                            <p className="py-3 text-xs text-neutral-400 italic">Belum ada pengurus</p>
-                          ) : rwMembers.map((m) => (
-                            <div key={m.id_organization_member} className="flex items-center gap-4 py-3">
-                              <Avatar member={m} size="md" />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-black truncate">{m.citizen?.nama_lengkap || 'Tidak Diketahui'}</p>
-                                <p className="text-xs font-extrabold uppercase tracking-wide text-sky-600">{m.jabatan}</p>
+                      )}
+                    </div>
+
+                    {rwList.length === 0 ? (
+                      <p className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-center text-xs text-neutral-400">Dukuh ini belum memiliki RW</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {rwList.map((rw) => {
+                          const rwMembers = getRwMembers(rw.id_wilayah)
+                          return (
+                            <div key={rw.id_wilayah} className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                              <div className="mb-3 flex items-center gap-2">
+                                <Icon name="building" className="h-4 w-4 text-neutral-400" />
+                                <p className="text-sm font-extrabold text-black">{rw.nama_wilayah}</p>
                               </div>
-                              {m.jabatan?.toLowerCase().includes('ketua rw') && canManageRw && (
-                                <button
-                                  onClick={() => handleRemove(m, 'Ketua RW')}
-                                  className="rounded-full bg-neutral-100 px-3 py-1 text-[10px] font-bold uppercase text-neutral-500 transition hover:bg-red-100 hover:text-red-600"
-                                >
-                                  Cabut
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-
-                        {rw.rts.filter((rt) => (isRwRole || isDukuh || isLurah) ? true : rt.id_wilayah === myRtId).map((rt) => (
-                          <div key={rt.id_wilayah} className="mt-3 rounded-lg border border-neutral-200 bg-white px-4">
-                            <div className="flex items-center gap-2 border-b border-neutral-100 py-2">
-                              <Icon name="building" className="h-3.5 w-3.5 text-neutral-400" />
-                              <p className="text-xs font-extrabold text-black">{rt.nama_wilayah}</p>
-                              {canManageSekBen && (
-                                <div className="ml-auto flex gap-2">
-                                  <button
-                                    onClick={() => openAdd('sek')}
-                                    className="rounded-full bg-black px-3 py-1 text-[10px] font-bold uppercase text-white transition hover:bg-neutral-800"
-                                  >
-                                    Tambah Sekretaris
-                                  </button>
-                                  <button
-                                    onClick={() => openAdd('ben')}
-                                    className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-[10px] font-bold uppercase text-neutral-700 transition hover:border-black"
-                                  >
-                                    Tambah Bendahara
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                            {getRtMembers(rt.id_wilayah).length === 0 ? (
-                              <p className="py-2 text-[11px] text-neutral-400 italic">Belum ada pengurus RT</p>
-                            ) : (
-                              <div className="divide-y divide-neutral-100">
-                                {getRtMembers(rt.id_wilayah).map((m) => (
-                                  <div key={m.id_organization_member} className="flex items-center gap-3">
+                              
+                              {/* Tabel Pengurus RW */}
+                              <div className="mb-4 divide-y divide-neutral-200 rounded-lg bg-white px-4 border border-neutral-100">
+                                {rwMembers.length === 0 ? (
+                                  <p className="py-3 text-xs text-neutral-400 italic">Belum ada pengurus RW</p>
+                                ) : rwMembers.map((m) => (
+                                  <div key={m.id_organization_member} className="flex items-center gap-4 py-3">
+                                    <Avatar member={m} size="md" />
                                     <div className="min-w-0 flex-1">
-                                      <OfficialRow member={m} />
+                                      <p className="text-sm font-bold text-black truncate">{m.citizen?.nama_lengkap || 'Tidak Diketahui'}</p>
+                                      <p className="text-xs font-extrabold uppercase tracking-wide text-sky-600">{m.jabatan}</p>
                                     </div>
-                                    {canManageSekBen && (m.jabatan === 'Sekretaris' || m.jabatan === 'Bendahara') && (
+                                    {m.jabatan?.toLowerCase().includes('ketua rw') && canManageRw && (
                                       <button
-                                        onClick={() => handleRemove(m, m.jabatan)}
-                                        className="shrink-0 rounded-full bg-neutral-100 px-3 py-1 text-[10px] font-bold uppercase text-neutral-500 transition hover:bg-red-100 hover:text-red-600"
+                                        onClick={() => handleRemove(m, 'Ketua RW')}
+                                        className="rounded-full bg-neutral-100 px-3 py-1 text-[10px] font-bold uppercase text-neutral-500 transition hover:bg-red-100 hover:text-red-600"
                                       >
                                         Cabut
                                       </button>
@@ -717,17 +675,71 @@ export default function StrukturOrganisasi() {
                                   </div>
                                 ))}
                               </div>
-                            )}
-                          </div>
-                        ))}
+
+                              {/* Daftar RT di dalam RW */}
+                              {rw.rts.filter((rt) => (isAdmin || isRwRole || isDukuh || isLurah) ? true : rt.id_wilayah === myRtId).map((rt) => (
+                                <div key={rt.id_wilayah} className="mt-3 rounded-lg border border-neutral-200 bg-white px-4">
+                                  <div className="flex items-center gap-2 border-b border-neutral-100 py-2">
+                                    <Icon name="building" className="h-3.5 w-3.5 text-neutral-400" />
+                                    <p className="text-xs font-extrabold text-black">{rt.nama_wilayah}</p>
+                                    {canManageSekBen && (
+                                      <div className="ml-auto flex gap-2">
+                                        <button
+                                          onClick={() => openAdd('sek')}
+                                          className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold uppercase text-neutral-600 transition hover:bg-neutral-50"
+                                        >
+                                          Tambah Sekr
+                                        </button>
+                                        <button
+                                          onClick={() => openAdd('ben')}
+                                          className="rounded-full bg-black px-3 py-1 text-[10px] font-bold uppercase text-white transition hover:bg-neutral-800"
+                                        >
+                                          Tambah Bendahara
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {getRtMembers(rt.id_wilayah).length === 0 ? (
+                                    <p className="py-2 text-[11px] text-neutral-400 italic">Belum ada pengurus RT</p>
+                                  ) : (
+                                    <div className="divide-y divide-neutral-100">
+                                      {getRtMembers(rt.id_wilayah).map((m) => (
+                                        <div key={m.id_organization_member} className="flex items-center gap-3 py-2">
+                                          <div className="min-w-0 flex-1">
+                                            <OfficialRow member={m} />
+                                          </div>
+                                          {canManageSekBen && (m.jabatan === 'Sekretaris' || m.jabatan === 'Bendahara') && (
+                                            <button
+                                              onClick={() => handleRemove(m, m.jabatan)}
+                                              className="shrink-0 rounded-full bg-neutral-100 px-3 py-1 text-[10px] font-bold uppercase text-neutral-500 transition hover:bg-red-100 hover:text-red-600"
+                                            >
+                                              Cabut
+                                            </button>
+                                          )}
+                                          {isRwRole && m.jabatan === 'Ketua RT' && !isAdmin && (
+                                            <button
+                                              onClick={() => handleRemove(m, 'Ketua RT')}
+                                              className="shrink-0 rounded-full bg-neutral-100 px-3 py-1 text-[10px] font-bold uppercase text-neutral-500 transition hover:bg-red-100 hover:text-red-600"
+                                            >
+                                              Cabut
+                                            </button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })}
                       </div>
-                    )
-                  })}
+                    )}
+                  </div>
                 </div>
-                )
-              })}
-            </div>
-          </>
+              )
+            })}
+          </div>
         )}
 
         {/* Orphan RW/RT: tampilkan meski tidak terikat Dukuh agar Michael tetap muncul saat hierarki belum rapi */}
@@ -874,3 +886,6 @@ export default function StrukturOrganisasi() {
     </PageShell>
   )
 }
+
+
+

@@ -174,6 +174,13 @@ export default function AdminPerangkatPage() {
       showToast('Pilih calon, jabatan, wilayah, dan periode mulai.', 'error')
       return
     }
+
+    const existing = strategicMembers.find(m => m.id_wilayah === form.id_wilayah && m.jabatan === form.jabatan)
+    if (existing) {
+      showToast(`Gagal: ${getWilayahName(form.id_wilayah)} sudah memiliki ${form.jabatan} (${existing.citizen?.nama_lengkap || 'aktif'}). Cabut jabatan lama terlebih dahulu.`, 'error')
+      return
+    }
+
     const citizen = citizens.find((c) => c.id_citizen === form.id_citizen)
     const ok = await confirm({
       title: `Angkat ${form.jabatan}`,

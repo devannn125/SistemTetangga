@@ -1,8 +1,8 @@
-﻿import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton'
 import { landingData } from './landingData'
-import { getPublicOrganizationMembers, getPublicWilayah } from '@/services/api'
+import { getPublicOrganizationMembers, getPublicWilayah, getLandingData } from '@/services/api'
 
 function WaLink({ waNumber, text, children, className = '' }) {
   const href = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`
@@ -57,10 +57,20 @@ export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
   const [orgMembers, setOrgMembers] = useState(null)
+  const [cmsData, setCmsData] = useState(null)
   const [wilayahs, setWilayahs] = useState([])
   const [orgLoading, setOrgLoading] = useState(false)
   const [selectedDukuhId, setSelectedDukuhId] = useState(null)
-  const { brand, navItems, hero, visi, misi, video, struktur, kegiatan, umkm, kontak } = landingData
+  const { brand, navItems, video, struktur, kontak } = landingData
+  const heroData = cmsData?.profile?.hero_title ? { title: cmsData.profile.hero_title, description: cmsData.profile.hero_subtitle, ctaLabel: landingData.hero.ctaLabel, ctaHref: landingData.hero.ctaHref } : landingData.hero
+  const visiData = cmsData?.profile?.visi || landingData.visi
+  const misiData = cmsData?.profile?.misi ? cmsData.profile.misi.split('\n') : (landingData.misi || []);
+  const sejarahData = cmsData?.profile?.sejarah || ''
+  const emailData = cmsData?.profile?.kontak_email || kontak?.email
+  const hpData = cmsData?.profile?.kontak_hp || kontak?.phone
+  const alamatData = cmsData?.profile?.kontak_alamat || kontak?.address
+  const kegiatanData = Array.isArray(cmsData?.articles) && cmsData.articles.length > 0 ? cmsData.articles.map(a => ({ id: a.id_article, title: a.judul, description: a.konten, image: a.image_url || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80', date: new Date(a.published_at).toLocaleDateString('id-ID') })) : (landingData.kegiatan || []);
+  const umkmData = Array.isArray(cmsData?.umkms) && cmsData.umkms.length > 0 ? cmsData.umkms.map(u => ({ id: u.id_umkm, title: u.nama_usaha, owner: u.nama_pemilik, description: u.deskripsi, phone: u.no_hp, image: u.image_url || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80' })) : (landingData.umkm?.items || []);
 
   useEffect(() => {
     const html = document.documentElement
@@ -80,7 +90,9 @@ export function LandingPage() {
     }
   }, [])
 
-  // Data dari sistem — public endpoint (tanpa login) + tab per Dukuh; fallback mock bila backend kosong/offline
+  useEffect(() => { getLandingData().then(setCmsData).catch(console.error) }, [])
+
+  // Data dari sistem ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â public endpoint (tanpa login) + tab per Dukuh; fallback mock bila backend kosong/offline
   useEffect(() => {
     let cancelled = false
     setOrgLoading(true)
@@ -127,7 +139,7 @@ export function LandingPage() {
     history.replaceState(null, '', href)
   }
 
-  // Mock fallback when not logged in — shape mirip API agar render sama kayak admin
+  // Mock fallback when not logged in ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â shape mirip API agar render sama kayak admin
   const mockWilayahs = useMemo(
     () => [
       { id_wilayah: 'KEL-01', nama_wilayah: brand.name, tipe: 'KELURAHAN', parent_id: null },
@@ -292,14 +304,14 @@ export function LandingPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-[#f6f7f4]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-6 py-20 text-center md:py-28">
-          <h1 className="mx-auto max-w-3xl text-3xl font-extrabold leading-tight text-neutral-900 md:text-5xl">{hero.title}</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600 md:text-lg">{hero.description}</p>
+          <h1 className="mx-auto max-w-3xl text-3xl font-extrabold leading-tight text-neutral-900 md:text-5xl">{heroData.title}</h1>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600 md:text-lg">{heroData.description}</p>
           <a
-            href={hero.ctaHref}
-            onClick={(e) => handleNav(e, hero.ctaHref)}
+            href={heroData.ctaHref}
+            onClick={(e) => handleNav(e, heroData.ctaHref)}
             className="mt-8 inline-flex rounded-full bg-[#14532d] px-8 py-3 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-[#0f3d22]"
           >
-            {hero.ctaLabel}
+            {heroData.ctaLabel}
           </a>
         </div>
       </section>
@@ -311,12 +323,18 @@ export function LandingPage() {
         <div className="mt-8 grid gap-10 md:grid-cols-[1.1fr_0.9fr]">
           <div>
             <h3 className="text-lg font-extrabold text-neutral-900">Visi</h3>
-            <p className="mt-3 max-w-xl text-[15px] leading-7 text-neutral-600">{visi}</p>
+            <p className="mt-3 max-w-xl text-[15px] leading-7 text-neutral-600">{visiData}</p>
           </div>
           <div>
-            <h3 className="text-lg font-extrabold text-neutral-900">Misi</h3>
+                          {sejarahData && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-extrabold text-neutral-900">Sejarah Singkat</h3>
+                  <p className="mt-3 max-w-xl text-[15px] leading-7 text-neutral-600 whitespace-pre-wrap">{sejarahData}</p>
+                </div>
+              )}
+              <h3 className="text-lg font-extrabold text-neutral-900 mt-6">Misi</h3>
             <ul className="mt-3 space-y-3">
-              {misi.map((m) => (
+              {misiData.map((m) => (
                 <li key={m} className="flex gap-3 text-[15px] leading-6 text-neutral-600">
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#14532d]" />
                   <span>{m}</span>
@@ -359,7 +377,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-4xl">
           <h3 className="text-center text-xl font-extrabold text-neutral-900">Struktur Organisasi {brand.name}</h3>
           <p className="mt-2 text-center text-xs text-neutral-500">
-            {orgMembers ? 'Data dari sistem — hierarki Lurah → Dukuh → RW → RT' : 'Bagan struktur organisasi lengkap beserta nama pengurus'}
+            {orgMembers ? 'Data dari sistem ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â hierarki Lurah ? Dukuh ? RW ? RT' : 'Bagan struktur organisasi lengkap beserta nama pengurus'}
           </p>
 
           {orgLoading ? (
@@ -507,7 +525,7 @@ export function LandingPage() {
         <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Kegiatan Warga</p>
         <h2 className="mt-2 text-2xl font-extrabold text-neutral-900">Kegiatan {brand.name}</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {kegiatan.map((k) => (
+          {kegiatanData.map((k) => (
             <article key={k.title} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md">
               <img src={k.image} alt={k.title} className="aspect-[16/10] w-full object-cover" loading="lazy" />
               <div className="p-5">
@@ -515,7 +533,7 @@ export function LandingPage() {
                 <h3 className="mt-1 line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900">{k.title}</h3>
                 <p className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-600">{k.description}</p>
                 <a href={k.href} className="mt-4 inline-flex text-sm font-bold text-[#14532d] no-underline hover:underline">
-                  Selengkapnya →
+                  Selengkapnya ?
                 </a>
               </div>
             </article>
@@ -529,23 +547,23 @@ export function LandingPage() {
           <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Usaha Warga</p>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-extrabold text-neutral-900">{umkm.headerTitle}</h2>
-              <p className="mt-2 text-sm font-semibold text-neutral-900">{umkm.headerDesc}</p>
-              <p className="text-sm text-neutral-600">{umkm.headerSub}</p>
+              <h2 className="text-2xl font-extrabold text-neutral-900">{landingData.umkm.headerTitle}</h2>
+              <p className="mt-2 text-sm font-semibold text-neutral-900">{landingData.umkm.headerDesc}</p>
+              <p className="text-sm text-neutral-600">{landingData.umkm.headerSub}</p>
             </div>
-            <a href={umkm.instagramHref} className="inline-flex rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-bold text-neutral-800 no-underline hover:bg-neutral-50">
+            <a href={landingData.umkm.instagramHref} className="inline-flex rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-bold text-neutral-800 no-underline hover:bg-neutral-50">
               Follow di Instagram
             </a>
           </div>
           <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {umkm.items.map((item) => (
+            {umkmData.map((item) => (
               <article key={item.title} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
                 <img src={item.image} alt={item.title} className="aspect-[4/3] w-full object-cover" loading="lazy" />
                 <div className="p-5">
                   <h3 className="line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900">{item.title}</h3>
                   <p className="mt-2 line-clamp-3 text-sm leading-6 text-neutral-600">{item.description}</p>
                   <WaLink
-                    waNumber={kontak.waNumber}
+                    waNumber={hpData}
                     text={`Halo, saya tertarik dengan ${item.title}`}
                     className="mt-4 inline-flex w-full justify-center rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white no-underline hover:bg-[#1da851]"
                   >
@@ -568,7 +586,7 @@ export function LandingPage() {
               <span className="mt-1 text-[#14532d]"><Icon name="map" className="h-5 w-5" /></span>
               <div>
                 <p className="font-bold text-neutral-900">Alamat</p>
-                <p className="text-neutral-600">{kontak.alamat}</p>
+                <p className="text-neutral-600">{alamatData}</p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -582,8 +600,8 @@ export function LandingPage() {
               <span className="mt-1 text-[#14532d]"><Icon name="message" className="h-5 w-5" /></span>
               <div>
                 <p className="font-bold text-neutral-900">Telepon / WhatsApp</p>
-                <WaLink waNumber={kontak.waNumber} text={`Halo ${brand.name}`} className="text-[#14532d] no-underline hover:underline">
-                  {kontak.telepon}
+                <WaLink waNumber={hpData} text={`Halo ${brand.name}`} className="text-[#14532d] no-underline hover:underline">
+                  {hpData}
                 </WaLink>
               </div>
             </div>
@@ -593,7 +611,7 @@ export function LandingPage() {
               </span>
               <div>
                 <p className="font-bold text-neutral-900">Email</p>
-                <a href={`mailto:${kontak.email}`} className="text-[#14532d] no-underline hover:underline">{kontak.email}</a>
+                <a href={`mailto:${emailData}`} className="text-[#14532d] no-underline hover:underline">{emailData}</a>
               </div>
             </div>
           </div>
@@ -611,11 +629,11 @@ export function LandingPage() {
               <img src={brand.logo} alt="" className="h-8 w-8 object-contain opacity-90" />
               <strong className="text-sm font-extrabold tracking-wide text-white">{brand.name}</strong>
             </div>
-            <p className="mt-3 text-sm leading-6 text-neutral-400">{kontak.alamat}</p>
+            <p className="mt-3 text-sm leading-6 text-neutral-400">{alamatData}</p>
             <p className="mt-3 text-sm">
-              <WaLink waNumber={kontak.waNumber} text="Halo" className="text-white no-underline hover:underline">{kontak.telepon}</WaLink>
-              <span className="mx-2 text-neutral-600">•</span>
-              <a href={`mailto:${kontak.email}`} className="text-white no-underline hover:underline">{kontak.email}</a>
+              <WaLink waNumber={hpData} text="Halo" className="text-white no-underline hover:underline">{hpData}</WaLink>
+              <span className="mx-2 text-neutral-600">ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢</span>
+              <a href={`mailto:${emailData}`} className="text-white no-underline hover:underline">{emailData}</a>
             </p>
           </div>
           <div>
@@ -627,14 +645,14 @@ export function LandingPage() {
             </nav>
           </div>
           <div className="text-sm text-neutral-400">
-            <p>© 2026 {brand.name}. All Rights Reserved.</p>
+            <p>ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© 2026 {brand.name}. All Rights Reserved.</p>
             <p className="mt-2">Developed by <span className="font-bold text-white">Universitas xyz</span> XYZ</p>
           </div>
         </div>
       </footer>
 
       <WaLink
-        waNumber={kontak.waNumber}
+        waNumber={hpData}
         text={`Halo, saya ingin bertanya tentang ${brand.name}`}
         className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 max-sm:bottom-3 max-sm:right-3 max-sm:h-12 max-sm:w-12"
       >
@@ -645,3 +663,5 @@ export function LandingPage() {
     </main>
   )
 }
+
+

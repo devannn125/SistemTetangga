@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
-import { getAuditLogs, getCitizens, getWilayah } from '@/services/api'
+import { getAuditLogs, getUsers, getWilayah } from '@/services/api'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { Icon } from '@/components/ui/Icon'
 
@@ -17,7 +17,7 @@ const ACTION_LABELS = {
 const PER_PAGE = 10
 
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState({ warga: 0, rt: 0, rw: 0, dukuh: 0 })
+  const [stats, setStats] = useState({ pengguna: 0, rt: 0, rw: 0, dukuh: 0 })
   const [loading, setLoading] = useState(true)
   const [logs, setLogs] = useState([])
   const [logsError, setLogsError] = useState('')
@@ -30,8 +30,8 @@ export default function AdminDashboardPage() {
     async function loadData() {
       setLoading(true)
       try {
-        const [wargaRes, wilRes, auditRes] = await Promise.all([
-          getCitizens({ per_page: 1, exclude_admin: 1 }),
+        const [penggunaRes, wilRes, auditRes] = await Promise.all([
+          getUsers({ per_page: 1 }),
           getWilayah({ per_page: 500, all: 1 }),
           getAuditLogs({
             per_page: PER_PAGE,
@@ -41,13 +41,13 @@ export default function AdminDashboardPage() {
           }),
         ])
 
-        const wargaCount = wargaRes?.meta?.total ?? 0
+        const penggunaCount = penggunaRes?.meta?.total ?? 0
         const arrWil = Array.isArray(wilRes?.data) ? wilRes.data : Array.isArray(wilRes) ? wilRes : []
         const rt = arrWil.filter(w => w.tipe === 'RT').length
         const rw = arrWil.filter(w => w.tipe === 'RW').length
         const dukuh = arrWil.filter(w => w.tipe === 'DUKUH').length
 
-        setStats({ warga: wargaCount, rt, rw, dukuh })
+        setStats({ pengguna: penggunaCount, rt, rw, dukuh })
 
         const arrLogs = Array.isArray(auditRes?.data) ? auditRes.data : Array.isArray(auditRes) ? auditRes : []
         setLogs(arrLogs)
@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
       description='Pemantauan statistik dan aktivitas sistem secara real-time.'
     >
       <div className='mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-        <StatCard item={{ title: 'Total Warga', value: loading ? '...' : stats.warga, icon: 'users', accent: 'blue' }} />
+        <StatCard item={{ title: 'Total Pengguna', value: loading ? '...' : stats.pengguna, icon: 'users', accent: 'blue' }} />
         <StatCard item={{ title: 'Total RT', value: loading ? '...' : stats.rt, icon: 'map', accent: 'amber' }} />
         <StatCard item={{ title: 'Total RW', value: loading ? '...' : stats.rw, icon: 'map', accent: 'green' }} />
         <StatCard item={{ title: 'Total Dukuh', value: loading ? '...' : stats.dukuh, icon: 'map', accent: 'blue' }} />
@@ -197,3 +197,5 @@ export default function AdminDashboardPage() {
     </PageShell>
   )
 }
+
+

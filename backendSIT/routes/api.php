@@ -48,6 +48,27 @@ Route::get('/dashboard', DashboardController::class);
 Route::get('/public/organization-members', [OrganizationMemberController::class, 'publicIndex']);
 Route::get('/public/wilayah', [WilayahController::class, 'publicIndex']);
 
+// --- Landing CMS ---
+use App\Http\Controllers\Api\LandingController;
+use App\Http\Controllers\Api\AdminLandingController;
+
+Route::get('/public/landing', [LandingController::class, 'index']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/landing/profile', [AdminLandingController::class, 'getProfile']);
+    Route::post('/admin/landing/profile', [AdminLandingController::class, 'updateProfile']);
+
+    Route::get('/admin/landing/articles', [AdminLandingController::class, 'getArticles']);
+    Route::post('/admin/landing/articles', [AdminLandingController::class, 'storeArticle']);
+    Route::post('/admin/landing/articles/{id}', [AdminLandingController::class, 'updateArticle']); // POST to handle multipart form data update
+    Route::delete('/admin/landing/articles/{id}', [AdminLandingController::class, 'destroyArticle']);
+
+    Route::get('/admin/landing/umkm', [AdminLandingController::class, 'getUmkms']);
+    Route::post('/admin/landing/umkm', [AdminLandingController::class, 'storeUmkm']);
+    Route::post('/admin/landing/umkm/{id}', [AdminLandingController::class, 'updateUmkm']); // POST to handle multipart form data update
+    Route::delete('/admin/landing/umkm/{id}', [AdminLandingController::class, 'destroyUmkm']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
@@ -129,3 +150,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
     Route::get('/audit-logs/{id}', [AuditLogController::class, 'show']);
 });
+

@@ -16,10 +16,11 @@ class MasterDataRequest extends FormRequest
     {
         return [
             'tipe' => ['required', Rule::in(['AGAMA', 'PENDIDIKAN', 'PROFESI', 'KATEGORI_BANSOS', 'KATEGORI_KOS', 'JENIS_KEJADIAN_SISKAMLING'])],
-            'kode_master' => ['required', 'string', 'max:50', Rule::unique('master_data', 'kode_master')->where('tipe', $this->input('tipe'))->ignore($this->route('master'))],
+            'kode_master' => ['required', 'string', 'max:50', Rule::unique('master_data', 'kode_master')->where('tipe', $this->input('tipe'))->ignore($this->route('master'), 'id_master')],
             'nama_master' => ['required', 'string', 'max:100'],
             'urutan' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
         ];
     }
 }
+

@@ -18,8 +18,9 @@ class WilayahRequest extends FormRequest
             'nama_wilayah' => ['required', 'string', 'max:100'],
             'tipe' => ['required', Rule::in(['PROVINSI', 'KABUPATEN', 'KECAMATAN', 'KELURAHAN', 'DUKUH', 'RW', 'RT'])],
             // Opsional: utk Kepala Lurah membuat node Dukuh, kode di-auto-generate backend.
-            'kode_wilayah' => ['nullable', 'string', 'max:20', Rule::unique('wilayah', 'kode_wilayah')->ignore($this->route('wilayah'))],
+            'kode_wilayah' => ['nullable', 'string', 'max:20', Rule::unique('wilayah', 'kode_wilayah')->ignore($this->route('wilayah'), 'id_wilayah')],
             'parent_id' => ['nullable', 'exists:wilayah,id_wilayah'],
         ];
     }
 }
+

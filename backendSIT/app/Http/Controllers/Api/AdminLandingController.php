@@ -15,27 +15,59 @@ class AdminLandingController extends Controller
     // === PROFILE ===
     public function getProfile()
     {
-        return response()->json(LandingProfile::first() ?? new LandingProfile());
+        $profile = LandingProfile::first() ?? new LandingProfile();
+        if ($profile->video_path) {
+            $profile->video_url = Storage::disk('public')->url($profile->video_path);
+        }
+        if ($profile->hero_image_path) {
+            $profile->hero_image_url = Storage::disk('public')->url($profile->hero_image_path);
+        }
+        return response()->json($profile);
     }
 
     public function updateProfile(Request $request)
     {
         $validated = $request->validate([
+            'brand_name' => 'nullable|string|max:255',
             'hero_title' => 'nullable|string|max:255',
             'hero_subtitle' => 'nullable|string|max:255',
+            'hero_image_file' => 'nullable|image|max:10240', // 10MB
             'visi' => 'nullable|string',
             'misi' => 'nullable|string',
             'sejarah' => 'nullable|string',
+            'video_file' => 'nullable|file|mimes:mp4,webm|max:102400', // 100MB
             'kontak_email' => 'nullable|email|max:255',
             'kontak_hp' => 'nullable|string|max:50',
             'kontak_alamat' => 'nullable|string',
         ]);
 
         $profile = LandingProfile::first();
-        if ($profile) {
-            $profile->update($validated);
-        } else {
-            $profile = LandingProfile::create($validated);
+        if (!$profile) {
+            $profile = new LandingProfile();
+        }
+
+        if ($request->hasFile('video_file')) {
+            if ($profile->video_path) {
+                Storage::disk('public')->delete($profile->video_path);
+            }
+            $validated['video_path'] = $request->file('video_file')->store('landing/videos', 'public');
+        }
+
+        if ($request->hasFile('hero_image_file')) {
+            if ($profile->hero_image_path) {
+                Storage::disk('public')->delete($profile->hero_image_path);
+            }
+            $validated['hero_image_path'] = $request->file('hero_image_file')->store('landing/images', 'public');
+        }
+
+        $profile->fill($validated);
+        $profile->save();
+
+        if ($profile->video_path) {
+            $profile->video_url = Storage::disk('public')->url($profile->video_path);
+        }
+        if ($profile->hero_image_path) {
+            $profile->hero_image_url = Storage::disk('public')->url($profile->hero_image_path);
         }
 
         return response()->json($profile);

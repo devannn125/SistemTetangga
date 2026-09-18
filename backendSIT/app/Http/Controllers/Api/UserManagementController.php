@@ -453,4 +453,35 @@ class UserManagementController extends BaseApiController
 
         return $data;
     }
+
+    public function impersonate($id)
+    {
+        // Hanya Admin yang bisa impersonate
+        if (!$this->rbac->hasAnyRole($this->requestUser(), ['ADMIN'])) {
+            abort(403, 'Hanya Super Admin yang dapat melakukan fitur Impersonate.');
+        }
+
+        $targetUser = User::with(['citizen', 'userRoles.role'])->findOrFail($id);
+
+        if ($targetUser->status !== 'ACTIVE') {
+            abort(400, 'Tidak dapat masuk sebagai pengguna yang tidak aktif.');
+        }
+
+        // Tentukan role mana yang paling prioritas/aktif untuk user target
+        $activeRole = $targetUser->userRoles->filter(fn($ur) => $ur->status === 'ACTIVE')->sortBy(fn($ur) => $ur->role?->level)->first()?->role;
+        $targetUser->setAttribute('active_role', $activeRole ? [
+            'kode' => $activeRole->kode,
+            'nama_role' => $activeRole->nama_role,
+        ] : ['kode' => 'WARGA', 'nama_role' => 'Warga']);
+
+        // Generate token for target user
+        $token = $targetUser->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Berhasil beralih akun.',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'data' => new \App\Http\Resources\UserResource($targetUser),
+        ]);
+    }
 }

@@ -138,6 +138,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // RBAC & User Management.
     Route::apiResource('users', UserManagementController::class);
     Route::post('users/{user}/role', [UserManagementController::class, 'assignRole']);
+    Route::post('users/{user}/impersonate', [UserManagementController::class, 'impersonate']);
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('user-roles', UserRoleController::class);
     Route::apiResource('modules', ModuleController::class);

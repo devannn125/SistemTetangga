@@ -143,18 +143,55 @@ function PortalFooter({ label }) {
 }
 
 /**
- * PortalLayout â€” shell reusable untuk semua portal role (Warga, RT, RW, dst).
+ * ImpersonationBanner — banner saat sedang impersonate user lain.
+ */
+function ImpersonationBanner() {
+  const isImpersonating = !!localStorage.getItem('originalAuthToken')
+  const user = getAuthData()
+
+  if (!isImpersonating) return null
+
+  const stopImpersonating = () => {
+    localStorage.setItem('authToken', localStorage.getItem('originalAuthToken'))
+    localStorage.setItem('authUser', localStorage.getItem('originalAuthUser'))
+    localStorage.setItem('authRole', localStorage.getItem('originalAuthRole'))
+    localStorage.setItem('authNik', localStorage.getItem('originalAuthNik'))
+
+    localStorage.removeItem('originalAuthToken')
+    localStorage.removeItem('originalAuthUser')
+    localStorage.removeItem('originalAuthRole')
+    localStorage.removeItem('originalAuthNik')
+
+    window.location.href = '/' // Kembali ke Admin
+    window.location.href = '/admin' // Kembali ke Admin
+  }
+
+  return (
+    <div className="bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900 border-b border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm z-50">
+      <div className="flex items-center gap-2">
+        <Icon name="user" className="h-4 w-4" />
+        <span>Anda sedang masuk sebagai <strong>{user?.nama_users}</strong>.</span>
+      </div>
+      <Button size="sm" variant="outline" className="bg-white border-amber-300 text-amber-700 hover:bg-amber-50" onClick={stopImpersonating}>
+        Kembali ke Admin
+      </Button>
+    </div>
+  )
+}
+
+/**
+ * PortalLayout — shell reusable untuk semua portal role (Warga, RT, RW, dst).
  * Tiap role tinggal kirim menuItems dan konten (children) miliknya sendiri.
  *
- * Props tidak berubah sama sekali â€” backward compatible.
+ * Props tidak berubah sama sekali — backward compatible.
  */
 export function PortalLayout({
   menuItems,
   activePath,
-  homePath,
-  brandTitle,
-  brandSubtitle,
-  footerLabel = 'Kenaran',
+  homePath = '/admin',
+  brandTitle = 'Sistem Informasi',
+  brandSubtitle = 'Desa',
+  footerLabel = 'Sistem Informasi Tetangga',
   children,
 }) {
   const confirm = useConfirm()
@@ -200,6 +237,7 @@ export function PortalLayout({
       )}
 
       <section className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <ImpersonationBanner />
         <PortalTopbar open={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
         <div className="flex-1">{children}</div>
         <PortalFooter label={footerLabel} />

@@ -22,10 +22,11 @@ export function getAdminLandingProfile() {
 }
 
 export function updateAdminLandingProfile(payload) {
+  const isFormData = payload instanceof FormData;
   return request('/admin/landing/profile', {
-    method: 'POST', // or PUT depending on route, I set it to POST in api.php
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    method: 'POST',
+    headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+    body: isFormData ? payload : JSON.stringify(payload)
   });
 }
 
@@ -79,5 +80,11 @@ export function updateAdminLandingUmkm(id, formData) {
 export function deleteAdminLandingUmkm(id) {
   return request(`/admin/landing/umkm/${id}`, {
     method: 'DELETE'
+  });
+}
+
+export function impersonateUser(id) {
+  return request(`/users/${id}/impersonate`, {
+    method: 'POST'
   });
 }

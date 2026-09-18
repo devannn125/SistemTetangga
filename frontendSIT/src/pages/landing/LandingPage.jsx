@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton'
 import { landingData } from './landingData'
@@ -62,10 +62,14 @@ export function LandingPage() {
   const [orgLoading, setOrgLoading] = useState(false)
   const [selectedDukuhId, setSelectedDukuhId] = useState(null)
   const { brand, navItems, video, struktur, kontak } = landingData
+  const brandName = cmsData?.profile?.brand_name || 'Kenaran.com'
+  const heroBgImage = cmsData?.profile?.hero_image_url || "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80"
+  
   const heroData = cmsData?.profile?.hero_title ? { title: cmsData.profile.hero_title, description: cmsData.profile.hero_subtitle, ctaLabel: landingData.hero.ctaLabel, ctaHref: landingData.hero.ctaHref } : landingData.hero
   const visiData = cmsData?.profile?.visi || landingData.visi
   const misiData = cmsData?.profile?.misi ? cmsData.profile.misi.split('\n') : (landingData.misi || []);
   const sejarahData = cmsData?.profile?.sejarah || ''
+  const videoUrlData = cmsData?.profile?.video_url
   const emailData = cmsData?.profile?.kontak_email || kontak?.email
   const hpData = cmsData?.profile?.kontak_hp || kontak?.phone
   const alamatData = cmsData?.profile?.kontak_alamat || kontak?.address
@@ -142,8 +146,8 @@ export function LandingPage() {
   // Mock fallback when not logged in -> shape mirip API agar render sama kayak admin
   const mockWilayahs = useMemo(
     () => [
-      { id_wilayah: 'KEL-01', nama_wilayah: brand.name, tipe: 'KELURAHAN', parent_id: null },
-      { id_wilayah: 'DK-01', nama_wilayah: brand.name, tipe: 'DUKUH', parent_id: 'KEL-01' },
+      { id_wilayah: 'KEL-01', nama_wilayah: brandName, tipe: 'KELURAHAN', parent_id: null },
+      { id_wilayah: 'DK-01', nama_wilayah: brandName, tipe: 'DUKUH', parent_id: 'KEL-01' },
       { id_wilayah: 'RW-02', nama_wilayah: 'RW 02', tipe: 'RW', parent_id: 'DK-01' },
       { id_wilayah: 'RT-01', nama_wilayah: 'RT 01', tipe: 'RT', parent_id: 'RW-02' },
       { id_wilayah: 'RT-02', nama_wilayah: 'RT 02', tipe: 'RT', parent_id: 'RW-02' },
@@ -152,7 +156,7 @@ export function LandingPage() {
       { id_wilayah: 'RT-05', nama_wilayah: 'RT 05', tipe: 'RT', parent_id: 'RW-02' },
       { id_wilayah: 'RT-06', nama_wilayah: 'RT 06', tipe: 'RT', parent_id: 'RW-02' },
     ],
-    [brand.name]
+    [brandName]
   )
 
   const mockMembers = useMemo(() => {
@@ -237,8 +241,9 @@ export function LandingPage() {
       <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-6">
           <a href="#beranda" onClick={(e) => handleNav(e, '#beranda')} className="flex items-center gap-3 no-underline">
-            <img src={brand.logo} alt={`Logo ${brand.name}`} className="h-9 w-9 object-contain" />
-            <span className="text-sm font-extrabold leading-none text-neutral-900">{brand.name}</span>
+            <span className="text-xl font-extrabold leading-none text-neutral-900" style={{ fontFamily: "'Archivo', sans-serif" }}>
+              {brandName}
+            </span>
           </a>
 
           <nav className="hidden items-center gap-7 text-sm font-semibold text-neutral-600 md:flex" aria-label="Navigasi">
@@ -297,9 +302,9 @@ export function LandingPage() {
       <section id="beranda" className="relative scroll-mt-24 overflow-hidden bg-[#f6f7f4]">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80"
+            src={heroBgImage}
             alt=""
-            className="h-full w-full object-cover opacity-20"
+            className="h-full w-full object-cover opacity-80"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-[#f6f7f4]" />
         </div>
@@ -318,21 +323,15 @@ export function LandingPage() {
 
       {/* PROFIL */}
       <section id="profil" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-14 md:py-16">
-        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Profil {brand.name}</p>
-        <h2 className="mt-2 text-2xl font-extrabold text-neutral-900 md:text-3xl">Profil {brand.name}</h2>
-        <div className="mt-8 grid gap-10 md:grid-cols-[1.1fr_0.9fr]">
+        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Profil {brandName}</p>
+        <h2 className="mt-2 text-2xl font-extrabold text-neutral-900 md:text-3xl">Profil {brandName}</h2>
+        <div className="mt-8 grid gap-10 md:grid-cols-2">
           <div>
             <h3 className="text-lg font-extrabold text-neutral-900">Visi</h3>
-            <p className="mt-3 max-w-xl text-[15px] leading-7 text-neutral-600">{visiData}</p>
+            <p className="mt-3 text-[15px] leading-7 text-neutral-600">{visiData}</p>
           </div>
           <div>
-                          {sejarahData && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-extrabold text-neutral-900">Sejarah Singkat</h3>
-                  <p className="mt-3 max-w-xl text-[15px] leading-7 text-neutral-600 whitespace-pre-wrap">{sejarahData}</p>
-                </div>
-              )}
-              <h3 className="text-lg font-extrabold text-neutral-900 mt-6">Misi</h3>
+            <h3 className="text-lg font-extrabold text-neutral-900">Misi</h3>
             <ul className="mt-3 space-y-3">
               {misiData.map((m) => (
                 <li key={m} className="flex gap-3 text-[15px] leading-6 text-neutral-600">
@@ -343,39 +342,34 @@ export function LandingPage() {
             </ul>
           </div>
         </div>
+        
+        {sejarahData && (
+          <div className="mt-10">
+            <h3 className="text-lg font-extrabold text-neutral-900">Sejarah Singkat</h3>
+            <p className="mt-3 max-w-3xl text-[15px] leading-7 text-neutral-600 whitespace-pre-wrap">{sejarahData}</p>
+          </div>
+        )}
       </section>
 
       {/* VIDEO */}
-      <section className="mx-auto max-w-7xl px-6 pb-14">
-        <h3 className="text-center text-xl font-extrabold text-neutral-900">{video.title}</h3>
-        <div className="mx-auto mt-6 max-w-3xl overflow-hidden rounded-xl border border-neutral-200 bg-black shadow-sm">
-          {!videoOpen ? (
-            <button onClick={() => setVideoOpen(true)} className="group relative block w-full text-left">
-              <img src={video.thumb} alt="Video profil" className="aspect-video w-full object-cover opacity-90 group-hover:opacity-100" />
-              <span className="absolute inset-0 grid place-items-center">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-[#14532d] shadow-lg transition group-hover:scale-105">
-                  <svg viewBox="0 0 24 24" className="h-7 w-7 fill-current"><path d="M8 5.14v14l11-7z" /></svg>
-                </span>
-              </span>
-            </button>
-          ) : (
-            <div className="aspect-video w-full bg-black">
-              <iframe
-                title={`Video Profil ${brand.name}`}
-                src={video.youtubeUrl}
-                className="h-full w-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          )}
-        </div>
-      </section>
+      {videoUrlData && (
+        <section className="mx-auto max-w-7xl px-6 pb-14">
+          <h3 className="text-center text-xl font-extrabold text-neutral-900">{video.title}</h3>
+          <div className="mx-auto mt-6 max-w-3xl overflow-hidden rounded-xl border border-neutral-200 bg-black shadow-sm">
+            <video
+              src={videoUrlData}
+              controls
+              preload="metadata"
+              className="aspect-video w-full bg-black object-contain"
+            />
+          </div>
+        </section>
+      )}
 
       {/* STRUKTUR - mirip admin StrukturOrganisasi (read-only, tab dukuh) */}
       <section className="bg-[#f6f7f4] px-6 py-14">
         <div className="mx-auto max-w-4xl">
-          <h3 className="text-center text-xl font-extrabold text-neutral-900">Struktur Organisasi {brand.name}</h3>
+          <h3 className="text-center text-xl font-extrabold text-neutral-900">Struktur Organisasi {brandName}</h3>
           <p className="mt-2 text-center text-xs text-neutral-500">
             {orgMembers ? 'Data dari sistem - hierarki Lurah -> Dukuh -> RW -> RT' : 'Bagan struktur organisasi lengkap beserta nama pengurus'}
           </p>
@@ -523,7 +517,7 @@ export function LandingPage() {
       {/* KEGIATAN */}
       <section id="kegiatan" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-14">
         <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Kegiatan Warga</p>
-        <h2 className="mt-2 text-2xl font-extrabold text-neutral-900">Kegiatan {brand.name}</h2>
+        <h2 className="mt-2 text-2xl font-extrabold text-neutral-900">Kegiatan {brandName}</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {kegiatanData.map((k) => (
             <article key={k.title} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md">
@@ -533,7 +527,7 @@ export function LandingPage() {
                 <h3 className="mt-1 line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900">{k.title}</h3>
                 <p className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-600">{k.description}</p>
                 <a href={k.href} className="mt-4 inline-flex text-sm font-bold text-[#14532d] no-underline hover:underline">
-                  Selengkapnya ?
+                  Selengkapnya
                 </a>
               </div>
             </article>
@@ -578,7 +572,7 @@ export function LandingPage() {
 
       {/* KONTAK */}
       <section id="kontak" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-14">
-        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Kontak {brand.name}</p>
+        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Kontak {brandName}</p>
         <h2 className="mt-2 text-2xl font-extrabold text-neutral-900">Hubungi Kami</h2>
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <div className="space-y-5 text-sm leading-6">
@@ -600,7 +594,7 @@ export function LandingPage() {
               <span className="mt-1 text-[#14532d]"><Icon name="message" className="h-5 w-5" /></span>
               <div>
                 <p className="font-bold text-neutral-900">Telepon / WhatsApp</p>
-                <WaLink waNumber={hpData} text={`Halo ${brand.name}`} className="text-[#14532d] no-underline hover:underline">
+                <WaLink waNumber={hpData} text={`Halo ${brandName}`} className="text-[#14532d] no-underline hover:underline">
                   {hpData}
                 </WaLink>
               </div>
@@ -616,44 +610,34 @@ export function LandingPage() {
             </div>
           </div>
           <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100">
-            <iframe title={`Peta ${brand.name}`} src={kontak.mapEmbed} className="h-[320px] w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+            <iframe title={`Peta ${brandName}`} src={kontak.mapEmbed} className="h-[320px] w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
           </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-[#0f1f14] px-6 py-10 text-neutral-300">
-        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-3">
-          <div>
-            <div className="flex items-center gap-3">
-              <img src={brand.logo} alt="" className="h-8 w-8 object-contain opacity-90" />
-              <strong className="text-sm font-extrabold tracking-wide text-white">{brand.name}</strong>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-neutral-400">{alamatData}</p>
-            <p className="mt-3 text-sm">
-              <WaLink waNumber={hpData} text="Halo" className="text-white no-underline hover:underline">{hpData}</WaLink>
-              <span className="mx-2 text-neutral-600">&bull;</span>
-              <a href={`mailto:${emailData}`} className="text-white no-underline hover:underline">{emailData}</a>
-            </p>
+      <footer className="bg-[#111111] px-6 py-12 text-xs text-neutral-400">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 md:grid-cols-3">
+          <div className="text-center leading-relaxed md:text-left">
+            {alamatData}
           </div>
-          <div>
-            <p className="text-sm font-extrabold text-white">Tautan Cepat</p>
-            <nav className="mt-3 flex flex-col gap-2 text-sm">
-              {navItems.filter(i=>i.href.startsWith('#')).map((i) => (
-                <a key={i.label} href={i.href} onClick={(e) => handleNav(e, i.href)} className="text-neutral-400 no-underline hover:text-white">{i.label}</a>
-              ))}
-            </nav>
+          <div className="text-center font-medium text-neutral-500">
+            Copyright &copy; {new Date().getFullYear()} {brandName}. All rights reserved.
           </div>
-          <div className="text-sm text-neutral-400">
-            <p>&copy; 2026 {brand.name}. All Rights Reserved.</p>
-            <p className="mt-2">Developed by <span className="font-bold text-white">Universitas xyz</span> XYZ</p>
+          <div className="flex justify-center gap-6 font-medium text-neutral-300 md:justify-end">
+            {emailData && (
+              <a href={`mailto:${emailData}`} className="transition-colors hover:text-white">Surel</a>
+            )}
+            {hpData && (
+              <WaLink waNumber={hpData} text={`Halo ${brandName}`} className="transition-colors hover:text-white">WhatsApp</WaLink>
+            )}
           </div>
         </div>
       </footer>
 
       <WaLink
         waNumber={hpData}
-        text={`Halo, saya ingin bertanya tentang ${brand.name}`}
+        text={`Halo, saya ingin bertanya tentang ${brandName}`}
         className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 max-sm:bottom-3 max-sm:right-3 max-sm:h-12 max-sm:w-12"
       >
         <span className="sr-only">Hubungi via WhatsApp</span>

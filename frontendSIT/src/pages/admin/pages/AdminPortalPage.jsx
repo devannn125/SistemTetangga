@@ -54,7 +54,9 @@ function TabProfile() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
-    hero_title: '', hero_subtitle: '', visi: '', misi: '', sejarah: '', kontak_email: '', kontak_hp: '', kontak_alamat: ''
+    brand_name: '', hero_title: '', hero_subtitle: '', visi: '', misi: '', sejarah: '', 
+    video_url: '', video_file: null, hero_image_url: '', hero_image_file: null, 
+    kontak_email: '', kontak_hp: '', kontak_alamat: ''
   })
 
   useEffect(() => {
@@ -70,11 +72,17 @@ function TabProfile() {
     e.preventDefault()
     setSaving(true)
     try {
-      const res = await updateAdminLandingProfile(form)
+      const payload = new FormData();
+      Object.keys(form).forEach(key => {
+        if (form[key] !== null && form[key] !== undefined && key !== 'video_url' && key !== 'hero_image_url') {
+          payload.append(key, form[key]);
+        }
+      });
+      const res = await updateAdminLandingProfile(payload)
       setForm(res)
       toast('Profil berhasil disimpan', 'success')
-    } catch(err) {
-      toast(err.message, 'error')
+    } catch (err) {
+      toast('Gagal menyimpan profil', 'error')
     } finally {
       setSaving(false)
     }
@@ -85,15 +93,38 @@ function TabProfile() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl rounded-xl border border-neutral-200 bg-white p-6">
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-black border-b pb-2">Bagian Hero (Atas)</h3>
+        <h3 className="text-lg font-bold text-black border-b pb-2">Bagian Hero (Atas) & Merek</h3>
+        <div><Label>Teks Logo (Kenaran.com)</Label><Input value={form.brand_name || ''} onChange={e => setForm({...form, brand_name: e.target.value})} placeholder="Kenaran.com" /></div>
         <div><Label>Judul Utama</Label><Input value={form.hero_title || ''} onChange={e => setForm({...form, hero_title: e.target.value})} placeholder="Sistem Informasi Terpadu" /></div>
         <div><Label>Sub-judul</Label><Input value={form.hero_subtitle || ''} onChange={e => setForm({...form, hero_subtitle: e.target.value})} placeholder="Kelurahan Serut, Gedangsari, Gunungkidul" /></div>
+        <div>
+          <Label>Gambar Latar Belakang (Hero Background)</Label>
+          {form.hero_image_url && !form.hero_image_file && (
+            <div className="mb-2"><img src={form.hero_image_url} alt="Hero" className="h-20 w-auto rounded object-cover" /></div>
+          )}
+          <Input type="file" accept="image/*" onChange={e => setForm({...form, hero_image_file: e.target.files[0]})} />
+          <p className="text-xs text-neutral-500 mt-1">Kosongkan jika tidak ingin mengubah gambar.</p>
+        </div>
       </div>
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-black border-b pb-2">Profil & Sejarah</h3>
         <div><Label>Visi</Label><Textarea value={form.visi || ''} onChange={e => setForm({...form, visi: e.target.value})} rows={3} /></div>
         <div><Label>Misi</Label><Textarea value={form.misi || ''} onChange={e => setForm({...form, misi: e.target.value})} rows={4} placeholder="Gunakan enter untuk memisahkan misi..." /></div>
         <div><Label>Sejarah Singkat</Label><Textarea value={form.sejarah || ''} onChange={e => setForm({...form, sejarah: e.target.value})} rows={5} /></div>
+        <div>
+          <Label>Video Profil (MP4/WebM)</Label>
+          {form.video_url && !form.video_file && (
+            <div className="mb-2">
+              <video src={form.video_url} controls className="h-32 w-auto rounded border" />
+            </div>
+          )}
+          <input 
+            type="file" 
+            accept="video/mp4,video/webm" 
+            onChange={e => setForm({...form, video_file: e.target.files[0]})} 
+            className="block w-full text-sm text-neutral-500 file:mr-4 file:rounded-full file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black hover:file:bg-neutral-200"
+          />
+        </div>
       </div>
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-black border-b pb-2">Kontak</h3>

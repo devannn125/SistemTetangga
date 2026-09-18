@@ -20,7 +20,7 @@ export const landingData = {
   },
   // ponytail: Google Maps embed gratis tanpa API key (output=embed). Ganti coords/q when koordinat Kenaran final.
   berandaMapEmbed:
-    'https://www.google.com/maps?q=Kenaran%2C%20Gedangsari%2C%20Gunungkidul%20Yogyakarta&z=14&hl=id&output=embed',
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15812.98!2d110.5014189!3d-7.8053323!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a5016d8b91ca7%3A0xf5ee3b66a61a4659!2sKenaran%2C%20Sumberharjo%2C%20Kec.%20Prambanan%2C%20Kabupaten%20Sleman%2C%20Daerah%20Istimewa%20Yogyakarta!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid',
   visi: 'Terwujudnya Kenaran yang mandiri, guyub, dan sejahtera melalui semangat gotong royong serta pemberdayaan potensi warga secara berkelanjutan.',
   misi: [
     'Meningkatkan kualitas pelayanan kepada warga secara ramah, transparan, dan mudah diakses.',
@@ -101,7 +101,7 @@ export const landingData = {
     email: 'testaja@gmail.com',
     // ponytail: Google Maps embed gratis tanpa key; ganti when koordinat resmi tersedia
     mapEmbed:
-      'https://www.google.com/maps?q=Kenaran%2C%20Gedangsari%2C%20Gunungkidul%20Yogyakarta&z=14&hl=id&output=embed',
+      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15812.98!2d110.5014189!3d-7.8053323!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a5016d8b91ca7%3A0xf5ee3b66a61a4659!2sKenaran%2C%20Sumberharjo%2C%20Kec.%20Prambanan%2C%20Kabupaten%20Sleman%2C%20Daerah%20Istimewa%20Yogyakarta!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid',
   },
   services: [
     {

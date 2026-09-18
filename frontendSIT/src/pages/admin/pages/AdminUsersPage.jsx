@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '@/components/layout/PageShell'
-import { request, getWilayah } from '@/services/api'
+import { request, getWilayah, impersonateUser } from '@/services/api'
+import { getAuthData, setAuthData } from '@/services/authService'
 import { DataTable } from '@/components/ui/DataTable'
 import { Button } from '@/components/ui/Button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog'
@@ -65,7 +66,8 @@ export default function AdminUsersPage() {
       const cit = r.citizen || {}
       const wilId = cit.id_wilayah || cit.wilayah?.id_wilayah || null
       const domisili = wilId ? alamatLengkapFor(wilId) : (cit.wilayah?.nama_wilayah || '-')
-      const roleDisp = (r.user_roles && r.user_roles[0]?.kode) || r.role || (Array.isArray(r.roles) && r.roles[0]) || 'WARGA'
+      const activeRole = r.user_roles?.find(ur => ur.status === 'ACTIVE')
+      const roleDisp = activeRole?.kode || r.role || (Array.isArray(r.roles) && r.roles[0]) || 'WARGA'
       return {
         ...r,
         nik: cit.nik || r.nik || '-',
@@ -247,6 +249,51 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function handleImpersonate(row) {
+    const ok = await confirm({
+      title: 'Masuk Sebagai',
+      message: `Anda akan login ke sistem sebagai "${row.nama_users}" (Role: ${row.role_display}). Segala aktivitas yang Anda lakukan akan tercatat atas nama pengguna ini.`,
+      confirmLabel: 'Ya, Masuk Sebagai Pengguna Ini',
+    })
+    if (!ok) return
+    try {
+      const res = await impersonateUser(row.id_users)
+      
+      // Simpan data admin asli ke localStorage agar bisa "Kembali"
+      if (!localStorage.getItem('originalAuthToken')) {
+        localStorage.setItem('originalAuthToken', localStorage.getItem('authToken'))
+        localStorage.setItem('originalAuthUser', localStorage.getItem('authUser'))
+        localStorage.setItem('originalAuthRole', localStorage.getItem('authRole'))
+        localStorage.setItem('originalAuthNik', localStorage.getItem('authNik'))
+      }
+
+      setAuthData(res)
+      const uData = res.data || res
+      const aRole = uData.user_roles?.find(ur => ur.status === 'ACTIVE')
+      const rKode = (aRole?.kode || uData.role?.kode || (typeof uData.role === 'string' ? uData.role : '')).toLowerCase()
+      const roleLower = rKode === 'warga' ? 'warga' : rKode
+      const fallbackDest =
+        ['warga', 'siskamling', 'pkk', 'karang_taruna'].includes(roleLower)
+          ? '/warga'
+          : roleLower === 'sekretaris'
+            ? '/sek'
+            : roleLower === 'bendahara'
+              ? '/ben'
+              : roleLower === 'dukuh'
+                ? '/dukuh'
+                : roleLower === 'lurah'
+                  ? '/kelurahan'
+                  : roleLower === 'admin'
+                    ? '/admin'
+                    : ['rt', 'rw'].includes(roleLower)
+                      ? `/${roleLower}`
+                      : `/role/${roleLower}`
+      window.location.href = uData.redirect_to || fallbackDest
+    } catch (err) {
+      showToast(err.message || 'Gagal masuk sebagai pengguna tersebut.', 'error')
+    }
+  }
+
   return (
     <PageShell
       eyebrow='Pengaturan Sistem'
@@ -279,12 +326,23 @@ export default function AdminUsersPage() {
               {val}
             </span>
           )},
-          { key: 'actions', label: 'Aksi', render: (_, row) => (
-            <div className='flex flex-wrap gap-2'>
-              <Button size='sm' variant='outline' className='text-blue-600' onClick={() => openEdit(row)}>Edit</Button>
-              <Button size='sm' variant='outline' className='text-red-600 border-red-200 hover:bg-red-50' onClick={() => handleDelete(row)}>Hapus</Button>
-            </div>
-          ) }
+          { key: 'actions', label: 'Aksi', render: (_, row) => {
+            const currentAuth = getAuthData()
+            const isSelf = currentAuth?.id_users === row.id_users
+            return (
+              <div className='flex flex-wrap gap-2'>
+                {!isSelf && row.status === 'ACTIVE' && (
+                  <Button size='sm' variant='outline' className='text-amber-600 border-amber-200 hover:bg-amber-50' onClick={() => handleImpersonate(row)}>
+                    Masuk Sebagai
+                  </Button>
+                )}
+                <Button size='sm' variant='outline' className='text-blue-600' onClick={() => openEdit(row)}>Edit</Button>
+                {!isSelf && (
+                  <Button size='sm' variant='outline' className='text-red-600 border-red-200 hover:bg-red-50' onClick={() => handleDelete(row)}>Hapus</Button>
+                )}
+              </div>
+            )
+          } }
         ]}
       />
 

@@ -38,7 +38,12 @@ use App\Http\Controllers\Api\UserRoleController;
 use App\Http\Controllers\Api\UserSessionController;
 use App\Http\Controllers\Api\StrukturPengurusController;
 use App\Http\Controllers\Api\WilayahController;
+use App\Http\Controllers\Api\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
+
+// Webhook untuk Telegram Bot
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
+
 Route::post('/login', [AuthController::class, 'login']);
 
 // Dashboard agregat statistik (publik, dipakai halaman login/landing).

@@ -181,7 +181,7 @@ export default function RtUserManagementPage() {
       render: (value, row) => (
         <div>
           <p className="font-medium text-neutral-900">{row.citizen?.nama_lengkap || value}</p>
-          <p className="text-xs text-neutral-400">{row.citizen?.wilayah?.nama_wilayah || '-'} Â· {row.no_hp}</p>
+          <p className="text-xs text-neutral-400">{row.citizen?.wilayah?.nama_wilayah || '-'} · {row.no_hp}</p>
         </div>
       ),
     },

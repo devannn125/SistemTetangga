@@ -4,7 +4,7 @@ import { useConfirm } from '@/components/ui/ConfirmContext'
 import { clearAuthData, getAuthData } from '@/services/authService'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
-import { FloatingWhatsAppButton } from '@/components/FloatingWhatsAppButton'
+import { FloatingTelegramButton } from '@/components/FloatingTelegramButton'
 
 /**
  * PortalSidebar — sidebar navigasi portal dengan item aktif + hover.
@@ -242,7 +242,7 @@ export function PortalLayout({
         <div className="flex-1">{children}</div>
         <PortalFooter label={footerLabel} />
       </section>
-      <FloatingWhatsAppButton />
+      <FloatingTelegramButton />
     </div>
   )
 }

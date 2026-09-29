@@ -57,6 +57,9 @@ class TelegramPoll extends Command
                                     if ($id_users) {
                                         $userToLink = \App\Models\User::find($id_users);
                                         if ($userToLink) {
+                                            // Hapus jika sudah dipakai user lain agar tidak constraint violation
+                                            \App\Models\User::where('telegram_chat_id', $chatId)->update(['telegram_chat_id' => null]);
+
                                             $userToLink->telegram_chat_id = $chatId;
                                             $userToLink->save();
                                             \Illuminate\Support\Facades\Cache::forget('tg_link_' . $code);

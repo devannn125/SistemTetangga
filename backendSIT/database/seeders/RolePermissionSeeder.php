@@ -167,22 +167,22 @@ class RolePermissionSeeder extends Seeder
             // Kecuali Struktur Organisasi: dukuh berwenang mengangkat/mencabut Ketua RW
             // di wilayah dukuh masing-masing.
             'DUKUH' => [
-                'DASHBOARD' => $view('KELURAHAN'),
-                'WARGA' => $view('KELURAHAN'),
-                'KELUARGA' => $view('KELURAHAN'),
-                'PERUMAHAN' => $view('KELURAHAN'),
-                'KEUANGAN' => $view('KELURAHAN'),
-                'PENGUMUMAN' => $view('KELURAHAN'),
-                'PERATURAN' => $view('KELURAHAN'),
+                'DASHBOARD' => $view('DUKUH'),
+                'WARGA' => $view('DUKUH'),
+                'KELUARGA' => $view('DUKUH'),
+                'PERUMAHAN' => $view('DUKUH'),
+                'KEUANGAN' => $view('DUKUH'),
+                'PENGUMUMAN' => $view('DUKUH'),
+                'PERATURAN' => $view('DUKUH'),
                 'ORGANISASI' => [
-                    ['action' => 'VIEW', 'level' => 'KELURAHAN'],
+                    ['action' => 'VIEW', 'level' => 'KELURAHAN'], // Tetap KELURAHAN agar bisa lihat struktur atasnya
                     ['action' => 'CREATE', 'level' => 'DUKUH'],
                     ['action' => 'DELETE', 'level' => 'DUKUH'],
                 ],
-                'PENGADUAN' => $view('KELURAHAN'),
-                'INVENTARIS' => $view('KELURAHAN'),
-                'STATISTIK' => $view('KELURAHAN'),
-                'MASTER' => $view('KELURAHAN'),
+                'PENGADUAN' => $view('DUKUH'),
+                'INVENTARIS' => $view('DUKUH'),
+                'STATISTIK' => $view('DUKUH'),
+                'MASTER' => $view('KELURAHAN'), // Tetap KELURAHAN untuk master data
             ],
 
             // Kepala Lurah: kelola seluruh wilayah kelurahan, termasuk angkat/cabut

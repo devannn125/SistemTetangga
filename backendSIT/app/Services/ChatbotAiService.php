@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\Wilayah;
 
 class ChatbotAiService
 {
@@ -82,14 +83,18 @@ class ChatbotAiService
         $prompt .= "BERIKUT ADALAH BATASAN AKSES DAN WEWENANG MEREKA (Jawablah sesuai wewenang ini):\n";
 
         // Tambahkan konteks spesifik berdasarkan role
-        if (in_array('Ketua RT', $roles) || in_array('RT', $roles)) {
-            $prompt .= "- Sebagai Ketua RT, pengguna memiliki akses penuh operasional di ruang lingkup satu RT.\n";
+        if (in_array('Administrator', $roles) || in_array('Admin', $roles)) {
+            $prompt .= "- Sebagai Administrator, pengguna memiliki akses penuh ke seluruh fitur dan data sistem di tingkat mana pun.\n";
+            $prompt .= "- Berwenang mengelola wewenang akun lain.\n";
+            $prompt .= "- Boleh melihat data agregat dan total warga di seluruh wilayah kelurahan.\n";
+        } elseif (in_array('Kepala Lurah', $roles) || in_array('Kepala Dukuh', $roles) || in_array('Ketua RW', $roles) || in_array('Ketua RT', $roles) || in_array('RT', $roles)) {
+            $prompt .= "- Sebagai pimpinan wilayah (" . implode(', ', $roles) . "), pengguna memiliki hak akses manajerial untuk melihat data warga dan laporan di wilayahnya.\n";
             $prompt .= "- Berwenang menyetujui (approve) final permohonan surat warga.\n";
             $prompt .= "- Berwenang menyetujui tamu warga.\n";
             $prompt .= "- Mengatur jadwal shift siskamling dan menerima notifikasi panic button.\n";
             $prompt .= "- Mengelola struktur organisasi dan periode jabatan pengurus.\n";
             $prompt .= "- Boleh mengakses data statistik sensitif (warga kurang mampu, penyakit, bansos).\n";
-            $prompt .= "- Tidak bertugas menginput transaksi keuangan harian (itu tugas Bendahara).\n";
+            $prompt .= "- Boleh melihat data agregat dan total warga di wilayahnya.\n";
         } elseif (in_array('Sekretaris RT', $roles) || in_array('Sekretaris', $roles)) {
             $prompt .= "- Sebagai Sekretaris RT, bertugas memverifikasi kelengkapan dokumen surat sebelum diapprove Ketua RT.\n";
             $prompt .= "- Menginput/mengelola data kependudukan warga secara langsung.\n";
@@ -109,6 +114,46 @@ class ChatbotAiService
 
         $prompt .= "\nJika pengguna menanyakan hal yang di luar wewenangnya, tolak dengan sopan dan jelaskan bahwa mereka tidak memiliki akses tersebut.";
         
+        // --- INJEKSI DATA REAL-TIME ---
+        try {
+            $dashboard = app(\App\Services\DashboardService::class)->summaryForUser($user);
+            $prompt .= "\n\n=== INFORMASI DATA SISTEM REAL-TIME UNTUK WILAYAH PENGGUNA SAAT INI ===\n";
+            $prompt .= "Gunakan data di bawah ini untuk menjawab jika pengguna bertanya tentang statistik atau data wilayah mereka:\n";
+            $prompt .= "- Nama Wilayah yang dinaungi pengguna: " . ($dashboard['area'] ?? 'Seluruh Wilayah') . "\n";
+            
+            // Ambil nama dan total Dukuh, RW, RT
+            $scopeIds = $dashboard['scopeIds'] ?? null;
+            
+            $wilayahQuery = Wilayah::query();
+            if ($scopeIds !== null) {
+                $wilayahQuery->whereIn('id_wilayah', $scopeIds);
+            }
+            
+            $dukuhs = (clone $wilayahQuery)->where('tipe', 'DUKUH')->get();
+            $rws = (clone $wilayahQuery)->where('tipe', 'RW')->get();
+            $rts = (clone $wilayahQuery)->where('tipe', 'RT')->get();
+            
+            $prompt .= "- Total Dukuh di bawah wewenang pengguna: " . $dukuhs->count() . " Dukuh. (Daftar nama: " . implode(', ', $dukuhs->pluck('nama_wilayah')->toArray()) . ")\n";
+            $prompt .= "- Total RW di bawah wewenang pengguna: " . $rws->count() . " RW. (Daftar nama: " . implode(', ', $rws->pluck('nama_wilayah')->toArray()) . ")\n";
+            $prompt .= "- Total RT di bawah wewenang pengguna: " . $rts->count() . " RT. (Daftar nama: " . implode(', ', $rts->pluck('nama_wilayah')->toArray()) . ")\n";
+
+            if (isset($dashboard['summaryCards'])) {
+                foreach ($dashboard['summaryCards'] as $card) {
+                    $prompt .= "- " . $card['title'] . ": " . $card['value'] . " (" . ($card['note'] ?? '') . ", " . ($card['detail'] ?? '') . ")\n";
+                }
+            }
+            if (isset($dashboard['financeCards'])) {
+                foreach ($dashboard['financeCards'] as $card) {
+                    $prompt .= "- Keuangan: " . $card['title'] . ": " . $card['value'] . "\n";
+                }
+            }
+            if (isset($dashboard['demografi'])) {
+                $prompt .= "- Demografi Warga: Laki-laki (" . ($dashboard['demografi']['L'] ?? 0) . "), Perempuan (" . ($dashboard['demografi']['P'] ?? 0) . "), Total (" . ($dashboard['demografi']['total'] ?? 0) . ")\n";
+            }
+        } catch (\Exception $e) {
+            // Abaikan jika gagal mengambil data real-time
+        }
+
         return $prompt;
     }
 }

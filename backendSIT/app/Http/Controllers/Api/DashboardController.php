@@ -11,7 +11,7 @@ class DashboardController extends Controller
     public function __invoke(Request $request, DashboardService $dashboard)
     {
         // Prioritaskan auth user (Bearer Sanctum) — anti spoof role/user_id
-        $authUser = $request->user();
+        $authUser = $request->user('sanctum');
         if ($authUser) {
             return response()->json($dashboard->summaryForUser($authUser));
         }

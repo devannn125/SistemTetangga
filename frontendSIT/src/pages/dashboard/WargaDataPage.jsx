@@ -357,7 +357,7 @@ export function WargaDataPage({ activeTab = 'semua' }) {
 
         <span className="text-xs font-medium text-neutral-500">
           {loading ? 'Memuat...' : `${rows.length} data`}
-          {!isHouseTab && !isGuestTab ? ` Â· Tamu ${guestCount ?? '-'}` : ''}
+          {!isHouseTab && !isGuestTab ? ` · Tamu ${guestCount ?? '-'}` : ''}
         </span>
       </section>
 

@@ -55,9 +55,17 @@ class TelegramWebhookController extends Controller
                     if ($id_users) {
                         $userToLink = \App\Models\User::find($id_users);
                         if ($userToLink) {
-                            \App\Models\User::where('telegram_chat_id', $chatId)->update(['telegram_chat_id' => null]);
-                            $userToLink->telegram_chat_id = $chatId;
-                            $userToLink->save();
+                            // Lepaskan akun lain yang sebelumnya memakai chat_id ini agar tidak kena duplicate key
+                            \App\Models\User::where('telegram_chat_id', $chatId)
+                                ->where('id_users', '!=', $userToLink->id_users)
+                                ->update(['telegram_chat_id' => null]);
+
+                            // Update langsung di DB
+                            \App\Models\User::where('id_users', $userToLink->id_users)->update([
+                                'telegram_chat_id' => $chatId,
+                                'telegram_linked_at' => now(),
+                            ]);
+
                             Cache::forget('tg_link_' . $code);
                             
                             $reply = "Berhasil! Akun Telegram ini sekarang tertaut dengan user {$userToLink->nama_users} ({$userToLink->email}). Anda sekarang dikenali sesuai wewenang Anda di sistem.";

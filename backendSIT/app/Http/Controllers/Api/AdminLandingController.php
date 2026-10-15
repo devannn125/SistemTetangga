@@ -16,12 +16,14 @@ class AdminLandingController extends Controller
     public function getProfile()
     {
         $profile = LandingProfile::first() ?? new LandingProfile();
-        if ($profile->video_path) {
-            $profile->video_url = Storage::disk('public')->url($profile->video_path);
-        }
-        if ($profile->hero_image_path) {
-            $profile->hero_image_url = Storage::disk('public')->url($profile->hero_image_path);
-        }
+        $profile->video_url = ($profile->video_path && Storage::disk('public')->exists($profile->video_path))
+            ? Storage::disk('public')->url($profile->video_path)
+            : null;
+
+        $profile->hero_image_url = ($profile->hero_image_path && Storage::disk('public')->exists($profile->hero_image_path))
+            ? Storage::disk('public')->url($profile->hero_image_path)
+            : null;
+
         return response()->json($profile);
     }
 
@@ -63,12 +65,13 @@ class AdminLandingController extends Controller
         $profile->fill($validated);
         $profile->save();
 
-        if ($profile->video_path) {
-            $profile->video_url = Storage::disk('public')->url($profile->video_path);
-        }
-        if ($profile->hero_image_path) {
-            $profile->hero_image_url = Storage::disk('public')->url($profile->hero_image_path);
-        }
+        $profile->video_url = ($profile->video_path && Storage::disk('public')->exists($profile->video_path))
+            ? Storage::disk('public')->url($profile->video_path)
+            : null;
+
+        $profile->hero_image_url = ($profile->hero_image_path && Storage::disk('public')->exists($profile->hero_image_path))
+            ? Storage::disk('public')->url($profile->hero_image_path)
+            : null;
 
         return response()->json($profile);
     }
@@ -77,9 +80,9 @@ class AdminLandingController extends Controller
     public function getArticles()
     {
         $articles = LandingArticle::orderBy('created_at', 'desc')->get()->map(function ($article) {
-            if ($article->image_path) {
-                $article->image_url = Storage::disk('public')->url($article->image_path);
-            }
+            $article->image_url = ($article->image_path && Storage::disk('public')->exists($article->image_path))
+                ? Storage::disk('public')->url($article->image_path)
+                : null;
             return $article;
         });
         return response()->json($articles);
@@ -158,9 +161,9 @@ class AdminLandingController extends Controller
     public function getUmkms()
     {
         $umkms = LandingUmkm::orderBy('created_at', 'desc')->get()->map(function ($umkm) {
-            if ($umkm->image_path) {
-                $umkm->image_url = Storage::disk('public')->url($umkm->image_path);
-            }
+            $umkm->image_url = ($umkm->image_path && Storage::disk('public')->exists($umkm->image_path))
+                ? Storage::disk('public')->url($umkm->image_path)
+                : null;
             return $umkm;
         });
         return response()->json($umkms);

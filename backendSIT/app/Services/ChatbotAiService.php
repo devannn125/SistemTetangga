@@ -52,7 +52,7 @@ class ChatbotAiService
 
         $systemPrompt = $this->buildSystemPrompt($user, $pathname);
 
-        // Format Payload untuk Pollinations (OpenAI format)
+        // Format Payload untuk Pollinations (OpenAI format - tanpa model berbayar agar gratis dan stabil)
         $payload = [
             'messages' => [
                 [
@@ -64,29 +64,38 @@ class ChatbotAiService
                     'content' => $message
                 ]
             ],
-            'model' => 'openai',
         ];
 
-        try {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-            ])->timeout(45)->retry(3, 2000)->post("https://text.pollinations.ai/", $payload);
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            try {
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout(35)->post("https://text.pollinations.ai/", $payload);
 
-            if ($response->successful()) {
-                // Pollinations API mengembalikan plain text secara langsung!
-                $text = $response->body();
-                if (!empty($text)) {
-                    return trim($text);
+                if ($response->successful()) {
+                    $text = trim($response->body());
+                    if (!empty($text)) {
+                        return $text;
+                    }
+                }
+
+                if ($response->status() === 402) {
+                    Log::warning("Pollinations 402 cooldown, attempt {$attempt}, sleeping 2s...");
+                    sleep(2);
+                    continue;
+                }
+
+                Log::error('ChatGPT API Error:', ['status' => $response->status(), 'body' => $response->body()]);
+            } catch (\Exception $e) {
+                Log::error('ChatbotAiService Exception: ' . $e->getMessage());
+                if ($attempt < 3) {
+                    sleep(2);
+                    continue;
                 }
             }
-
-            Log::error('ChatGPT API Error:', ['status' => $response->status(), 'body' => $response->body()]);
-            return "Mohon maaf, saya sedang mengalami kendala jaringan saat memproses pesan Anda. Silakan coba lagi sebentar lagi.";
-
-        } catch (\Exception $e) {
-            Log::error('ChatbotAiService Exception: ' . $e->getMessage());
-            return "Mohon maaf, terjadi kesalahan pada server AI kami.";
         }
+
+        return "Mohon maaf, saya sedang mengalami kendala jaringan saat memproses pesan Anda. Silakan coba lagi sebentar lagi.";
     }
 
     /**
@@ -232,19 +241,61 @@ PROMPT;
                 }
             }
 
-            // HANYA Pengurus/Pimpinan yang boleh melihat daftar nama warga
+            // HANYA Pengurus/Pimpinan yang boleh melihat daftar data warga di bawah wewenangnya
             if ($isPengurus) {
                 $citizensQuery = \App\Models\Citizen::with('wilayah')->where('status_aktif', true);
                 if ($scopeIds !== null) {
                     $citizensQuery->whereIn('id_wilayah', $scopeIds);
                 }
-                $citizens = $citizensQuery->get(['id_citizen', 'nama_lengkap', 'id_wilayah']);
+                $citizens = $citizensQuery->limit(60)->get([
+                    'id_citizen', 'nama_lengkap', 'nik', 'no_hp', 'email',
+                    'jenis_kelamin', 'status_warga', 'status_ekonomi', 'penerima_bansos', 'id_wilayah'
+                ]);
                 if ($citizens->isNotEmpty()) {
-                    $prompt .= "\n- Daftar Warga di bawah wewenang (Total " . $citizens->count() . " warga):\n";
+                    $prompt .= "\n- DAFTAR DATA RESMI WARGA DI BAWAH WEWENANG ANDA (Total " . $citizens->count() . " warga):\n";
                     foreach ($citizens as $c) {
-                        $wilDesc = $c->wilayah ? "({$c->wilayah->tipe} {$c->wilayah->nama_wilayah})" : "";
-                        $prompt .= "  * {$c->nama_lengkap} {$wilDesc}\n";
+                        $wilDesc = $c->wilayah ? "{$c->wilayah->tipe} {$c->wilayah->nama_wilayah}" : "";
+                        $kontak = [];
+                        if ($c->no_hp) $kontak[] = "HP: " . $c->no_hp;
+                        if ($c->email) $kontak[] = "Email: " . $c->email;
+                        $kontakStr = !empty($kontak) ? implode(', ', $kontak) : "Tidak ada";
+                        $jk = $c->jenis_kelamin === 'L' ? 'Laki-laki' : ($c->jenis_kelamin === 'P' ? 'Perempuan' : '-');
+                        $nik = $c->nik ?: '-';
+                        $status = $c->status_warga ?: 'Tetap';
+                        $ekonomi = $c->status_ekonomi ?: 'Mampu';
+                        $bansos = $c->penerima_bansos ? 'Penerima Bansos' : 'Non-Bansos';
+                        
+                        $prompt .= "  * Nama: {$c->nama_lengkap} | NIK: {$nik} | JK: {$jk} | Kontak: {$kontakStr} | Wilayah: {$wilDesc} | Status: {$status} | Status Sosial: {$ekonomi} ({$bansos})\n";
                     }
+                    $prompt .= "  * ATURAN PENTING MENGENAI DATA WARGA:\n";
+                    $prompt .= "    - Pengguna saat ini adalah PENGURUS/PIMPINAN RESMI ({$roleStr}) yang MEMILIKI WEWENANG RESMI untuk melihat data warga di atas (termasuk NIK, nomor kontak/HP, email, dll.).\n";
+                    $prompt .= "    - Jika pengguna bertanya tentang data warga di atas (seperti NIK, nomor kontak, nama, telepon, email, status), JAWAB DENGAN LENGKAP DAN JELAS berdasarkan data resmi di atas!\n";
+                    $prompt .= "    - Jangan pernah menolak atau mengatakan 'tidak memiliki informasi' jika data warga tersebut tercantum di atas.\n";
+                }
+
+                // Data Transaksi Keuangan Real-Time Sesuai Menu Keuangan
+                $finQuery = \App\Models\FinanceTransaction::query();
+                if ($scopeIds !== null) {
+                    $finQuery->whereIn('id_wilayah', $scopeIds);
+                }
+                $incomeReal = (float) (clone $finQuery)->where('tipe', 'PEMASUKAN')->sum('jumlah');
+                $expenseReal = (float) (clone $finQuery)->where('tipe', 'PENGELUARAN')->sum('jumlah');
+                $saldoKasReal = $incomeReal - $expenseReal;
+                $prompt .= "\n- KEUANGAN & KAS WILAYAH RESMI (Sesuai Menu Keuangan):\n";
+                $prompt .= "  * Saldo Kas Saat Ini: Rp" . number_format($saldoKasReal, 0, ',', '.') . "\n";
+                $prompt .= "  * Total Pemasukan: Rp" . number_format($incomeReal, 0, ',', '.') . "\n";
+                $prompt .= "  * Total Pengeluaran: Rp" . number_format($expenseReal, 0, ',', '.') . "\n";
+                
+                $recentTx = (clone $finQuery)->latest('tanggal')->limit(5)->get();
+                if ($recentTx->isNotEmpty()) {
+                    $prompt .= "  * 5 Transaksi Keuangan Terakhir:\n";
+                    foreach ($recentTx as $tx) {
+                        $tgl = $tx->tanggal ? date('d/m/Y', strtotime($tx->tanggal)) : '-';
+                        $jml = 'Rp' . number_format($tx->jumlah, 0, ',', '.');
+                        $prompt .= "    - {$tgl} [{$tx->tipe}] {$tx->kategori} ({$jml}): {$tx->deskripsi}\n";
+                    }
+                } else {
+                    $prompt .= "  * Belum ada transaksi keuangan yang tercatat di sistem (Saldo kas masih Rp0).\n";
                 }
 
                 if (isset($dashboard['summaryCards'])) {
@@ -259,6 +310,14 @@ PROMPT;
                 }
                 if (isset($dashboard['demografi'])) {
                     $prompt .= "- Demografi: Laki-laki (" . ($dashboard['demografi']['L'] ?? 0) . "), Perempuan (" . ($dashboard['demografi']['P'] ?? 0) . "), Total (" . ($dashboard['demografi']['total'] ?? 0) . ")\n";
+                }
+            } else {
+                // Warga biasa: beri info dirinya sendiri
+                if ($user->citizen) {
+                    $myCit = $user->citizen;
+                    $prompt .= "\n- DATA PRIBADI ANDA SENDIRI:\n";
+                    $prompt .= "  * Nama: {$myCit->nama_lengkap} | NIK: {$myCit->nik} | JK: {$myCit->jenis_kelamin} | Kontak: {$myCit->no_hp} | Email: {$myCit->email}\n";
+                    $prompt .= "  * Sebagai warga, Anda berhak melihat data pribadi Anda sendiri, namun tidak berhak melihat NIK warga lain.\n";
                 }
             }
         } catch (\Exception $e) {

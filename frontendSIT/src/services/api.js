@@ -12,6 +12,30 @@ export * from './endpoints/siskamling'
 export * from './endpoints/announcements'
 export * from './endpoints/statistics'
 export * from './endpoints/audit'
+// --- Media URL Resolver ---
+export function resolveMediaUrl(url) {
+  if (!url) return null
+  const backendBase = import.meta.env.VITE_API_URL 
+    ? import.meta.env.VITE_API_URL.replace('/api', '') 
+    : 'http://127.0.0.1:8000'
+
+  if (url.startsWith('http://localhost/') || url === 'http://localhost') {
+    return url.replace('http://localhost', backendBase)
+  }
+  if (url.startsWith('http://127.0.0.1/') && !url.startsWith('http://127.0.0.1:')) {
+    return url.replace('http://127.0.0.1', backendBase)
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+
+  const clean = url.startsWith('/') ? url : `/${url}`
+  if (clean.startsWith('/storage/')) {
+    return `${backendBase}${clean}`
+  }
+  return `${backendBase}/storage${clean}`
+}
+
 // --- Landing CMS ---
 export function getLandingData() {
   return request('/public/landing');

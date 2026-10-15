@@ -65,10 +65,10 @@ export const dashboardData = {
     },
     {
       title: 'Saldo Kas',
-      value: 'Rp10.600.000',
+      value: 'Rp0',
       accent: 'green',
       icon: 'wallet',
-      note: '+Rp19.600.000 pemasukan',
+      note: '+Rp0 pemasukan',
       positive: true,
     },
     {

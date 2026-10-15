@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { FloatingTelegramButton } from '@/components/FloatingTelegramButton'
 import { landingData } from './landingData'
-import { getPublicOrganizationMembers, getPublicWilayah, getLandingData } from '@/services/api'
+import { getPublicOrganizationMembers, getPublicWilayah, getLandingData, resolveMediaUrl } from '@/services/api'
 
 function WaLink({ waNumber, text, children, className = '' }) {
   const href = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`
@@ -14,10 +14,7 @@ function WaLink({ waNumber, text, children, className = '' }) {
 }
 
 function avatarUrl(url) {
-  if (!url) return null
-  if (url.startsWith('http')) return url
-  const base = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://127.0.0.1:8000'
-  return `${base}/storage/${url}`
+  return resolveMediaUrl(url)
 }
 
 function Avatar({ member, size = 'md' }) {
@@ -56,6 +53,7 @@ function OfficialRow({ member }) {
 export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
+  const [heroImageFailed, setHeroImageFailed] = useState(false)
   const [orgMembers, setOrgMembers] = useState(null)
   const [cmsData, setCmsData] = useState(null)
   const [wilayahs, setWilayahs] = useState([])
@@ -63,18 +61,18 @@ export function LandingPage() {
   const [selectedDukuhId, setSelectedDukuhId] = useState(null)
   const { brand, navItems, video, struktur, kontak } = landingData
   const brandName = cmsData?.profile?.brand_name || 'Kenaran.com'
-  const heroBgImage = cmsData?.profile?.hero_image_url || "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80"
+  const heroBgImage = resolveMediaUrl(cmsData?.profile?.hero_image_url)
   
   const heroData = cmsData?.profile?.hero_title ? { title: cmsData.profile.hero_title, description: cmsData.profile.hero_subtitle, ctaLabel: landingData.hero.ctaLabel, ctaHref: landingData.hero.ctaHref } : landingData.hero
   const visiData = cmsData?.profile?.visi || landingData.visi
   const misiData = cmsData?.profile?.misi ? cmsData.profile.misi.split('\n') : (landingData.misi || []);
   const sejarahData = cmsData?.profile?.sejarah || ''
-  const videoUrlData = cmsData?.profile?.video_url
+  const videoUrlData = resolveMediaUrl(cmsData?.profile?.video_url)
   const emailData = cmsData?.profile?.kontak_email || kontak?.email
   const hpData = cmsData?.profile?.kontak_hp || kontak?.phone
   const alamatData = cmsData?.profile?.kontak_alamat || kontak?.address
-  const kegiatanData = Array.isArray(cmsData?.articles) && cmsData.articles.length > 0 ? cmsData.articles.map(a => ({ id: a.id_article, title: a.judul, description: a.konten, image: a.image_url || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80', date: new Date(a.published_at).toLocaleDateString('id-ID') })) : (landingData.kegiatan || []);
-  const umkmData = Array.isArray(cmsData?.umkms) && cmsData.umkms.length > 0 ? cmsData.umkms.map(u => ({ id: u.id_umkm, title: u.nama_usaha, owner: u.nama_pemilik, description: u.deskripsi, phone: u.no_hp, image: u.image_url || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80' })) : (landingData.umkm?.items || []);
+  const kegiatanData = Array.isArray(cmsData?.articles) && cmsData.articles.length > 0 ? cmsData.articles.map(a => ({ id: a.id_article, title: a.judul, description: a.konten, image: resolveMediaUrl(a.image_url) || null, date: new Date(a.published_at).toLocaleDateString('id-ID') })) : (landingData.kegiatan || []);
+  const umkmData = Array.isArray(cmsData?.umkms) && cmsData.umkms.length > 0 ? cmsData.umkms.map(u => ({ id: u.id_umkm, title: u.nama_usaha, owner: u.nama_pemilik, description: u.deskripsi, phone: u.no_hp, image: resolveMediaUrl(u.image_url) || null })) : (landingData.umkm?.items || []);
 
   useEffect(() => {
     const html = document.documentElement
@@ -299,15 +297,18 @@ export function LandingPage() {
       </header>
 
       {/* HERO */}
-      <section id="beranda" className="relative scroll-mt-24 overflow-hidden bg-[#f6f7f4]">
-        <div className="absolute inset-0">
-          <img
-            src={heroBgImage}
-            alt=""
-            className="h-full w-full object-cover opacity-80"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-[#f6f7f4]" />
-        </div>
+      <section id="beranda" className="relative scroll-mt-24 overflow-hidden bg-white border-b border-neutral-100">
+        {heroBgImage && !heroImageFailed && (
+          <div className="absolute inset-0">
+            <img
+              src={heroBgImage}
+              alt=""
+              className="h-full w-full object-cover opacity-80"
+              onError={() => setHeroImageFailed(true)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-white" />
+          </div>
+        )}
         <div className="relative mx-auto max-w-7xl px-6 py-20 text-center md:py-28">
           <h1 className="mx-auto max-w-3xl text-3xl font-extrabold leading-tight text-neutral-900 md:text-5xl">{heroData.title}</h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600 md:text-lg">{heroData.description}</p>
@@ -521,7 +522,27 @@ export function LandingPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {kegiatanData.map((k) => (
             <article key={k.title} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md">
-              <img src={k.image} alt={k.title} className="aspect-[16/10] w-full object-cover" loading="lazy" />
+              {k.image ? (
+                <img
+                  src={k.image}
+                  alt={k.title}
+                  className="aspect-[16/10] w-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                    if (e.currentTarget.nextElementSibling) {
+                      e.currentTarget.nextElementSibling.style.display = 'flex'
+                    }
+                  }}
+                />
+              ) : null}
+              <div
+                className={`aspect-[16/10] w-full items-center justify-center border-b border-neutral-100 bg-neutral-50 text-neutral-300 ${
+                  k.image ? 'hidden' : 'flex'
+                }`}
+              >
+                <Icon name="newspaper" className="h-10 w-10 text-neutral-300" />
+              </div>
               <div className="p-5">
                 <p className="text-xs font-semibold text-neutral-500">{k.date}</p>
                 <h3 className="mt-1 line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900">{k.title}</h3>
@@ -552,7 +573,27 @@ export function LandingPage() {
           <div className="mt-8 grid gap-6 md:grid-cols-3">
             {umkmData.map((item) => (
               <article key={item.title} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
-                <img src={item.image} alt={item.title} className="aspect-[4/3] w-full object-cover" loading="lazy" />
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="aspect-[4/3] w-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                      if (e.currentTarget.nextElementSibling) {
+                        e.currentTarget.nextElementSibling.style.display = 'flex'
+                      }
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`aspect-[4/3] w-full items-center justify-center border-b border-neutral-100 bg-neutral-50 text-neutral-300 ${
+                    item.image ? 'hidden' : 'flex'
+                  }`}
+                >
+                  <Icon name="box" className="h-10 w-10 text-neutral-300" />
+                </div>
                 <div className="p-5">
                   <h3 className="line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900">{item.title}</h3>
                   <p className="mt-2 line-clamp-3 text-sm leading-6 text-neutral-600">{item.description}</p>

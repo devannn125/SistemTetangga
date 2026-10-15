@@ -6,7 +6,7 @@ import { dashboardData as fallbackData } from '@/data/dashboardData'
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#6366F1']
 
 export function WargaDashboard({ role, data: propData }) {
-  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
+  const { data: fetched, isLoading } = useDashboardData({ enabled: !propData })
   const data = propData || fetched || fallbackData
 
   // role could be WARGA, SISKAMLING, PKK, KARANG_TARUNA

@@ -4,7 +4,7 @@ import { useDashboardData } from '@/hooks/useDashboardData'
 import { dashboardData as fallbackData } from '@/data/dashboardData'
 
 export function BendaharaDashboard({ data: propData }) {
-  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
+  const { data: fetched, isLoading } = useDashboardData({ enabled: !propData })
   const data = propData || fetched || fallbackData
 
   if (isLoading || !data) {

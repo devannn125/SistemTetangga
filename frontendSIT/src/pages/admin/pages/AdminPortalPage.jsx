@@ -4,7 +4,8 @@ import { Icon } from '@/components/ui/Icon'
 import { 
   getAdminLandingProfile, updateAdminLandingProfile,
   getAdminLandingArticles, createAdminLandingArticle, updateAdminLandingArticle, deleteAdminLandingArticle,
-  getAdminLandingUmkm, createAdminLandingUmkm, updateAdminLandingUmkm, deleteAdminLandingUmkm
+  getAdminLandingUmkm, createAdminLandingUmkm, updateAdminLandingUmkm, deleteAdminLandingUmkm,
+  resolveMediaUrl
 } from '@/services/api'
 import { useToast } from '@/components/ui/ToastContext'
 import { DataTable } from '@/components/ui/DataTable'
@@ -100,7 +101,7 @@ function TabProfile() {
         <div>
           <Label>Gambar Latar Belakang (Hero Background)</Label>
           {form.hero_image_url && !form.hero_image_file && (
-            <div className="mb-2"><img src={form.hero_image_url} alt="Hero" className="h-20 w-auto rounded object-cover" /></div>
+            <div className="mb-2"><img src={resolveMediaUrl(form.hero_image_url)} alt="Hero" className="h-20 w-auto rounded object-cover" /></div>
           )}
           <Input type="file" accept="image/*" onChange={e => setForm({...form, hero_image_file: e.target.files[0]})} />
           <p className="text-xs text-neutral-500 mt-1">Kosongkan jika tidak ingin mengubah gambar.</p>
@@ -115,7 +116,7 @@ function TabProfile() {
           <Label>Video Profil (MP4/WebM)</Label>
           {form.video_url && !form.video_file && (
             <div className="mb-2">
-              <video src={form.video_url} controls className="h-32 w-auto rounded border" />
+              <video src={resolveMediaUrl(form.video_url)} controls className="h-32 w-auto rounded border" />
             </div>
           )}
           <input 
@@ -199,7 +200,7 @@ function TabBerita() {
 
 
 
-    { key: 'image_url', label: 'Gambar', render: (_, row) => row.image_url ? <img src={row.image_url} alt="" className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 bg-neutral-100 rounded" /> },
+    { key: 'image_url', label: 'Gambar', render: (_, row) => row.image_url ? <img src={resolveMediaUrl(row.image_url)} alt="" className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 bg-neutral-100 rounded" /> },
     { key: 'judul', label: 'Judul' },
     { key: 'is_published', label: 'Status', render: (_, row) => row.is_published ? <span className="text-emerald-600 font-bold">Publik</span> : <span className="text-neutral-500">Draft</span> },
     { key: 'created_at', label: 'Tanggal', render: (_, row) => new Date(row.created_at).toLocaleDateString('id-ID') },
@@ -299,7 +300,7 @@ function TabUmkm() {
 
 
 
-    { key: 'image_url', label: 'Gambar', render: (_, row) => row.image_url ? <img src={row.image_url} alt="" className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 bg-neutral-100 rounded" /> },
+    { key: 'image_url', label: 'Gambar', render: (_, row) => row.image_url ? <img src={resolveMediaUrl(row.image_url)} alt="" className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 bg-neutral-100 rounded" /> },
     { key: 'nama_usaha', label: 'Usaha' },
     { key: 'nama_pemilik', label: 'Pemilik' },
     { key: 'no_hp', label: 'No. HP' },

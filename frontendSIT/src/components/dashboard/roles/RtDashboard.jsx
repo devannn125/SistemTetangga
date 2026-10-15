@@ -6,15 +6,16 @@ import { dashboardData as fallbackData } from '@/data/dashboardData'
 const GAUGE_COLORS = ['#10B981', '#E5E7EB']
 
 export function RtDashboard({ data: propData }) {
-  const { data: fetched, isLoading } = useDashboardData({ enabled: false })
+  const { data: fetched, isLoading } = useDashboardData({ enabled: !propData })
   const data = propData || fetched || fallbackData
 
   if (isLoading || !data) {
     return <div className="p-6 text-center text-sm text-neutral-500 animate-pulse">Memuat data real...</div>
   }
 
-  const saldoKas = data.summaryCards?.[2]?.value || 'Rp 0'
-  const saldoNote = data.summaryCards?.[2]?.note || '+Rp0 pemasukan'
+  const saldoCard = data.summaryCards?.find(c => (c.title || '').toLowerCase().includes('kas') || c.icon === 'wallet') || data.summaryCards?.[2]
+  const saldoKas = saldoCard?.value || 'Rp0'
+  const saldoNote = saldoCard?.note || '+Rp0 pemasukan'
   const pendingLetters = data.summaryCards?.[3]?.value || 0
   const letterDetail = data.summaryCards?.[3]?.note || '0 disetujui'
 

@@ -1,30 +1,20 @@
-import { useState, useEffect } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { useConfirm } from '@/components/ui/ConfirmContext'
 import { clearAuthData, getAuthData } from '@/services/authService'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
-import { FloatingTelegramButton } from '@/components/FloatingTelegramButton'
 
 /**
- * PortalSidebar — sidebar navigasi portal dengan item aktif + hover.
- * HP: jadi drawer fixed + hamburger kanan-atas (PortalTopbar).
+ * PortalSidebar â€” sidebar navigasi portal dengan item aktif + hover.
  */
-function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubtitle, onLogout, open, onClose }) {
+function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubtitle, onLogout }) {
   const authUser = getAuthData()
   const displayName = authUser?.nama_users || 'Pengguna'
   const displayRole = authUser?.role?.nama_role || 'Role'
   const displayInitial = (displayName || 'P').charAt(0).toUpperCase()
 
   return (
-    <aside
-      id="portal-sidebar"
-      className={cn(
-        'sticky top-0 flex h-screen w-[240px] shrink-0 flex-col border-r border-neutral-100 bg-white',
-        'max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:h-[100dvh] max-md:w-[280px] max-md:max-w-[84vw] max-md:border-r max-md:transition-transform max-md:duration-200',
-        open ? 'max-md:translate-x-0' : 'max-md:-translate-x-full',
-      )}
-    >
+    <aside className="sticky top-0 flex h-screen w-[240px] shrink-0 flex-col border-r border-neutral-100 bg-white max-md:static max-md:h-auto max-md:w-full max-md:border-r-0 max-md:border-b">
       {/* Brand */}
       <div className="flex h-14 items-center gap-2.5 border-b border-neutral-100 px-5">
         <a
@@ -48,7 +38,7 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
 
       {/* Navigation */}
       <nav
-        className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-3 pb-3 touch-pan-y"
+        className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-3 max-md:grid max-md:grid-cols-2 max-md:overflow-visible"
         aria-label="Menu portal"
       >
         {menuItems.map((item) => {
@@ -57,7 +47,6 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
             <a
               key={item.path}
               href={item.path}
-              onClick={() => onClose?.()}
               className={cn(
                 'flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium no-underline transition-colors hover:bg-black hover:text-white',
                 isActive
@@ -107,24 +96,11 @@ function PortalSidebar({ menuItems, activePath, homePath, brandTitle, brandSubti
 }
 
 /**
- * PortalTopbar — topbar dengan hamburger kanan-atas di HP.
+ * PortalTopbar â€” topbar dengan tombol logout.
  */
-function PortalTopbar({ open, onToggle }) {
+function PortalTopbar() {
   return (
-    <header className="flex h-14 items-center justify-between border-b border-neutral-100 bg-white px-6 max-md:px-4 md:justify-end">
-      <span className="hidden text-sm font-bold text-neutral-900 max-md:block">Kenaran</span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="inline-flex md:hidden"
-        onClick={onToggle}
-        aria-label={open ? 'Tutup menu' : 'Buka menu'}
-        aria-expanded={open}
-        aria-controls="portal-sidebar"
-      >
-        <Icon name={open ? 'x' : 'menu'} className="h-5 w-5" />
-      </Button>
-    </header>
+    <header className="flex h-14 items-center justify-end border-b border-neutral-100 bg-white px-6" />
   )
 }
 
@@ -143,65 +119,21 @@ function PortalFooter({ label }) {
 }
 
 /**
- * ImpersonationBanner — banner saat sedang impersonate user lain.
- */
-function ImpersonationBanner() {
-  const isImpersonating = !!localStorage.getItem('originalAuthToken')
-  const user = getAuthData()
-
-  if (!isImpersonating) return null
-
-  const stopImpersonating = () => {
-    localStorage.setItem('authToken', localStorage.getItem('originalAuthToken'))
-    localStorage.setItem('authUser', localStorage.getItem('originalAuthUser'))
-    localStorage.setItem('authRole', localStorage.getItem('originalAuthRole'))
-    localStorage.setItem('authNik', localStorage.getItem('originalAuthNik'))
-
-    localStorage.removeItem('originalAuthToken')
-    localStorage.removeItem('originalAuthUser')
-    localStorage.removeItem('originalAuthRole')
-    localStorage.removeItem('originalAuthNik')
-
-    window.location.href = '/' // Kembali ke Admin
-    window.location.href = '/admin' // Kembali ke Admin
-  }
-
-  return (
-    <div className="bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900 border-b border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm z-50">
-      <div className="flex items-center gap-2">
-        <Icon name="user" className="h-4 w-4" />
-        <span>Anda sedang masuk sebagai <strong>{user?.nama_users}</strong>.</span>
-      </div>
-      <Button size="sm" variant="outline" className="bg-white border-amber-300 text-amber-700 hover:bg-amber-50" onClick={stopImpersonating}>
-        Kembali ke Admin
-      </Button>
-    </div>
-  )
-}
-
-/**
- * PortalLayout — shell reusable untuk semua portal role (Warga, RT, RW, dst).
+ * PortalLayout â€” shell reusable untuk semua portal role (Warga, RT, RW, dst).
  * Tiap role tinggal kirim menuItems dan konten (children) miliknya sendiri.
  *
- * Props tidak berubah sama sekali — backward compatible.
+ * Props tidak berubah sama sekali â€” backward compatible.
  */
 export function PortalLayout({
   menuItems,
   activePath,
-  homePath = '/admin',
-  brandTitle = 'Sistem Informasi',
-  brandSubtitle = 'Desa',
-  footerLabel = 'Sistem Informasi Tetangga',
+  homePath,
+  brandTitle,
+  brandSubtitle,
+  footerLabel = 'Kenaran',
   children,
 }) {
   const confirm = useConfirm()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  useEffect(() => {
-    if (sidebarOpen) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
-  }, [sidebarOpen])
 
   function handleLogout() {
     confirm({
@@ -224,25 +156,13 @@ export function PortalLayout({
         brandTitle={brandTitle}
         brandSubtitle={brandSubtitle}
         onLogout={handleLogout}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
       />
-      {sidebarOpen && (
-        <button
-          type="button"
-          aria-label="Tutup menu"
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/40 md:hidden"
-        />
-      )}
 
       <section className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <ImpersonationBanner />
-        <PortalTopbar open={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} />
+        <PortalTopbar />
         <div className="flex-1">{children}</div>
         <PortalFooter label={footerLabel} />
       </section>
-      <FloatingTelegramButton />
     </div>
   )
 }

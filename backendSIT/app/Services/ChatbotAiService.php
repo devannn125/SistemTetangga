@@ -38,18 +38,19 @@ class ChatbotAiService
     /**
      * Memanggil API ChatGPT gratis (via Pollinations)
      *
-     * @param string $message Pesan dari Telegram
+     * @param string $message Pesan dari Telegram atau Web
      * @param \App\Models\User|null $user Instance user jika ditemukan
+     * @param string|null $pathname Halaman web aktif pengguna jika ada
      * @return string Balasan dari AI
      */
-    public function getResponse(string $message, $user): string
+    public function getResponse(string $message, $user, ?string $pathname = null): string
     {
         // 1. Filter Keamanan Teknis (Hard Guardrail)
         if ($this->isTechnicalQuestion($message)) {
             return "Mohon maaf, informasi mengenai arsitektur teknis, teknologi, dan infrastruktur sistem bersifat rahasia/internal pengembang dan tidak dapat dibagikan. Saya hanya dapat membantu terkait informasi administrasi dan layanan masyarakat.";
         }
 
-        $systemPrompt = $this->buildSystemPrompt($user);
+        $systemPrompt = $this->buildSystemPrompt($user, $pathname);
 
         // Format Payload untuk Pollinations (OpenAI format)
         $payload = [
@@ -62,7 +63,8 @@ class ChatbotAiService
                     'role' => 'user',
                     'content' => $message
                 ]
-            ]
+            ],
+            'model' => 'openai',
         ];
 
         try {
@@ -90,7 +92,10 @@ class ChatbotAiService
     /**
      * Membangun konteks AI berdasarkan role user dengan proteksi ketat.
      */
-    private function buildSystemPrompt($user): string
+    /**
+     * Membangun konteks AI berdasarkan role user dengan proteksi ketat.
+     */
+    private function buildSystemPrompt($user, ?string $pathname = null): string
     {
         $basePrompt = <<<PROMPT
 Anda adalah asisten virtual resmi untuk Sistem Informasi Administrasi RT Digital (Sistem Tetangga).
@@ -112,7 +117,7 @@ Jawab dalam bahasa Indonesia yang ringkas, sopan, dan jelas. Hindari markdown be
 PROMPT;
 
         if (!$user) {
-            return $basePrompt . "\n\nPengguna saat ini BELUM menautkan akun Telegram ke sistem. Jelaskan bahwa mereka harus login ke aplikasi Sistem Tetangga dan klik logo Telegram untuk menautkan akun agar dapat dilayani sesuai peran.";
+            return $basePrompt . "\n\nPengguna saat ini BELUM login atau belum menautkan akun. Jelaskan bahwa mereka harus login ke aplikasi Sistem Tetangga agar dapat dilayani sesuai peran dan wewenangnya.";
         }
 
         // Ambil role-role pengguna yang aktif
@@ -135,6 +140,27 @@ PROMPT;
             || in_array('Bendahara RT', $roles) || in_array('Bendahara', $roles);
 
         $prompt = $basePrompt . "\n\nSaat ini Anda sedang berbicara dengan Bapak/Ibu {$nama}, dengan peran: {$roleStr} di sistem.\n";
+
+        // Tambahkan konteks halaman aktif jika dikirimkan oleh web chatbox
+        if ($pathname) {
+            $cleanPath = trim($pathname);
+            $pageName = match (true) {
+                str_contains($cleanPath, '/struktur') => 'Struktur Organisasi (Hirarki Pengurus Kelurahan, Dukuh, RW, dan RT)',
+                str_contains($cleanPath, '/perangkat') => 'Perangkat Desa & Daftar Pengurus',
+                str_contains($cleanPath, '/warga') => 'Kependudukan & Data Warga',
+                str_contains($cleanPath, '/wilayah') => 'Manajemen Wilayah',
+                str_contains($cleanPath, '/users') => 'Manajemen Pengguna & Akun',
+                str_contains($cleanPath, '/keuangan') => 'Keuangan, Kas, dan Iuran Wilayah',
+                str_contains($cleanPath, '/surat') => 'Pengajuan & Layanan Surat',
+                str_contains($cleanPath, '/pengaduan') => 'Layanan Pengaduan Warga',
+                str_contains($cleanPath, '/ronda') || str_contains($cleanPath, '/siskamling') => 'Jadwal Siskamling & Ronda',
+                str_contains($cleanPath, '/peraturan') => 'Peraturan & Regulasi Wilayah',
+                str_contains($cleanPath, '/portal') => 'Manajemen Portal Berita & Profil Landing',
+                default => 'Beranda / Dashboard Sistem',
+            };
+            $prompt .= "Konteks Tampilan: Pengguna saat ini sedang membuka halaman '{$pageName}' (URL: {$cleanPath}). Jawablah pertanyaan pengguna sesuai dengan data resmi sistem yang tertampil pada halaman ini.\n";
+        }
+
         $prompt .= "BATASAN AKSES DAN WEWENANG ROLE INI:\n";
 
         // Tambahkan konteks spesifik berdasarkan role
@@ -180,7 +206,15 @@ PROMPT;
             $prompt .= "- Total RW di bawah wewenang: " . $rws->count() . " RW. (" . implode(', ', $rws->pluck('nama_wilayah')->toArray()) . ")\n";
             $prompt .= "- Total RT di bawah wewenang: " . $rts->count() . " RT. (" . implode(', ', $rts->pluck('nama_wilayah')->toArray()) . ")\n";
 
-            // Ambil data pejabat/struktur organisasi aktif (Kepala Dukuh, RT, RW, Lurah, dll)
+            // Injeksi Hirarki Struktur Organisasi (Lurah -> Dukuh -> RW -> RT)
+            $prompt .= "\n- HIERARKI STRUKTUR ORGANISASI & PENGURUS WILAYAH (SESUAI HALAMAN STRUKTUR ORGANISASI):\n";
+            $prompt .= $this->buildStrukturOrganisasiText($scopeIds) . "\n";
+            $prompt .= "  * Petunjuk Jawaban Pengurus:\n";
+            $prompt .= "    - Jika pengguna bertanya siapa pejabat di wilayah tertentu (misal: 'Siapa kepala dukuh Wangon?'), jawab langsung nama pejabatnya (misal: 'Kepala Dukuh Wangon adalah Devan').\n";
+            $prompt .= "    - Jika posisi tertulis 'Belum ada pengurus' / 'Belum ada Kepala Dukuh', jawab dengan jujur dan jelas bahwa posisi tersebut saat ini belum ada pengurus / masih kosong.\n";
+            $prompt .= "    - Hirarki: RT berada di bawah naungan RW, RW berada di bawah Dukuh, dan Dukuh berada di bawah Kelurahan.\n";
+
+            // Ringkasan Pengurus Aktif (Direct Flat Lookup)
             $orgQuery = \App\Models\OrganizationMember::with(['citizen', 'wilayah'])
                 ->where('status_aktif', true);
             if ($scopeIds !== null) {
@@ -188,13 +222,13 @@ PROMPT;
             }
             $orgMembers = $orgQuery->get();
             if ($orgMembers->isNotEmpty()) {
-                $prompt .= "- Pejabat / Pengurus Wilayah Aktif:\n";
+                $prompt .= "\n- DAFTAR RINGKAS PEJABAT AKTIF:\n";
                 foreach ($orgMembers as $om) {
                     $jabatan = $om->jabatan;
                     $namaPejabat = $om->citizen->nama_lengkap ?? 'Tidak diketahui';
                     $namaWil = $om->wilayah->nama_wilayah ?? '';
                     $tipeWil = $om->wilayah->tipe ?? '';
-                    $prompt .= "  * {$jabatan} ({$tipeWil} {$namaWil}): {$namaPejabat}\n";
+                    $prompt .= "  * {$jabatan} {$tipeWil} {$namaWil}: {$namaPejabat}\n";
                 }
             }
 
@@ -206,7 +240,7 @@ PROMPT;
                 }
                 $citizens = $citizensQuery->get(['id_citizen', 'nama_lengkap', 'id_wilayah']);
                 if ($citizens->isNotEmpty()) {
-                    $prompt .= "- Daftar Warga di bawah wewenang (Total " . $citizens->count() . " warga):\n";
+                    $prompt .= "\n- Daftar Warga di bawah wewenang (Total " . $citizens->count() . " warga):\n";
                     foreach ($citizens as $c) {
                         $wilDesc = $c->wilayah ? "({$c->wilayah->tipe} {$c->wilayah->nama_wilayah})" : "";
                         $prompt .= "  * {$c->nama_lengkap} {$wilDesc}\n";
@@ -232,5 +266,74 @@ PROMPT;
         }
 
         return $prompt;
+    }
+
+    /**
+     * Membangun representasi teks hierarki struktur organisasi dan pengurus
+     * sesuai wewenang/scope wilayah pengguna (meniru tree pada halaman Struktur Organisasi).
+     */
+    private function buildStrukturOrganisasiText(?array $scopeIds): string
+    {
+        $wilayahQuery = \App\Models\Wilayah::query();
+        if ($scopeIds !== null) {
+            $wilayahQuery->whereIn('id_wilayah', $scopeIds);
+        }
+        $wilayahs = $wilayahQuery->get();
+
+        $orgQuery = \App\Models\OrganizationMember::with(['citizen', 'wilayah'])
+            ->where('status_aktif', true);
+        if ($scopeIds !== null) {
+            $orgQuery->whereIn('id_wilayah', $scopeIds);
+        }
+        $orgMembers = $orgQuery->get();
+
+        $memberByWilayah = [];
+        foreach ($orgMembers as $om) {
+            $nama = $om->citizen->nama_lengkap ?? 'Tidak Diketahui';
+            $memberByWilayah[$om->id_wilayah][] = "{$om->jabatan}: {$nama}";
+        }
+
+        $lines = [];
+        $kelurahans = $wilayahs->where('tipe', 'KELURAHAN');
+
+        if ($kelurahans->isEmpty()) {
+            $dukuhs = $wilayahs->where('tipe', 'DUKUH');
+            foreach ($dukuhs as $dukuh) {
+                $dukuhPejabat = implode(', ', $memberByWilayah[$dukuh->id_wilayah] ?? ['Belum ada Kepala Dukuh']);
+                $lines[] = "DUKUH {$dukuh->nama_wilayah} ({$dukuhPejabat})";
+                $rws = $wilayahs->where('parent_id', $dukuh->id_wilayah)->where('tipe', 'RW');
+                foreach ($rws as $rw) {
+                    $rwPejabat = implode(', ', $memberByWilayah[$rw->id_wilayah] ?? ['Belum ada pengurus RW']);
+                    $lines[] = "  - RW {$rw->nama_wilayah} ({$rwPejabat})";
+                    $rts = $wilayahs->where('parent_id', $rw->id_wilayah)->where('tipe', 'RT');
+                    foreach ($rts as $rt) {
+                        $rtPejabat = implode(', ', $memberByWilayah[$rt->id_wilayah] ?? ['Belum ada pengurus RT']);
+                        $lines[] = "    * RT {$rt->nama_wilayah} ({$rtPejabat})";
+                    }
+                }
+            }
+        } else {
+            foreach ($kelurahans as $kel) {
+                $kelPejabat = implode(', ', $memberByWilayah[$kel->id_wilayah] ?? ['Belum ada pengurus kelurahan']);
+                $lines[] = "KELURAHAN {$kel->nama_wilayah} ({$kelPejabat}):";
+                $dukuhs = $wilayahs->where('parent_id', $kel->id_wilayah)->where('tipe', 'DUKUH');
+                foreach ($dukuhs as $dukuh) {
+                    $dukuhPejabat = implode(', ', $memberByWilayah[$dukuh->id_wilayah] ?? ['Belum ada Kepala Dukuh']);
+                    $lines[] = "  - DUKUH {$dukuh->nama_wilayah} ({$dukuhPejabat})";
+                    $rws = $wilayahs->where('parent_id', $dukuh->id_wilayah)->where('tipe', 'RW');
+                    foreach ($rws as $rw) {
+                        $rwPejabat = implode(', ', $memberByWilayah[$rw->id_wilayah] ?? ['Belum ada pengurus RW']);
+                        $lines[] = "    * RW {$rw->nama_wilayah} ({$rwPejabat})";
+                        $rts = $wilayahs->where('parent_id', $rw->id_wilayah)->where('tipe', 'RT');
+                        foreach ($rts as $rt) {
+                            $rtPejabat = implode(', ', $memberByWilayah[$rt->id_wilayah] ?? ['Belum ada pengurus RT']);
+                            $lines[] = "      + RT {$rt->nama_wilayah} ({$rtPejabat})";
+                        }
+                    }
+                }
+            }
+        }
+
+        return implode("\n", $lines);
     }
 }

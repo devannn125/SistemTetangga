@@ -88,3 +88,14 @@ export function impersonateUser(id) {
     method: 'POST'
   });
 }
+
+export function sendChatbotMessage(message, pathname) {
+  return request('/chatbot/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      message,
+      pathname: pathname || (typeof window !== 'undefined' ? window.location.pathname : ''),
+    }),
+  });
+}
+

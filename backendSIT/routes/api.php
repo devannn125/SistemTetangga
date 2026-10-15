@@ -39,10 +39,14 @@ use App\Http\Controllers\Api\UserSessionController;
 use App\Http\Controllers\Api\StrukturPengurusController;
 use App\Http\Controllers\Api\WilayahController;
 use App\Http\Controllers\Api\TelegramWebhookController;
+use App\Http\Controllers\Api\ChatbotController;
 use Illuminate\Support\Facades\Route;
 
 // Webhook untuk Telegram Bot
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
+
+// Endpoint Web Floating Chatbox AI
+Route::post('/chatbot/send', [ChatbotController::class, 'send']);
 
 Route::post('/login', [AuthController::class, 'login']);
 

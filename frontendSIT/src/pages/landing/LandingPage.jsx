@@ -21,12 +21,16 @@ function avatarUrl(url) {
 }
 
 function Avatar({ member, size = 'md' }) {
-  const name = member?.citizen?.nama_lengkap || member?.name || member?.nama_users || '?'
+  const jabatan = member?.jabatan || member?.role || 'Jabatan'
   const url = avatarUrl(member?.foto_url) || member?.image || null
   const box = size === 'lg' ? 'h-20 w-20 text-3xl' : size === 'md' ? 'h-12 w-12 text-lg' : 'h-9 w-9 text-sm'
   return (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-neutral-200 bg-neutral-50 font-extrabold text-neutral-300 ${box}`}>
-      {url ? <img src={url} alt={name} className="h-full w-full object-cover" /> : (name[0] || '?').toUpperCase()}
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-neutral-200 bg-neutral-50 font-extrabold text-neutral-400 ${box}`}>
+      {url ? (
+        <img src={url} alt={jabatan} className="h-full w-full object-cover" />
+      ) : (
+        <Icon name="shield" className={size === 'lg' ? 'h-9 w-9' : size === 'md' ? 'h-6 w-6' : 'h-4 w-4'} />
+      )}
     </div>
   )
 }
@@ -46,8 +50,7 @@ function OfficialRow({ member }) {
     <div className="flex items-center gap-4 py-3">
       <Avatar member={member} size="md" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-black">{member.citizen?.nama_lengkap || member.name || 'Tidak Diketahui'}</p>
-        <p className="text-xs font-extrabold uppercase tracking-wide text-sky-600">{member.jabatan || member.role}</p>
+        <p className="truncate text-sm font-bold text-neutral-900">{member.jabatan || member.role}</p>
       </div>
     </div>
   )
@@ -371,7 +374,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-4xl">
           <h3 className="text-center text-xl font-extrabold text-neutral-900">Struktur Organisasi {brandName}</h3>
           <p className="mt-2 text-center text-xs text-neutral-500">
-            {orgMembers ? 'Data dari sistem - hierarki Lurah -> Dukuh -> RW -> RT' : 'Bagan struktur organisasi lengkap beserta nama pengurus'}
+            {orgMembers ? 'Data dari sistem - hierarki Lurah -> Dukuh -> RW -> RT' : 'Bagan struktur organisasi dan hierarki jabatan pengurus'}
           </p>
 
           {orgLoading ? (
@@ -402,10 +405,7 @@ export function LandingPage() {
                 <div className="flex justify-center">
                   <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-neutral-300 bg-white px-8 py-6 shadow-sm">
                     <Avatar member={lurahMember} size="lg" />
-                    <p className="mt-3 text-base font-bold text-black">{lurahMember.citizen?.nama_lengkap || lurahMember.name}</p>
-                    <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700">
-                      Kepala Lurah
-                    </span>
+                    <p className="mt-3 text-base font-bold text-neutral-900">{lurahMember.jabatan || 'Kepala Lurah'}</p>
                   </div>
                 </div>
               )}
@@ -426,10 +426,9 @@ export function LandingPage() {
                           <div className="divide-y divide-neutral-200 rounded-lg bg-white px-4">
                             {dkMember ? (
                               <div className="flex items-center gap-4 py-3">
-                                <Avatar member={dkMember} size="lg" />
+                                <Avatar member={dkMember} size="md" />
                                 <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-bold text-black">{dkMember.citizen?.nama_lengkap || dkMember.name}</p>
-                                  <p className="text-xs font-extrabold uppercase tracking-wide text-sky-600">Kepala Dukuh</p>
+                                  <p className="truncate text-sm font-bold text-neutral-900">{dkMember.jabatan || 'Kepala Dukuh'}</p>
                                 </div>
                               </div>
                             ) : (
@@ -471,8 +470,7 @@ export function LandingPage() {
                                       <div key={m.id_organization_member} className="flex items-center gap-4 py-3">
                                         <Avatar member={m} size="md" />
                                         <div className="min-w-0 flex-1">
-                                          <p className="truncate text-sm font-bold text-black">{m.citizen?.nama_lengkap || m.name}</p>
-                                          <p className="text-xs font-extrabold uppercase tracking-wide text-sky-600">{m.jabatan}</p>
+                                          <p className="truncate text-sm font-bold text-neutral-900">{m.jabatan}</p>
                                         </div>
                                       </div>
                                     ))

@@ -382,14 +382,14 @@ export function LandingPage() {
               </div>
             </div>
 
-            <div className="mt-6 max-w-4xl space-y-4 text-[15px] sm:text-base font-normal leading-relaxed text-neutral-700">
+            <div className="mt-6 w-full space-y-4 text-[15px] sm:text-base font-normal leading-relaxed text-neutral-700 text-justify">
               {sejarahData
                 .split(/\n+/)
                 .filter((p) => p.trim().length > 0)
                 .map((paragraph, index) => (
                   <p
                     key={index}
-                    className={index === 0 ? 'text-neutral-900 font-medium' : ''}
+                    className={`text-justify ${index === 0 ? 'text-neutral-900 font-medium' : ''}`}
                   >
                     {paragraph}
                   </p>

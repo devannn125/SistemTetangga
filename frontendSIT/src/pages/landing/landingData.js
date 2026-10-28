@@ -7,10 +7,10 @@ export const landingData = {
   navItems: [
     { label: 'Beranda', href: '#beranda' },
     { label: 'Profil', href: '#profil' },
+    { label: 'Struktur', href: '#struktur' },
     { label: 'Kegiatan', href: '#kegiatan' },
     { label: 'UMKM', href: '#umkm' },
     { label: 'Kontak', href: '#kontak' },
-    { label: 'Login', href: '/login' },
   ],
   hero: {
     title: 'Selamat Datang di Website Resmi Kenaran',
@@ -29,6 +29,8 @@ export const landingData = {
     'Meningkatkan kualitas sumber daya manusia melalui kegiatan pendidikan, kesehatan, dan sosial bagi seluruh lapisan usia.',
     'Menjaga keamanan, ketertiban, dan kerukunan hidup bermasyarakat yang harmonis dan agamis.',
   ],
+  sejarah:
+    'Padukuhan Kenaran berakar dari pemukiman warga agraris di kawasan perbukitan dan persawahan yang asri di kawasan Prambanan, Sleman. Sejak masa lampau, kehidupan masyarakat di Kenaran senantiasa berlandaskan pada semangat keguyuban, gotong royong, dan kearifan budaya lokal yang diwariskan lintas generasi.\n\nSeiring berjalannya waktu, Kenaran berkembang menjadi wilayah yang berdaya dengan tumbuhnya sentra kerajinan anyaman bambu serta ragam usaha mikro yang menopang kemandirian ekonomi warga. Semangat musyawarah mufakat, kerja bakti lingkungan, serta pembinaan generasi muda tetap menjadi fondasi utama keharmonisan bermasyarakat.\n\nKini, Padukuhan Kenaran melangkah menyongsong masa depan dengan memadukan nilai tradisi luhur dan keterbukaan tata kelola modern, menghadirkan pelayanan kemasyarakatan yang transparan, tertib, dan inklusif bagi seluruh lapisan warga.',
   video: {
     title: 'Video Profil Kenaran',
     youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',

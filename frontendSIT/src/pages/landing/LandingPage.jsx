@@ -13,43 +13,6 @@ function WaLink({ waNumber, text, children, className = '' }) {
   )
 }
 
-function avatarUrl(url) {
-  return resolveMediaUrl(url)
-}
-
-function Avatar({ member, size = 'md' }) {
-  const name = member?.citizen?.nama_lengkap || member?.name || member?.nama_users || '?'
-  const url = avatarUrl(member?.foto_url) || member?.image || null
-  const box = size === 'lg' ? 'h-20 w-20 text-3xl' : size === 'md' ? 'h-12 w-12 text-lg' : 'h-9 w-9 text-sm'
-  return (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-neutral-200 bg-neutral-50 font-extrabold text-neutral-300 ${box}`}>
-      {url ? <img src={url} alt={name} className="h-full w-full object-cover" /> : (name[0] || '?').toUpperCase()}
-    </div>
-  )
-}
-
-function SectionHeading({ children }) {
-  return (
-    <div className="flex items-center gap-4 py-3">
-      <div className="h-px flex-1 bg-neutral-200" />
-      <p className="shrink-0 text-xs font-extrabold uppercase tracking-[0.12em] text-neutral-500">{children}</p>
-      <div className="h-px flex-1 bg-neutral-200" />
-    </div>
-  )
-}
-
-function OfficialRow({ member }) {
-  return (
-    <div className="flex items-center gap-4 py-3">
-      <Avatar member={member} size="md" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-black">{member.citizen?.nama_lengkap || member.name || 'Tidak Diketahui'}</p>
-        <p className="text-xs font-extrabold uppercase tracking-wide text-sky-600">{member.jabatan || member.role}</p>
-      </div>
-    </div>
-  )
-}
-
 export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
@@ -66,7 +29,7 @@ export function LandingPage() {
   const heroData = cmsData?.profile?.hero_title ? { title: cmsData.profile.hero_title, description: cmsData.profile.hero_subtitle, ctaLabel: landingData.hero.ctaLabel, ctaHref: landingData.hero.ctaHref } : landingData.hero
   const visiData = cmsData?.profile?.visi || landingData.visi
   const misiData = cmsData?.profile?.misi ? cmsData.profile.misi.split('\n') : (landingData.misi || []);
-  const sejarahData = cmsData?.profile?.sejarah || ''
+  const sejarahData = cmsData?.profile?.sejarah || landingData.sejarah || ''
   const videoUrlData = resolveMediaUrl(cmsData?.profile?.video_url)
   const emailData = cmsData?.profile?.kontak_email || kontak?.email
   const hpData = cmsData?.profile?.kontak_hp || kontak?.phone
@@ -322,32 +285,125 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* PROFIL */}
-      <section id="profil" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-14 md:py-16">
-        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Profil {brandName}</p>
-        <h2 className="mt-2 text-2xl font-extrabold text-neutral-900 md:text-3xl">Profil {brandName}</h2>
-        <div className="mt-8 grid gap-10 md:grid-cols-2">
-          <div>
-            <h3 className="text-lg font-extrabold text-neutral-900">Visi</h3>
-            <p className="mt-3 text-[15px] leading-7 text-neutral-600">{visiData}</p>
+      {/* PROFIL: VISI, MISI, & SEJARAH SINGKAT */}
+      <section id="profil" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-16 md:py-20">
+        <div className="max-w-3xl">
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-[#14532d]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#14532d]" />
+            Profil & Landasan Wilayah
+          </span>
+          <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl md:text-4xl">
+            Visi, Misi & Jejak Historis {brandName}
+          </h2>
+          <p className="mt-3 text-base leading-relaxed text-neutral-600">
+            Arah pandang dan komitmen bersama dalam mewujudkan kehidupan masyarakat yang guyub rukun, mandiri, dan berkesinambungan.
+          </p>
+        </div>
+
+        {/* VISI & MISI DUA KOLOM BERSTRUKTUR */}
+        <div className="mt-10 grid gap-8 lg:grid-cols-12 items-stretch">
+          {/* VISI CARD */}
+          <div className="flex flex-col justify-between rounded-2xl border border-stone-200/90 bg-[#fafaf8] p-7 sm:p-9 shadow-xs lg:col-span-5">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#14532d]">
+                  Visi Pembangunan
+                </span>
+                <span className="text-3xl font-serif leading-none text-emerald-800/40 select-none">“</span>
+              </div>
+              <blockquote className="mt-4 text-lg font-bold leading-relaxed text-neutral-900 sm:text-xl">
+                {visiData}
+              </blockquote>
+            </div>
+
+            <div className="mt-8 border-t border-stone-200/80 pt-4">
+              <p className="text-xs font-semibold text-neutral-500">
+                Landasan cita-cita bersama warga {brandName} untuk masa depan yang lebih baik.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-extrabold text-neutral-900">Misi</h3>
-            <ul className="mt-3 space-y-3">
-              {misiData.map((m) => (
-                <li key={m} className="flex gap-3 text-[15px] leading-6 text-neutral-600">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#14532d]" />
-                  <span>{m}</span>
-                </li>
-              ))}
-            </ul>
+
+          {/* MISI LIST */}
+          <div className="flex flex-col justify-between rounded-2xl border border-stone-200/90 bg-white p-7 sm:p-9 shadow-xs lg:col-span-7">
+            <div>
+              <div className="flex items-center justify-between border-b border-stone-200/80 pb-4">
+                <div>
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#14532d]">
+                    Misi Kepengurusan
+                  </span>
+                  <h3 className="text-base font-extrabold text-neutral-900">
+                    Langkah Nyata & Pengabdian Warga
+                  </h3>
+                </div>
+                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-[#14532d] border border-emerald-200/70">
+                  {misiData.length} Pilar
+                </span>
+              </div>
+
+              <div className="mt-5 space-y-3.5">
+                {misiData.map((m, idx) => (
+                  <div
+                    key={m}
+                    className="flex items-start gap-3.5 rounded-xl border border-stone-100 bg-[#fbfbf9] p-3.5 transition-colors hover:border-stone-200 hover:bg-stone-50/60"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-emerald-200/80 bg-emerald-50 text-[11px] font-black text-[#14532d]">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <p className="text-sm font-medium leading-relaxed text-neutral-700">
+                      {m}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-stone-100 pt-3">
+              <p className="text-[11px] text-neutral-500">
+                Dilaksanakan secara berkesinambungan melalui semangat gotong royong dan partisipasi aktif seluruh warga.
+              </p>
+            </div>
           </div>
         </div>
-        
+
+        {/* SEJARAH SINGKAT */}
         {sejarahData && (
-          <div className="mt-10">
-            <h3 className="text-lg font-extrabold text-neutral-900">Sejarah Singkat</h3>
-            <p className="mt-3 max-w-3xl text-[15px] leading-7 text-neutral-600 whitespace-pre-wrap">{sejarahData}</p>
+          <div className="mt-10 rounded-2xl border border-stone-200/90 bg-[#fafaf8] p-7 sm:p-10 shadow-xs">
+            <div className="flex items-center gap-3 border-b border-stone-200/80 pb-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-[#14532d] border border-stone-200">
+                <Icon name="book" className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#14532d]">
+                  Historis & Asal-Usul
+                </span>
+                <h3 className="text-lg font-extrabold text-neutral-900 sm:text-xl">
+                  Sejarah Singkat {brandName}
+                </h3>
+              </div>
+            </div>
+
+            <div className="mt-6 max-w-4xl space-y-4 text-[15px] sm:text-base font-normal leading-relaxed text-neutral-700">
+              {sejarahData
+                .split(/\n+/)
+                .filter((p) => p.trim().length > 0)
+                .map((paragraph, index) => (
+                  <p
+                    key={index}
+                    className={index === 0 ? 'text-neutral-900 font-medium' : ''}
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-stone-200/80 pt-5 text-xs text-neutral-500">
+              <span className="font-semibold text-neutral-600">
+                Peninggalan Nilai: Guyub Rukun &bull; Gotong Royong &bull; Kemandirian
+              </span>
+              <span className="italic text-neutral-400">
+                Catatan sejarah resmi {brandName}
+              </span>
+            </div>
           </div>
         )}
       </section>
@@ -367,148 +423,223 @@ export function LandingPage() {
         </section>
       )}
 
-      {/* STRUKTUR - mirip admin StrukturOrganisasi (read-only, tab dukuh) */}
-      <section className="bg-[#f6f7f4] px-6 py-14">
-        <div className="mx-auto max-w-4xl">
-          <h3 className="text-center text-xl font-extrabold text-neutral-900">Struktur Organisasi {brandName}</h3>
-          <p className="mt-2 text-center text-xs text-neutral-500">
-            {orgMembers ? 'Data dari sistem - hierarki Lurah -> Dukuh -> RW -> RT' : 'Bagan struktur organisasi lengkap beserta nama pengurus'}
-          </p>
+      {/* STRUKTUR ORGANISASI: HANYA MENAMPILKAN JABATAN */}
+      <section id="struktur" className="border-t border-stone-200/80 bg-[#f8f9f6] px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-[#14532d]">
+              <Icon name="shield" className="h-3.5 w-3.5" />
+              Tata Kelola Wilayah
+            </span>
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900 md:text-3xl">
+              Struktur Organisasi {brandName}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+              Bagan tata kelola dan hierarki jabatan kepengurusan wilayah dari tingkat Kalurahan, Padukuhan, Rukun Warga (RW), hingga Rukun Tetangga (RT).
+            </p>
+          </div>
 
           {orgLoading ? (
-            <div className="mt-8 rounded-xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">Memuat struktur organisasi...</div>
+            <div className="mt-10 rounded-2xl border border-stone-200 bg-white p-12 text-center text-sm font-medium text-neutral-500 shadow-xs">
+              <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-stone-300 border-t-[#14532d]" />
+              <p>Memuat struktur tata kelola wilayah...</p>
+            </div>
           ) : (
-            <div className="mt-6 space-y-6">
-              {/* Tabs Dukuh jika >1 dukuh (mirip admin LURAH tab dukuh) */}
+            <div className="mt-10 space-y-8">
+              {/* Tabs Dukuh jika >1 dukuh */}
               {tree.dukuhList.length > 1 && (
                 <div className="flex flex-wrap justify-center gap-2">
                   {tree.dukuhList.map((d) => (
                     <button
                       key={d.id_wilayah}
                       onClick={() => setSelectedDukuhId(d.id_wilayah)}
-                      className={`rounded-full border px-5 py-2 text-xs font-extrabold transition ${
+                      className={`rounded-full border px-5 py-2 text-xs font-bold transition-colors ${
                         (selectedDukuhId || tree.dukuhList[0]?.id_wilayah) === d.id_wilayah
-                          ? 'border-[#14532d] bg-[#14532d] text-white'
-                          : 'border-neutral-300 bg-white text-neutral-700 hover:border-[#14532d] hover:text-[#14532d]'
+                          ? 'border-[#14532d] bg-[#14532d] text-white shadow-xs'
+                          : 'border-stone-300 bg-white text-neutral-700 hover:border-[#14532d] hover:text-[#14532d]'
                       }`}
                     >
-                      {d.nama_wilayah}
+                      Padukuhan {d.nama_wilayah}
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* Kepala Lurah */}
-              {lurahMember && (
-                <div className="flex justify-center">
-                  <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-neutral-300 bg-white px-8 py-6 shadow-sm">
-                    <Avatar member={lurahMember} size="lg" />
-                    <p className="mt-3 text-base font-bold text-black">{lurahMember.citizen?.nama_lengkap || lurahMember.name}</p>
-                    <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700">
-                      Kepala Lurah
-                    </span>
+              {/* TIER 1: KEPALA KALURAHAN / LURAH */}
+              <div className="flex flex-col items-center">
+                <div className="w-full max-w-md rounded-2xl border border-stone-200/90 bg-white p-6 text-center shadow-xs transition hover:border-[#14532d]/40">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-200/60 bg-emerald-50 text-[#14532d]">
+                    <Icon name="building" className="h-6 w-6" />
                   </div>
+                  <span className="inline-block rounded-full bg-emerald-100/80 px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-emerald-800">
+                    Pemerintah Kalurahan
+                  </span>
+                  <h3 className="mt-2 text-lg font-extrabold text-neutral-900">
+                    {lurahMember?.jabatan || 'Kepala Kalurahan / Lurah'}
+                  </h3>
+                  <p className="mt-1 text-xs font-medium text-neutral-500">
+                    Penanggung Jawab Utama Wilayah Kalurahan
+                  </p>
+                </div>
+
+                {/* Connecting Line ke Tingkat Padukuhan */}
+                <div className="h-8 w-0.5 bg-stone-300" />
+              </div>
+
+              {/* TIER 2: KEPALA DUKUH */}
+              {visibleDukuhs.length > 0 && (
+                <div className="flex flex-col items-center">
+                  <div className="w-full max-w-md space-y-4">
+                    {visibleDukuhs.map((dk) => (
+                      <div
+                        key={dk.id_wilayah}
+                        className="rounded-2xl border border-stone-200/90 bg-white p-6 text-center shadow-xs transition hover:border-[#14532d]/40"
+                      >
+                        <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-stone-200 bg-stone-100 text-[#14532d]">
+                          <Icon name="map" className="h-5 w-5" />
+                        </div>
+                        <span className="inline-block rounded-full bg-stone-100 px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-stone-700">
+                          Wilayah {dk.nama_wilayah}
+                        </span>
+                        <h3 className="mt-2 text-lg font-extrabold text-neutral-900">
+                          Kepala Dukuh
+                        </h3>
+                        <p className="mt-1 text-xs font-medium text-neutral-500">
+                          Koordinator & Pemimpin Padukuhan {dk.nama_wilayah}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Connecting Line ke Tingkat RW */}
+                  <div className="h-8 w-0.5 bg-stone-300" />
                 </div>
               )}
 
-              {/* Kepala Dukuh */}
+              {/* TIER 3 & 4: RUKUN WARGA (RW) & RUKUN TETANGGA (RT) */}
               {visibleDukuhs.length > 0 && (
-                <>
-                  <SectionHeading>Kepala Dukuh</SectionHeading>
-                  <div className="space-y-4">
-                    {visibleDukuhs.map((dk) => {
-                      const dkMember = getDukuhMember(dk.id_wilayah)
+                <div className="space-y-8">
+                  {visibleDukuhs.map((dk) => {
+                    const rwList = dk.rws
+                    if (rwList.length === 0) {
                       return (
-                        <div key={dk.id_wilayah} className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-                          <div className="mb-3 flex items-center gap-2">
-                            <Icon name="building" className="h-4 w-4 text-neutral-400" />
-                            <p className="text-sm font-extrabold text-black">{dk.nama_wilayah}</p>
-                          </div>
-                          <div className="divide-y divide-neutral-200 rounded-lg bg-white px-4">
-                            {dkMember ? (
-                              <div className="flex items-center gap-4 py-3">
-                                <Avatar member={dkMember} size="lg" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-bold text-black">{dkMember.citizen?.nama_lengkap || dkMember.name}</p>
-                                  <p className="text-xs font-extrabold uppercase tracking-wide text-sky-600">Kepala Dukuh</p>
+                        <div key={dk.id_wilayah} className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-xs text-neutral-500">
+                          Padukuhan ini belum memiliki daftar RW.
+                        </div>
+                      )
+                    }
+
+                    return rwList.map((rw) => {
+                      const rwMembers = getRwMembers(rw.id_wilayah)
+                      const rwRoles = Array.from(new Set(rwMembers.map((m) => m.jabatan?.trim()).filter(Boolean)))
+                      const displayRwRoles = rwRoles.length > 0 ? rwRoles : ['Ketua ' + rw.nama_wilayah]
+
+                      return (
+                        <div
+                          key={rw.id_wilayah}
+                          className="rounded-2xl border border-stone-200/90 bg-white p-6 sm:p-8 shadow-xs"
+                        >
+                          {/* RW Header Card */}
+                          <div className="border-b border-stone-200/80 pb-5">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/70 bg-emerald-50 text-[#14532d]">
+                                  <Icon name="users" className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
+                                    Tingkat Rukun Warga
+                                  </span>
+                                  <h4 className="text-lg font-extrabold text-neutral-900">
+                                    {rw.nama_wilayah}
+                                  </h4>
                                 </div>
                               </div>
+                              <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-semibold text-neutral-600">
+                                {rw.rts?.length || 0} Rukun Tetangga
+                              </span>
+                            </div>
+
+                            {/* Daftar Jabatan di RW */}
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {displayRwRoles.map((roleName) => (
+                                <div
+                                  key={roleName}
+                                  className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-1.5 text-xs font-bold text-neutral-800"
+                                >
+                                  <span className="h-1.5 w-1.5 rounded-full bg-[#14532d]" />
+                                  <span>{roleName}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* RT Hierarchy under RW */}
+                          <div className="mt-6">
+                            <div className="mb-4 flex items-center justify-between">
+                              <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                                Kepengurusan Rukun Tetangga (RT) di Bawah {rw.nama_wilayah}
+                              </p>
+                            </div>
+
+                            {rw.rts.length === 0 ? (
+                              <p className="py-4 text-center text-xs italic text-neutral-400">
+                                Belum ada RT terdaftar di bawah RW ini.
+                              </p>
                             ) : (
-                              <p className="py-3 text-xs italic text-neutral-400">Kepala Dukuh belum ditunjuk</p>
+                              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                                {rw.rts.map((rt) => {
+                                  const rtMembers = getRtMembers(rt.id_wilayah)
+                                  const rtRoles = Array.from(new Set(rtMembers.map((m) => m.jabatan?.trim()).filter(Boolean)))
+                                  const displayRtRoles = rtRoles.length > 0 ? rtRoles : ['Ketua ' + rt.nama_wilayah]
+
+                                  return (
+                                    <div
+                                      key={rt.id_wilayah}
+                                      className="flex flex-col justify-between rounded-xl border border-stone-200 bg-[#fafaf8] p-4 transition-all hover:border-[#14532d]/40 hover:bg-white hover:shadow-xs"
+                                    >
+                                      <div>
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <Icon name="home" className="h-4 w-4 text-stone-500" />
+                                            <span className="text-sm font-extrabold text-neutral-900">
+                                              {rt.nama_wilayah}
+                                            </span>
+                                          </div>
+                                          <span className="rounded bg-stone-200/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-700">
+                                            RT
+                                          </span>
+                                        </div>
+
+                                        <div className="mt-3 space-y-1.5">
+                                          {displayRtRoles.map((roleName) => (
+                                            <div
+                                              key={roleName}
+                                              className="flex items-center gap-2 rounded-md border border-stone-200/80 bg-white px-2.5 py-1.5 text-xs font-bold text-neutral-800"
+                                            >
+                                              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600" />
+                                              <span className="truncate">{roleName}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
                             )}
                           </div>
                         </div>
                       )
-                    })}
-                  </div>
-                </>
-              )}
-
-              {/* Pengurus RW + RT (hierarki) */}
-              {visibleDukuhs.length > 0 && (
-                <>
-                  <SectionHeading>Pengurus RW</SectionHeading>
-                  <div className="space-y-4">
-                    {visibleDukuhs.map((dk) => {
-                      const rwList = dk.rws
-                      return (
-                        <div key={dk.id_wilayah} className="space-y-3">
-                          {rwList.length === 0 && (
-                            <p className="rounded-xl border border-neutral-200 bg-white p-4 text-center text-xs text-neutral-400">Dukuh ini belum memiliki RW</p>
-                          )}
-                          {rwList.map((rw) => {
-                            const rwMembers = getRwMembers(rw.id_wilayah)
-                            return (
-                              <div key={rw.id_wilayah} className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-                                <div className="mb-3 flex items-center gap-2">
-                                  <Icon name="building" className="h-4 w-4 text-neutral-400" />
-                                  <p className="text-sm font-extrabold text-black">{rw.nama_wilayah}</p>
-                                </div>
-                                <div className="divide-y divide-neutral-200 rounded-lg bg-white px-4">
-                                  {rwMembers.length === 0 ? (
-                                    <p className="py-3 text-xs italic text-neutral-400">Belum ada pengurus</p>
-                                  ) : (
-                                    rwMembers.map((m) => (
-                                      <div key={m.id_organization_member} className="flex items-center gap-4 py-3">
-                                        <Avatar member={m} size="md" />
-                                        <div className="min-w-0 flex-1">
-                                          <p className="truncate text-sm font-bold text-black">{m.citizen?.nama_lengkap || m.name}</p>
-                                          <p className="text-xs font-extrabold uppercase tracking-wide text-sky-600">{m.jabatan}</p>
-                                        </div>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-
-                                {rw.rts.map((rt) => (
-                                  <div key={rt.id_wilayah} className="mt-3 rounded-lg border border-neutral-200 bg-white px-4">
-                                    <div className="flex items-center gap-2 border-b border-neutral-100 py-2">
-                                      <Icon name="building" className="h-3.5 w-3.5 text-neutral-400" />
-                                      <p className="text-xs font-extrabold text-black">{rt.nama_wilayah}</p>
-                                    </div>
-                                    {getRtMembers(rt.id_wilayah).length === 0 ? (
-                                      <p className="py-2 text-[11px] italic text-neutral-400">Belum ada pengurus RT</p>
-                                    ) : (
-                                      <div className="divide-y divide-neutral-100">
-                                        {getRtMembers(rt.id_wilayah).map((m) => (
-                                          <OfficialRow key={m.id_organization_member} member={m} />
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
+                    })
+                  })}
+                </div>
               )}
 
               {visibleDukuhs.length === 0 && effectiveMembers.length === 0 && (
-                <p className="rounded-xl border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">Belum ada data struktur organisasi.</p>
+                <p className="rounded-2xl border border-stone-200 bg-white p-12 text-center text-sm text-neutral-500">
+                  Belum ada data struktur kepengurusan wilayah yang tersedia.
+                </p>
               )}
             </div>
           )}

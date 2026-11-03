@@ -23,6 +23,12 @@ class WilayahController extends BaseApiController
             $query->where('parent_id', $request->query('parent_id'));
         } elseif (! filter_var($request->query('all'), FILTER_VALIDATE_BOOLEAN)) {
             $query->whereNull('parent_id');
+        } else {
+            // Ketika all=1, pastikan node non-root memiliki parent_id yang valid di tabel wilayah
+            $query->where(function ($q) {
+                $q->whereNull('parent_id')
+                    ->orWhereIn('parent_id', Wilayah::select('id_wilayah'));
+            });
         }
         return WilayahResource::collection($query->orderBy('tipe')->get());
     }
@@ -213,10 +219,23 @@ class WilayahController extends BaseApiController
         $this->authorizeModule('MASTER', 'DELETE');
 
         $wilayah = Wilayah::findOrFail($id);
-        $wilayah->delete();
+
+        DB::transaction(function () use ($wilayah) {
+            $this->deleteDescendants($wilayah);
+            $wilayah->delete();
+        });
 
         $this->audit('MASTER', 'DELETE', 'wilayah', $wilayah->id_wilayah);
 
         return response()->noContent();
+    }
+
+    protected function deleteDescendants(Wilayah $wilayah): void
+    {
+        $children = Wilayah::where('parent_id', $wilayah->id_wilayah)->get();
+        foreach ($children as $child) {
+            $this->deleteDescendants($child);
+            $child->delete();
+        }
     }
 }

@@ -112,26 +112,43 @@ export default function AdminWilayahPage() {
     return m
   }, [wilayahs])
 
-  const getWilayahPath = (id) => {
-    const chain = []
-    let cur = wilayahById[id]
-    let guard = 0
-    while (cur && guard < 10) {
-      chain.push(`${cur.tipe} ${cur.nama_wilayah}`)
-      if (!cur.parent_id) break
-      cur = wilayahById[cur.parent_id]
-      guard++
+  const getSimpleParentLabel = (w) => {
+    if (!w) return ''
+    if (w.tipe === 'KELURAHAN') {
+      return `Kalurahan ${w.nama_wilayah}`
     }
-    return chain.reverse().join(' › ')
+    if (w.tipe === 'DUKUH') {
+      const parentKel = wilayahById[w.parent_id]
+      return parentKel
+        ? `Padukuhan ${w.nama_wilayah} (Kal. ${parentKel.nama_wilayah})`
+        : `Padukuhan ${w.nama_wilayah}`
+    }
+    if (w.tipe === 'RW') {
+      const parentDukuh = wilayahById[w.parent_id]
+      return parentDukuh
+        ? `${w.nama_wilayah} (Padukuhan ${parentDukuh.nama_wilayah})`
+        : w.nama_wilayah
+    }
+    return `${w.tipe} ${w.nama_wilayah}`
   }
 
   const parentOptions = useMemo(() => {
     const need = { DUKUH: 'KELURAHAN', RW: 'DUKUH', RT: 'RW' }[form.tipe] || null
     if (!need) return []
     return wilayahs
-      .filter((w) => w.tipe === need)
+      .filter((w) => {
+        if (w.tipe !== need) return false
+        // Jangan tampilkan wilayah yang induknya sudah terhapus (orphan)
+        if (w.tipe === 'DUKUH' && w.parent_id && !wilayahById[w.parent_id]) return false
+        if (w.tipe === 'RW' && w.parent_id && !wilayahById[w.parent_id]) return false
+        return true
+      })
       .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))
-  }, [wilayahs, form.tipe])
+  }, [wilayahs, form.tipe, wilayahById])
+
+  const orphanNodes = useMemo(() => {
+    return wilayahs.filter(w => w.tipe !== 'KELURAHAN' && (!w.parent_id || !wilayahById[w.parent_id]))
+  }, [wilayahs, wilayahById])
 
   const tree = useMemo(() => {
     if (wilayahs.length === 0) return []
@@ -218,6 +235,30 @@ export default function AdminWilayahPage() {
       </div>
       
       <div className='max-w-4xl'>
+        {orphanNodes.length > 0 && (
+          <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4">
+            <div className="mb-2">
+              <h4 className="font-bold text-amber-900 text-sm">Wilayah Tanpa Induk Terdeteksi</h4>
+              <p className="text-xs text-amber-700">Wilayah berikut berada di luar hierarki karena induknya telah dihapus. Silakan tetapkan induk baru atau hapus wilayah ini.</p>
+            </div>
+            <div className="space-y-2 mt-3">
+              {orphanNodes.map(node => (
+                <div key={node.id_wilayah} className="flex items-center justify-between bg-white p-3 rounded-lg border border-amber-200 shadow-xs">
+                  <div>
+                    <span className="text-[11px] font-bold text-amber-800 uppercase mr-2 bg-amber-100 px-2 py-0.5 rounded">{node.tipe}</span>
+                    <span className="font-bold text-neutral-900 text-sm">{node.nama_wilayah}</span>
+                    <span className="text-xs text-neutral-400 ml-2">({node.kode_wilayah})</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(node)}>Pilih Induk</Button>
+                    <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(node)}>Hapus</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className='animate-pulse text-sm text-neutral-500'>Memuat struktur wilayah...</div>
         ) : tree.length === 0 ? (
@@ -258,19 +299,19 @@ export default function AdminWilayahPage() {
             <div className='space-y-2'>
               <Label>Induk Wilayah (Parent) <span className="text-red-500">*</span></Label>
               <Select value={form.parent_id} onValueChange={val => setForm({...form, parent_id: val})}>
-                <SelectTrigger><SelectValue placeholder={form.tipe === 'KELURAHAN' ? '— Kelurahan tidak punya induk —' : parentOptions.length === 0 ? `Belum ada ${ ({ DUKUH: 'Kelurahan', RW: 'Dukuh', RT: 'RW' }[form.tipe] || 'induk')} — buat dulu` : 'Pilih Induk'} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={form.tipe === 'KELURAHAN' ? 'Tidak butuh induk (Tingkat Tertinggi)' : parentOptions.length === 0 ? `Belum ada data ${ ({ DUKUH: 'Kelurahan', RW: 'Dukuh', RT: 'RW' }[form.tipe] || 'induk')} — buat dulu` : 'Pilih Induk Wilayah'} /></SelectTrigger>
                 <SelectContent>
                   {form.tipe === 'KELURAHAN' ? (
                     <SelectItem value='' disabled>Tidak butuh induk</SelectItem>
                   ) : parentOptions.length === 0 ? (
-                    <SelectItem value="__none__" disabled>Belum ada wilayah tipe { ({ DUKUH: 'KELURAHAN', RW: 'DUKUH', RT: 'RW' }[form.tipe]) } — buat induk dulu</SelectItem>
+                    <SelectItem value="__none__" disabled>Belum ada data { ({ DUKUH: 'Kelurahan', RW: 'Dukuh', RT: 'RW' }[form.tipe]) }</SelectItem>
                   ) : parentOptions.map(w => (
-                    <SelectItem key={w.id_wilayah} value={w.id_wilayah}>{getWilayahPath(w.id_wilayah)} — {w.id_wilayah}</SelectItem>
+                    <SelectItem key={w.id_wilayah} value={w.id_wilayah}>{getSimpleParentLabel(w)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-neutral-500">
-                {form.tipe === 'KELURAHAN' ? 'Kelurahan adalah akar hierarki, tanpa induk.' : form.tipe === 'DUKUH' ? 'Dukuh harus di bawah Kelurahan.' : form.tipe === 'RW' ? 'RW harus di bawah Dukuh (parent_id → Dukuh).' : 'RT harus di bawah RW (parent_id → RW).'}
+                {form.tipe === 'KELURAHAN' ? 'Kelurahan adalah tingkat tertinggi wilayah.' : form.tipe === 'DUKUH' ? 'Dukuh berada di bawah Kelurahan.' : form.tipe === 'RW' ? 'RW berada di bawah Padukuhan.' : 'RT berada di bawah RW.'}
               </p>
             </div>
             <div className='space-y-2'>

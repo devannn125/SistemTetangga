@@ -34,6 +34,7 @@ export function LandingPage() {
   const [cmsData, setCmsData] = useState(null)
   const [wilayahs, setWilayahs] = useState([])
   const [orgLoading, setOrgLoading] = useState(false)
+  const [selectedKelurahanId, setSelectedKelurahanId] = useState(null)
   const [selectedDukuhId, setSelectedDukuhId] = useState(null)
   const [selectedRwId, setSelectedRwId] = useState(null)
   const { brand, navItems, video, struktur, kontak } = landingData
@@ -170,10 +171,12 @@ export function LandingPage() {
   const tree = useMemo(() => {
     if (effectiveWilayahs.length === 0) return { kelurahan: null, dukuhList: [], kelurahanList: [] }
     const kelurahanList = effectiveWilayahs.filter((w) => w.tipe === 'KELURAHAN').sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))
-    const kelurahan = kelurahanList[0] || null
-    if (kelurahanList.length === 0) return { kelurahan: null, dukuhList: [], kelurahanList }
+    const kelurahan = (selectedKelurahanId ? kelurahanList.find((k) => k.id_wilayah === selectedKelurahanId) : null) || kelurahanList[0] || null
+    if (!kelurahan) return { kelurahan: null, dukuhList: [], kelurahanList }
+
+    // HANYA ambil Dukuh yang secara sah berinduk ke kelurahan aktif (mencegah wilayah terhapus/kelurahan lain muncul)
     const dukuhList = effectiveWilayahs
-      .filter((w) => w.tipe === 'DUKUH')
+      .filter((w) => w.tipe === 'DUKUH' && (w.parent_id === kelurahan.id_wilayah || (!w.parent_id && kelurahanList.length === 1)))
       .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))
       .map((d) => ({
         ...d,
@@ -182,11 +185,13 @@ export function LandingPage() {
           .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah))
           .map((rw) => ({
             ...rw,
-            rts: effectiveWilayahs.filter((w) => w.parent_id === rw.id_wilayah && w.tipe === 'RT').sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah)),
+            rts: effectiveWilayahs
+              .filter((w) => w.parent_id === rw.id_wilayah && w.tipe === 'RT')
+              .sort((a, b) => a.nama_wilayah.localeCompare(b.nama_wilayah)),
           })),
       }))
     return { kelurahan, dukuhList, kelurahanList }
-  }, [effectiveWilayahs])
+  }, [effectiveWilayahs, selectedKelurahanId])
 
   const lurahMember = useMemo(() => {
     const found = effectiveMembers.find((m) => (m.jabatan || '').toLowerCase().includes('lurah'))
@@ -208,7 +213,12 @@ export function LandingPage() {
 
   // auto select first dukuh when tree loads
   useEffect(() => {
-    if (tree.dukuhList.length > 1 && !selectedDukuhId) setSelectedDukuhId(tree.dukuhList[0].id_wilayah)
+    if (tree.dukuhList.length > 0) {
+      const valid = tree.dukuhList.some((d) => d.id_wilayah === selectedDukuhId)
+      if (!valid) setSelectedDukuhId(tree.dukuhList[0].id_wilayah)
+    } else {
+      setSelectedDukuhId(null)
+    }
   }, [tree.dukuhList, selectedDukuhId])
 
   useEffect(() => {
@@ -464,6 +474,30 @@ export function LandingPage() {
             </div>
           ) : (
             <div className="mt-10 space-y-6">
+              {/* Tabs Kelurahan jika >1 kelurahan */}
+              {tree.kelurahanList.length > 1 && (
+                <div className="flex flex-wrap justify-center items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold text-neutral-500 mr-1">Kalurahan:</span>
+                  {tree.kelurahanList.map((k) => (
+                    <button
+                      key={k.id_wilayah}
+                      onClick={() => {
+                        setSelectedKelurahanId(k.id_wilayah)
+                        setSelectedDukuhId(null)
+                        setSelectedRwId(null)
+                      }}
+                      className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors ${
+                        (selectedKelurahanId || tree.kelurahan?.id_wilayah) === k.id_wilayah
+                          ? 'border-[#14532d] bg-[#14532d] text-white shadow-xs'
+                          : 'border-stone-300 bg-white text-neutral-700 hover:border-[#14532d]'
+                      }`}
+                    >
+                      {k.nama_wilayah}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Tabs Dukuh jika >1 dukuh */}
               {tree.dukuhList.length > 1 && (
                 <div className="flex flex-wrap justify-center gap-2">
@@ -529,13 +563,13 @@ export function LandingPage() {
                           {/* TINGKAT 1: Lurah (kiri) & Dukuh (tengah) */}
                           <div className="flex items-center justify-center">
                             {/* Lurah */}
-                            <OrgTreeCard topText="Kalurahan" bottomText={lurahTitle} />
+                            <OrgTreeCard topText={tree.kelurahan?.nama_wilayah || 'Kalurahan'} bottomText={lurahTitle} />
 
                             {/* Garis konektor horizontal Lurah - Dukuh */}
                             <div className="h-0.5 w-10 sm:w-16 bg-neutral-700" />
 
                             {/* Dukuh */}
-                            <OrgTreeCard topText="Padukuhan" bottomText={dukuhTitle} />
+                            <OrgTreeCard topText={currentDukuh?.nama_wilayah || 'Padukuhan'} bottomText={dukuhTitle} />
 
                             {/* Spacer penyeimbang sisi kanan agar Dukuh persis berada di tengah vertikal di atas RW */}
                             <div className="w-[calc(7rem+2.5rem)] sm:w-[calc(8rem+4rem)] shrink-0 pointer-events-none" aria-hidden="true" />

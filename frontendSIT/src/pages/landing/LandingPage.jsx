@@ -13,15 +13,151 @@ function WaLink({ waNumber, text, children, className = '' }) {
   )
 }
 
-function OrgTreeCard({ topText, bottomText }) {
+function OrgTreeCard({ topText, bottomText, compact = false }) {
   return (
-    <div className="w-28 sm:w-32 md:w-34 shrink-0 overflow-hidden rounded-xs border border-neutral-800 bg-white shadow-[2px_3px_5px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5">
-      <div className="bg-[#54a22b] px-2 py-1.5 text-center text-xs font-bold text-white tracking-wider">
+    <div className={`shrink-0 overflow-hidden rounded-xs border border-neutral-800 bg-white shadow-[2px_3px_5px_rgba(0,0,0,0.22)] transition-transform hover:-translate-y-0.5 ${
+      compact 
+        ? 'w-22 min-[400px]:w-25 sm:w-28 md:w-32' 
+        : 'w-28 sm:w-32 md:w-36'
+    }`}>
+      <div className="bg-[#54a22b] px-1.5 sm:px-2 py-1 sm:py-1.5 text-center text-[10px] min-[400px]:text-xs font-bold text-white tracking-wide truncate">
         {topText}
       </div>
-      <div className="flex min-h-[44px] items-center justify-center border-t border-neutral-800/60 bg-white px-2 py-2 text-center text-xs sm:text-[13px] font-bold text-neutral-900 leading-tight">
-        {bottomText}
+      <div className={`flex items-center justify-center border-t border-neutral-800/60 bg-white px-1 sm:px-2 py-1.5 sm:py-2 text-center font-bold text-neutral-900 leading-tight ${
+        compact 
+          ? 'min-h-[38px] sm:min-h-[42px] text-[10px] min-[400px]:text-xs sm:text-[13px]' 
+          : 'min-h-[44px] text-xs sm:text-[13px]'
+      }`}>
+        <span className="line-clamp-2">{bottomText}</span>
       </div>
+    </div>
+  )
+}
+
+function MoreRtCard({ count, onClick, compact = false }) {
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.() }}
+      className={`shrink-0 overflow-hidden rounded-xs border-2 border-dashed border-[#14532d] bg-emerald-50 shadow-[2px_3px_5px_rgba(0,0,0,0.15)] transition-all hover:bg-emerald-100 hover:border-solid hover:-translate-y-0.5 cursor-pointer text-center group ${
+        compact 
+          ? 'w-22 min-[400px]:w-25 sm:w-28 md:w-32' 
+          : 'w-28 sm:w-32 md:w-36'
+      }`}
+    >
+      <div className="bg-[#14532d] px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[10px] min-[400px]:text-xs font-bold text-white tracking-wide flex items-center justify-center gap-1">
+        <Icon name="maximize" className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+        <span>+{count} RT</span>
+      </div>
+      <div className={`flex flex-col items-center justify-center bg-white/90 px-1 sm:px-2 py-1 sm:py-1.5 text-center ${
+        compact ? 'min-h-[38px] sm:min-h-[42px]' : 'min-h-[44px]'
+      }`}>
+        <span className="text-[10px] min-[400px]:text-xs font-bold text-[#14532d] group-hover:underline leading-tight">Lihat Semua</span>
+        <span className="text-[9px] min-[400px]:text-[10px] text-neutral-500 font-medium">Klik Preview</span>
+      </div>
+    </div>
+  )
+}
+
+function OrgTreeDiagram({
+  kelurahanName,
+  lurahTitle,
+  dukuhName,
+  dukuhTitle,
+  activeRw,
+  rts,
+  compact = false,
+  onOpenPreview,
+}) {
+  const maxPreviewRts = compact ? 3 : 9999
+  const showMoreCard = compact && rts.length > maxPreviewRts
+  const displayRts = showMoreCard ? rts.slice(0, maxPreviewRts) : rts
+  const remainingCount = rts.length - maxPreviewRts
+
+  return (
+    <div className="flex flex-col items-center mx-auto">
+      {/* TINGKAT 1: Lurah (kiri) & Dukuh (tengah) */}
+      <div className="flex items-center justify-center">
+        {/* Lurah */}
+        <OrgTreeCard topText={kelurahanName || 'Kalurahan'} bottomText={lurahTitle} compact={compact} />
+
+        {/* Garis konektor horizontal Lurah - Dukuh */}
+        <div className={`h-0.5 bg-neutral-700 ${compact ? 'w-6 min-[400px]:w-8 sm:w-12' : 'w-10 sm:w-16'}`} />
+
+        {/* Dukuh */}
+        <OrgTreeCard topText={dukuhName || 'Padukuhan'} bottomText={dukuhTitle} compact={compact} />
+
+        {/* Spacer penyeimbang sisi kanan agar Dukuh persis berada di tengah vertikal di atas RW */}
+        <div
+          className={`shrink-0 pointer-events-none ${
+            compact
+              ? 'w-[calc(5.5rem+1.5rem)] min-[400px]:w-[calc(6.25rem+2rem)] sm:w-[calc(7rem+3rem)] md:w-[calc(8rem+3rem)]'
+              : 'w-[calc(7rem+2.5rem)] sm:w-[calc(8rem+4rem)] md:w-[calc(9rem+4rem)]'
+          }`}
+          aria-hidden="true"
+        />
+      </div>
+
+      {/* Garis vertikal dari Dukuh ke RW */}
+      <div className={`w-0.5 bg-neutral-700 ${compact ? 'h-6 sm:h-8' : 'h-8 sm:h-10'}`} />
+
+      {/* TINGKAT 2: Ketua RW */}
+      {activeRw ? (
+        <>
+          <OrgTreeCard topText={activeRw.nama_wilayah} bottomText={`Ketua ${activeRw.nama_wilayah}`} compact={compact} />
+
+          {/* TINGKAT 3: Garis Bus & Kolom RT */}
+          {rts.length === 0 ? (
+            <p className="mt-6 text-xs italic text-neutral-400">Belum ada RT terdaftar di bawah RW ini.</p>
+          ) : rts.length === 1 ? (
+            <div className="flex flex-col items-center">
+              <div className={`w-0.5 bg-neutral-700 ${compact ? 'h-5 sm:h-6' : 'h-6 sm:h-8'}`} />
+              <OrgTreeCard topText={rts[0].nama_wilayah} bottomText={`Ketua ${rts[0].nama_wilayah}`} compact={compact} />
+            </div>
+          ) : (
+            <>
+              {/* Garis vertikal dari RW ke Bus RT */}
+              <div className={`w-0.5 bg-neutral-700 ${compact ? 'h-5 sm:h-6' : 'h-6 sm:h-8'}`} />
+
+              {/* Baris Kolom RT */}
+              <div className="flex items-start justify-center">
+                {displayRts.map((rt, idx) => {
+                  const isFirst = idx === 0
+                  const isLast = !showMoreCard && idx === displayRts.length - 1
+                  return (
+                    <div key={rt.id_wilayah} className={`flex flex-col items-center ${compact ? 'px-1 sm:px-2' : 'px-1.5 sm:px-3'}`}>
+                      {/* Garis bus horizontal antar kolom RT */}
+                      <div className={`flex w-full ${compact ? 'h-4 sm:h-5' : 'h-5 sm:h-6'}`}>
+                        <div className={`w-1/2 ${!isFirst ? 'border-t-2 border-neutral-700' : ''}`} />
+                        <div className={`w-1/2 ${!isLast ? 'border-t-2 border-neutral-700' : ''}`} />
+                      </div>
+                      {/* Garis vertikal masuk ke kartu RT */}
+                      <div className={`w-0.5 bg-neutral-700 ${compact ? '-mt-4 sm:-mt-5 h-4 sm:h-5' : '-mt-5 sm:-mt-6 h-5 sm:h-6'}`} />
+                      <OrgTreeCard topText={rt.nama_wilayah} bottomText={`Ketua ${rt.nama_wilayah}`} compact={compact} />
+                    </div>
+                  )
+                })}
+
+                {/* Kolom +X RT Lainnya jika showMoreCard */}
+                {showMoreCard && (
+                  <div className={`flex flex-col items-center ${compact ? 'px-1 sm:px-2' : 'px-1.5 sm:px-3'}`}>
+                    <div className={`flex w-full ${compact ? 'h-4 sm:h-5' : 'h-5 sm:h-6'}`}>
+                      <div className="w-1/2 border-t-2 border-neutral-700" />
+                      <div className="w-1/2" />
+                    </div>
+                    <div className={`w-0.5 bg-neutral-700 ${compact ? '-mt-4 sm:-mt-5 h-4 sm:h-5' : '-mt-5 sm:-mt-6 h-5 sm:h-6'}`} />
+                    <MoreRtCard count={remainingCount} onClick={onOpenPreview} compact={compact} />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        <p className="mt-6 text-xs italic text-neutral-400">Padukuhan ini belum memiliki daftar RW.</p>
+      )}
     </div>
   )
 }
@@ -37,6 +173,9 @@ export function LandingPage() {
   const [selectedKelurahanId, setSelectedKelurahanId] = useState(null)
   const [selectedDukuhId, setSelectedDukuhId] = useState(null)
   const [selectedRwId, setSelectedRwId] = useState(null)
+  const [previewModalOpen, setPreviewModalOpen] = useState(false)
+  const [selectedKegiatan, setSelectedKegiatan] = useState(null)
+  const [selectedUmkm, setSelectedUmkm] = useState(null)
   const { brand, navItems, video, struktur, kontak } = landingData
   const brandName = cmsData?.profile?.brand_name || 'Kenaran.com'
   const heroBgImage = resolveMediaUrl(cmsData?.profile?.hero_image_url)
@@ -224,6 +363,25 @@ export function LandingPage() {
   useEffect(() => {
     setSelectedRwId(null)
   }, [selectedDukuhId])
+
+  useEffect(() => {
+    const isAnyModalOpen = previewModalOpen || Boolean(selectedKegiatan) || Boolean(selectedUmkm)
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden'
+      const onKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setPreviewModalOpen(false)
+          setSelectedKegiatan(null)
+          setSelectedUmkm(null)
+        }
+      }
+      window.addEventListener('keydown', onKeyDown)
+      return () => {
+        document.body.style.overflow = ''
+        window.removeEventListener('keydown', onKeyDown)
+      }
+    }
+  }, [previewModalOpen, selectedKegiatan, selectedUmkm])
 
   return (
     <main className="min-h-screen bg-white text-neutral-800">
@@ -535,101 +693,154 @@ export function LandingPage() {
                 }
 
                 return (
-                  <div className="space-y-6">
-                    {/* Tabs RW jika terdapat lebih dari 1 RW */}
-                    {rwList.length > 1 && (
-                      <div className="flex flex-wrap items-center justify-center gap-2">
-                        <span className="text-xs font-semibold text-neutral-500 mr-1">Pilih RW:</span>
-                        {rwList.map((rw) => (
-                          <button
-                            key={rw.id_wilayah}
-                            onClick={() => setSelectedRwId(rw.id_wilayah)}
-                            className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors ${
-                              activeRw?.id_wilayah === rw.id_wilayah
-                                ? 'border-[#14532d] bg-[#14532d] text-white shadow-xs'
-                                : 'border-stone-300 bg-white text-neutral-700 hover:border-[#14532d] hover:text-[#14532d]'
-                            }`}
-                          >
-                            {rw.nama_wilayah}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Kontainer Bagan Organisasi (Canvas) */}
-                    <div className="rounded-2xl border border-stone-200/90 bg-[#fafaf8] p-5 sm:p-8 md:p-10 shadow-xs">
-                      <div className="overflow-x-auto pb-4 pt-2">
-                        <div className="min-w-max flex flex-col items-center mx-auto px-4">
-                          {/* TINGKAT 1: Lurah (kiri) & Dukuh (tengah) */}
-                          <div className="flex items-center justify-center">
-                            {/* Lurah */}
-                            <OrgTreeCard topText={tree.kelurahan?.nama_wilayah || 'Kalurahan'} bottomText={lurahTitle} />
-
-                            {/* Garis konektor horizontal Lurah - Dukuh */}
-                            <div className="h-0.5 w-10 sm:w-16 bg-neutral-700" />
-
-                            {/* Dukuh */}
-                            <OrgTreeCard topText={currentDukuh?.nama_wilayah || 'Padukuhan'} bottomText={dukuhTitle} />
-
-                            {/* Spacer penyeimbang sisi kanan agar Dukuh persis berada di tengah vertikal di atas RW */}
-                            <div className="w-[calc(7rem+2.5rem)] sm:w-[calc(8rem+4rem)] shrink-0 pointer-events-none" aria-hidden="true" />
+                  <>
+                    <div className="space-y-6">
+                      {/* Kontrol Atas: Tabs RW & Tombol Buka Preview Layar Penuh */}
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        {rwList.length > 1 ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-semibold text-neutral-500 mr-1">Pilih RW:</span>
+                            {rwList.map((rw) => (
+                              <button
+                                key={rw.id_wilayah}
+                                onClick={() => setSelectedRwId(rw.id_wilayah)}
+                                className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                                  activeRw?.id_wilayah === rw.id_wilayah
+                                    ? 'border-[#14532d] bg-[#14532d] text-white shadow-xs'
+                                    : 'border-stone-300 bg-white text-neutral-700 hover:border-[#14532d] hover:text-[#14532d]'
+                                }`}
+                              >
+                                {rw.nama_wilayah}
+                              </button>
+                            ))}
                           </div>
+                        ) : (
+                          <div />
+                        )}
 
-                          {/* Garis vertikal dari Dukuh ke RW */}
-                          <div className="h-8 sm:h-10 w-0.5 bg-neutral-700" />
+                        <button
+                          type="button"
+                          onClick={() => setPreviewModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-50 px-4 py-1.5 text-xs font-bold text-[#14532d] hover:bg-[#14532d] hover:text-white transition-all shadow-2xs cursor-pointer ml-auto"
+                        >
+                          <Icon name="maximize" className="h-3.5 w-3.5" />
+                          <span>Buka Preview Layar Penuh</span>
+                        </button>
+                      </div>
 
-                          {/* TINGKAT 2: Ketua RW */}
-                          {activeRw ? (
-                            <>
-                              <OrgTreeCard topText={activeRw.nama_wilayah} bottomText={`Ketua ${activeRw.nama_wilayah}`} />
+                      {/* Kontainer Bagan Organisasi (Canvas) - Bebas scroll (overflow-hidden) */}
+                      <div className="rounded-2xl border border-stone-200/90 bg-[#fafaf8] p-4 sm:p-6 md:p-8 shadow-xs overflow-hidden">
+                        <div className="w-full overflow-hidden py-2">
+                          <OrgTreeDiagram
+                            kelurahanName={tree.kelurahan?.nama_wilayah}
+                            lurahTitle={lurahTitle}
+                            dukuhName={currentDukuh?.nama_wilayah}
+                            dukuhTitle={dukuhTitle}
+                            activeRw={activeRw}
+                            rts={rts}
+                            compact={true}
+                            onOpenPreview={() => setPreviewModalOpen(true)}
+                          />
+                        </div>
 
-                              {/* TINGKAT 3: Garis Bus & Kolom RT */}
-                              {rts.length === 0 ? (
-                                <p className="mt-6 text-xs italic text-neutral-400">Belum ada RT terdaftar di bawah RW ini.</p>
-                              ) : rts.length === 1 ? (
-                                <div className="flex flex-col items-center">
-                                  <div className="h-6 sm:h-8 w-0.5 bg-neutral-700" />
-                                  <OrgTreeCard topText={rts[0].nama_wilayah} bottomText={`Ketua ${rts[0].nama_wilayah}`} />
-                                </div>
-                              ) : (
-                                <>
-                                  {/* Garis vertikal dari RW ke Bus RT */}
-                                  <div className="h-6 sm:h-8 w-0.5 bg-neutral-700" />
-
-                                  {/* Baris Kolom RT */}
-                                  <div className="flex items-start justify-center">
-                                    {rts.map((rt, idx) => {
-                                      const isFirst = idx === 0
-                                      const isLast = idx === rts.length - 1
-                                      return (
-                                        <div key={rt.id_wilayah} className="flex flex-col items-center px-1.5 sm:px-3">
-                                          {/* Garis bus horizontal antar kolom RT */}
-                                          <div className="flex h-5 sm:h-6 w-full">
-                                            <div className={`w-1/2 ${!isFirst ? 'border-t-2 border-neutral-700' : ''}`} />
-                                            <div className={`w-1/2 ${!isLast ? 'border-t-2 border-neutral-700' : ''}`} />
-                                          </div>
-                                          {/* Garis vertikal masuk ke kartu RT */}
-                                          <div className="-mt-5 sm:-mt-6 h-5 sm:h-6 w-0.5 bg-neutral-700" />
-                                          <OrgTreeCard topText={rt.nama_wilayah} bottomText={`Ketua ${rt.nama_wilayah}`} />
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <p className="mt-6 text-xs italic text-neutral-400">Padukuhan ini belum memiliki daftar RW.</p>
-                          )}
+                        {/* Keterangan Bagan di bagian bawah dengan aksi cepat preview */}
+                        <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200/80 pt-4 text-xs text-neutral-500">
+                          <span>Bagan struktur organisasi tata kelola wilayah</span>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 font-bold text-[#14532d] hover:underline cursor-pointer"
+                          >
+                            <Icon name="eye" className="h-3.5 w-3.5" />
+                            <span>Buka Preview Penuh (Semua RT)</span>
+                          </button>
                         </div>
                       </div>
-
-                      {/* Keterangan Bagan di bagian bawah */}
-                      <p className="mt-6 border-t border-stone-200/80 pt-4 text-center text-xs sm:text-sm font-medium text-neutral-500">
-                        Bagan struktur organisasi tata kelola wilayah
-                      </p>
                     </div>
-                  </div>
+
+                    {/* Modal Dialog Preview Struktur Organisasi Penuh dengan Backdrop Blur */}
+                    {previewModalOpen && (
+                      <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="modal-preview-title"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-8 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+                        onClick={() => setPreviewModalOpen(false)}
+                      >
+                        <div
+                          className="relative flex flex-col w-full max-w-6xl max-h-[92vh] bg-white rounded-2xl shadow-2xl border border-stone-200 overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {/* Header Modal */}
+                          <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4 bg-stone-50/90">
+                            <div>
+                              <h3 id="modal-preview-title" className="text-base sm:text-lg font-bold text-neutral-900">
+                                Preview Struktur Organisasi Lengkap
+                              </h3>
+                              <p className="text-xs text-neutral-500">
+                                {currentDukuh?.nama_wilayah || 'Padukuhan'} &bull; {activeRw?.nama_wilayah || 'RW'} ({rts.length} RT)
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModalOpen(false)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-stone-200 hover:text-neutral-900 transition-colors cursor-pointer"
+                              aria-label="Tutup preview"
+                            >
+                              <Icon name="x" className="h-5 w-5" />
+                            </button>
+                          </div>
+
+                          {/* Body Modal - Full preview dengan seluruh RT */}
+                          <div className="flex-1 overflow-auto p-6 sm:p-10 bg-[#fafaf8]">
+                            {/* RW Selector jika ada banyak RW */}
+                            {rwList.length > 1 && (
+                              <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
+                                <span className="text-xs font-semibold text-neutral-500 mr-1">Pilih RW:</span>
+                                {rwList.map((rw) => (
+                                  <button
+                                    key={rw.id_wilayah}
+                                    onClick={() => setSelectedRwId(rw.id_wilayah)}
+                                    className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                                      activeRw?.id_wilayah === rw.id_wilayah
+                                        ? 'border-[#14532d] bg-[#14532d] text-white shadow-xs'
+                                        : 'border-stone-300 bg-white text-neutral-700 hover:border-[#14532d] hover:text-[#14532d]'
+                                    }`}
+                                  >
+                                    {rw.nama_wilayah}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="min-w-max flex justify-center py-4">
+                              <OrgTreeDiagram
+                                kelurahanName={tree.kelurahan?.nama_wilayah}
+                                lurahTitle={lurahTitle}
+                                dukuhName={currentDukuh?.nama_wilayah}
+                                dukuhTitle={dukuhTitle}
+                                activeRw={activeRw}
+                                rts={rts}
+                                compact={false}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Footer Modal */}
+                          <div className="flex items-center justify-between border-t border-stone-200 px-5 py-3 bg-white text-xs text-neutral-500">
+                            <span>Geser / gulir horizontal jika susunan RT melebihi lebar layar</span>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModalOpen(false)}
+                              className="rounded-lg bg-[#14532d] px-4 py-1.5 font-semibold text-white hover:bg-emerald-800 transition-colors cursor-pointer"
+                            >
+                              Tutup
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )
               })()}
             </div>
@@ -639,39 +850,64 @@ export function LandingPage() {
 
       {/* KEGIATAN */}
       <section id="kegiatan" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-14">
-        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Kegiatan Warga</p>
-        <h2 className="mt-2 text-2xl font-extrabold text-neutral-900">Kegiatan {brandName}</h2>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Kegiatan Warga</p>
+            <h2 className="mt-2 text-2xl font-extrabold text-neutral-900 sm:text-3xl">Kegiatan & Agenda {brandName}</h2>
+            <p className="mt-1 text-sm text-neutral-600">Dokumentasi dan agenda kegiatan kemasyarakatan di lingkungan kita.</p>
+          </div>
+        </div>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {kegiatanData.map((k) => (
-            <article key={k.title} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md">
-              {k.image ? (
-                <img
-                  src={k.image}
-                  alt={k.title}
-                  className="aspect-[16/10] w-full object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                    if (e.currentTarget.nextElementSibling) {
-                      e.currentTarget.nextElementSibling.style.display = 'flex'
-                    }
-                  }}
-                />
-              ) : null}
-              <div
-                className={`aspect-[16/10] w-full items-center justify-center border-b border-neutral-100 bg-neutral-50 text-neutral-300 ${
-                  k.image ? 'hidden' : 'flex'
-                }`}
-              >
-                <Icon name="newspaper" className="h-10 w-10 text-neutral-300" />
+            <article
+              key={k.title}
+              onClick={() => setSelectedKegiatan(k)}
+              className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-emerald-600/40 hover:shadow-lg cursor-pointer"
+            >
+              <div>
+                {k.image ? (
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-100">
+                    <img
+                      src={k.image}
+                      alt={k.title}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'flex'
+                        }
+                      }}
+                    />
+                    <div className="hidden h-full w-full items-center justify-center bg-neutral-50 text-neutral-300">
+                      <Icon name="newspaper" className="h-10 w-10 text-neutral-300" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex aspect-[16/10] w-full items-center justify-center border-b border-neutral-100 bg-neutral-50 text-neutral-300">
+                    <Icon name="newspaper" className="h-10 w-10 text-neutral-300" />
+                  </div>
+                )}
+                <div className="p-5">
+                  {k.date && (
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-500">
+                      <Icon name="calendar" className="h-3.5 w-3.5 text-emerald-700" />
+                      <span>{k.date}</span>
+                    </div>
+                  )}
+                  <h3 className="mt-2 line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900 group-hover:text-[#14532d] transition-colors">
+                    {k.title}
+                  </h3>
+                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-600">
+                    {k.description}
+                  </p>
+                </div>
               </div>
-              <div className="p-5">
-                <p className="text-xs font-semibold text-neutral-500">{k.date}</p>
-                <h3 className="mt-1 line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900">{k.title}</h3>
-                <p className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-600">{k.description}</p>
-                <a href={k.href} className="mt-4 inline-flex text-sm font-bold text-[#14532d] no-underline hover:underline">
-                  Selengkapnya
-                </a>
+              <div className="px-5 pb-5 pt-0">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#14532d] group-hover:underline">
+                  <span>Lihat Detail Kegiatan</span>
+                  <Icon name="arrowRight" className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                </span>
               </div>
             </article>
           ))}
@@ -684,48 +920,79 @@ export function LandingPage() {
           <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#14532d]">Usaha Warga</p>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-extrabold text-neutral-900">{landingData.umkm.headerTitle}</h2>
+              <h2 className="text-2xl font-extrabold text-neutral-900 sm:text-3xl">{landingData.umkm.headerTitle}</h2>
               <p className="mt-2 text-sm font-semibold text-neutral-900">{landingData.umkm.headerDesc}</p>
               <p className="text-sm text-neutral-600">{landingData.umkm.headerSub}</p>
             </div>
-            <a href={landingData.umkm.instagramHref} className="inline-flex rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-bold text-neutral-800 no-underline hover:bg-neutral-50">
+            <a
+              href={landingData.umkm.instagramHref}
+              className="inline-flex rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-bold text-neutral-800 no-underline hover:bg-neutral-50 transition shadow-2xs"
+            >
               Follow di Instagram
             </a>
           </div>
           <div className="mt-8 grid gap-6 md:grid-cols-3">
             {umkmData.map((item) => (
-              <article key={item.title} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
-                {item.image ? (
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="aspect-[4/3] w-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                      if (e.currentTarget.nextElementSibling) {
-                        e.currentTarget.nextElementSibling.style.display = 'flex'
-                      }
-                    }}
-                  />
-                ) : null}
-                <div
-                  className={`aspect-[4/3] w-full items-center justify-center border-b border-neutral-100 bg-neutral-50 text-neutral-300 ${
-                    item.image ? 'hidden' : 'flex'
-                  }`}
-                >
-                  <Icon name="box" className="h-10 w-10 text-neutral-300" />
+              <article
+                key={item.title}
+                onClick={() => setSelectedUmkm(item)}
+                className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-emerald-600/40 hover:shadow-lg cursor-pointer"
+              >
+                <div>
+                  {item.image ? (
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.style.display = 'flex'
+                          }
+                        }}
+                      />
+                      <div className="hidden h-full w-full items-center justify-center bg-neutral-50 text-neutral-300">
+                        <Icon name="box" className="h-10 w-10 text-neutral-300" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex aspect-[4/3] w-full items-center justify-center border-b border-neutral-100 bg-neutral-50 text-neutral-300">
+                      <Icon name="box" className="h-10 w-10 text-neutral-300" />
+                    </div>
+                  )}
+                  <div className="p-5">
+                    {item.owner && (
+                      <p className="text-[11px] font-bold text-emerald-800 mb-1">
+                        Pemilik: {item.owner}
+                      </p>
+                    )}
+                    <h3 className="line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900 group-hover:text-[#14532d] transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-neutral-600">
+                      {item.description}
+                    </p>
+                  </div>
                 </div>
-                <div className="p-5">
-                  <h3 className="line-clamp-2 text-sm font-extrabold leading-6 text-neutral-900">{item.title}</h3>
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-neutral-600">{item.description}</p>
-                  <WaLink
-                    waNumber={hpData}
-                    text={`Halo, saya tertarik dengan ${item.title}`}
-                    className="mt-4 inline-flex w-full justify-center rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white no-underline hover:bg-[#1da851]"
-                  >
-                    Chat via WhatsApp
-                  </WaLink>
+
+                <div className="p-5 pt-0 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#14532d]">
+                    <span className="group-hover:underline inline-flex items-center gap-1">
+                      <span>Lihat Detail Usaha</span>
+                      <Icon name="arrowRight" className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <WaLink
+                      waNumber={item.phone || hpData}
+                      text={`Halo, saya tertarik dengan ${item.title}`}
+                      className="inline-flex w-full justify-center rounded-xl bg-[#25D366] px-4 py-2.5 text-xs font-bold text-white no-underline hover:bg-[#1da851] shadow-xs transition"
+                    >
+                      Chat via WhatsApp
+                    </WaLink>
+                  </div>
                 </div>
               </article>
             ))}
@@ -797,6 +1064,208 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Modal Detail Kegiatan Warga dengan Backdrop Blur */}
+      {selectedKegiatan && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-kegiatan-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-8 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setSelectedKegiatan(null)}
+        >
+          <div
+            className="relative flex flex-col w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-stone-200 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div className="flex items-center justify-between border-b border-stone-200 px-5 sm:px-6 py-4 bg-stone-50/90">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-[#14532d]">
+                  <Icon name="calendar" className="h-4.5 w-4.5" />
+                </span>
+                <div>
+                  <h3 id="modal-kegiatan-title" className="text-base sm:text-lg font-bold text-neutral-900 leading-tight">
+                    Detail Kegiatan Warga
+                  </h3>
+                  <p className="text-xs text-neutral-500">Kegiatan &amp; Dokumentasi {brandName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedKegiatan(null)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-stone-200 hover:text-neutral-900 transition-colors cursor-pointer"
+                aria-label="Tutup detail kegiatan"
+              >
+                <Icon name="x" className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body Modal */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 bg-white">
+              {selectedKegiatan.image ? (
+                <div className="overflow-hidden rounded-xl border border-stone-200 bg-neutral-100 shadow-2xs">
+                  <img
+                    src={selectedKegiatan.image}
+                    alt={selectedKegiatan.title}
+                    className="max-h-84 w-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="flex h-44 w-full items-center justify-center rounded-xl border border-stone-200 bg-neutral-50 text-neutral-300">
+                  <Icon name="newspaper" className="h-12 w-12 text-neutral-300" />
+                </div>
+              )}
+
+              <div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-[#14532d] border border-emerald-200/80">
+                    Agenda / Kegiatan
+                  </span>
+                  {selectedKegiatan.date && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-neutral-700 border border-stone-200">
+                      <Icon name="clock" className="h-3 w-3 text-emerald-800" />
+                      {selectedKegiatan.date}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-neutral-900 leading-snug">
+                  {selectedKegiatan.title}
+                </h2>
+              </div>
+
+              <div className="border-t border-stone-200/80 pt-4 text-sm sm:text-base leading-relaxed text-neutral-700 whitespace-pre-line text-justify">
+                {selectedKegiatan.description}
+              </div>
+            </div>
+
+            {/* Footer Modal */}
+            <div className="flex items-center justify-between border-t border-stone-200 px-5 sm:px-6 py-3.5 bg-stone-50/70">
+              <span className="text-xs text-neutral-500">Informasi publik masyarakat {brandName}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedKegiatan(null)}
+                className="rounded-lg bg-[#14532d] px-5 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail UMKM Warga dengan Backdrop Blur */}
+      {selectedUmkm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-umkm-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-8 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setSelectedUmkm(null)}
+        >
+          <div
+            className="relative flex flex-col w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-stone-200 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div className="flex items-center justify-between border-b border-stone-200 px-5 sm:px-6 py-4 bg-stone-50/90">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-[#14532d]">
+                  <Icon name="box" className="h-4.5 w-4.5" />
+                </span>
+                <div>
+                  <h3 id="modal-umkm-title" className="text-base sm:text-lg font-bold text-neutral-900 leading-tight">
+                    Detail Usaha &amp; Produk UMKM
+                  </h3>
+                  <p className="text-xs text-neutral-500">Pemberdayaan Ekonomi Warga {brandName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedUmkm(null)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:bg-stone-200 hover:text-neutral-900 transition-colors cursor-pointer"
+                aria-label="Tutup detail UMKM"
+              >
+                <Icon name="x" className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body Modal */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 bg-white">
+              {selectedUmkm.image ? (
+                <div className="overflow-hidden rounded-xl border border-stone-200 bg-neutral-100 shadow-2xs">
+                  <img
+                    src={selectedUmkm.image}
+                    alt={selectedUmkm.title}
+                    className="max-h-84 w-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="flex h-44 w-full items-center justify-center rounded-xl border border-stone-200 bg-neutral-50 text-neutral-300">
+                  <Icon name="box" className="h-12 w-12 text-neutral-300" />
+                </div>
+              )}
+
+              <div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-[#14532d] border border-emerald-200/80">
+                    UMKM Warga
+                  </span>
+                  {selectedUmkm.owner && (
+                    <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-neutral-700 border border-stone-200">
+                      Pemilik: {selectedUmkm.owner}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-neutral-900 leading-snug">
+                  {selectedUmkm.title}
+                </h2>
+              </div>
+
+              <div className="border-t border-stone-200/80 pt-4">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-neutral-500 mb-2">
+                  Deskripsi Produk &amp; Layanan
+                </h4>
+                <p className="text-sm sm:text-base leading-relaxed text-neutral-700 whitespace-pre-line text-justify">
+                  {selectedUmkm.description}
+                </p>
+              </div>
+
+              {(selectedUmkm.phone || hpData) && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#14532d]">
+                      Tertarik Memesan atau Bertanya?
+                    </p>
+                    <p className="text-xs text-neutral-600 mt-0.5">
+                      Hubungi kontak WhatsApp untuk informasi harga, ketersediaan, atau pemesanan langsung.
+                    </p>
+                  </div>
+                  <WaLink
+                    waNumber={selectedUmkm.phone || hpData}
+                    text={`Halo, saya tertarik dengan produk ${selectedUmkm.title} di ${brandName}`}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-xs font-bold text-white no-underline hover:bg-[#1da851] shadow-xs transition"
+                  >
+                    <span>Chat via WhatsApp</span>
+                  </WaLink>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="flex items-center justify-between border-t border-stone-200 px-5 sm:px-6 py-3.5 bg-stone-50/70">
+              <span className="text-xs text-neutral-500">Dukung produk dan perekonomian warga lokal</span>
+              <button
+                type="button"
+                onClick={() => setSelectedUmkm(null)}
+                className="rounded-lg bg-[#14532d] px-5 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <FloatingTelegramButton />
     </main>

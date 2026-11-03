@@ -13,6 +13,19 @@ function WaLink({ waNumber, text, children, className = '' }) {
   )
 }
 
+function OrgTreeCard({ topText, bottomText }) {
+  return (
+    <div className="w-28 sm:w-32 md:w-34 shrink-0 overflow-hidden rounded-xs border border-neutral-800 bg-white shadow-[2px_3px_5px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5">
+      <div className="bg-[#54a22b] px-2 py-1.5 text-center text-xs font-bold text-white tracking-wider">
+        {topText}
+      </div>
+      <div className="flex min-h-[44px] items-center justify-center border-t border-neutral-800/60 bg-white px-2 py-2 text-center text-xs sm:text-[13px] font-bold text-neutral-900 leading-tight">
+        {bottomText}
+      </div>
+    </div>
+  )
+}
+
 export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
@@ -22,6 +35,7 @@ export function LandingPage() {
   const [wilayahs, setWilayahs] = useState([])
   const [orgLoading, setOrgLoading] = useState(false)
   const [selectedDukuhId, setSelectedDukuhId] = useState(null)
+  const [selectedRwId, setSelectedRwId] = useState(null)
   const { brand, navItems, video, struktur, kontak } = landingData
   const brandName = cmsData?.profile?.brand_name || 'Kenaran.com'
   const heroBgImage = resolveMediaUrl(cmsData?.profile?.hero_image_url)
@@ -196,6 +210,10 @@ export function LandingPage() {
   useEffect(() => {
     if (tree.dukuhList.length > 1 && !selectedDukuhId) setSelectedDukuhId(tree.dukuhList[0].id_wilayah)
   }, [tree.dukuhList, selectedDukuhId])
+
+  useEffect(() => {
+    setSelectedRwId(null)
+  }, [selectedDukuhId])
 
   return (
     <main className="min-h-screen bg-white text-neutral-800">
@@ -445,7 +463,7 @@ export function LandingPage() {
               <p>Memuat struktur tata kelola wilayah...</p>
             </div>
           ) : (
-            <div className="mt-10 space-y-8">
+            <div className="mt-10 space-y-6">
               {/* Tabs Dukuh jika >1 dukuh */}
               {tree.dukuhList.length > 1 && (
                 <div className="flex flex-wrap justify-center gap-2">
@@ -465,182 +483,121 @@ export function LandingPage() {
                 </div>
               )}
 
-              {/* TIER 1: KEPALA KALURAHAN / LURAH */}
-              <div className="flex flex-col items-center">
-                <div className="w-full max-w-md rounded-2xl border border-stone-200/90 bg-white p-6 text-center shadow-xs transition hover:border-[#14532d]/40">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-200/60 bg-emerald-50 text-[#14532d]">
-                    <Icon name="building" className="h-6 w-6" />
-                  </div>
-                  <span className="inline-block rounded-full bg-emerald-100/80 px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-emerald-800">
-                    Pemerintah Kalurahan
-                  </span>
-                  <h3 className="mt-2 text-lg font-extrabold text-neutral-900">
-                    {lurahMember?.jabatan || 'Kepala Kalurahan / Lurah'}
-                  </h3>
-                  <p className="mt-1 text-xs font-medium text-neutral-500">
-                    Penanggung Jawab Utama Wilayah Kalurahan
-                  </p>
-                </div>
+              {(() => {
+                const currentDukuh = visibleDukuhs[0] || tree.dukuhList[0]
+                const rwList = currentDukuh?.rws || []
+                const activeRw = rwList.find((r) => r.id_wilayah === selectedRwId) || rwList[0]
+                const rts = activeRw?.rts || []
+                const lurahTitle = lurahMember?.jabatan?.replace(/Kepala\s+/i, '') || 'Lurah'
+                const dukuhMember = currentDukuh ? getDukuhMember(currentDukuh.id_wilayah) : null
+                const dukuhTitle = dukuhMember?.jabatan?.replace(/Kepala\s+/i, '') || 'Dukuh'
 
-                {/* Connecting Line ke Tingkat Padukuhan */}
-                <div className="h-8 w-0.5 bg-stone-300" />
-              </div>
+                if (!currentDukuh && effectiveMembers.length === 0) {
+                  return (
+                    <p className="rounded-2xl border border-stone-200 bg-white p-12 text-center text-sm text-neutral-500">
+                      Belum ada data struktur kepengurusan wilayah yang tersedia.
+                    </p>
+                  )
+                }
 
-              {/* TIER 2: KEPALA DUKUH */}
-              {visibleDukuhs.length > 0 && (
-                <div className="flex flex-col items-center">
-                  <div className="w-full max-w-md space-y-4">
-                    {visibleDukuhs.map((dk) => (
-                      <div
-                        key={dk.id_wilayah}
-                        className="rounded-2xl border border-stone-200/90 bg-white p-6 text-center shadow-xs transition hover:border-[#14532d]/40"
-                      >
-                        <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-stone-200 bg-stone-100 text-[#14532d]">
-                          <Icon name="map" className="h-5 w-5" />
-                        </div>
-                        <span className="inline-block rounded-full bg-stone-100 px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-stone-700">
-                          Wilayah {dk.nama_wilayah}
-                        </span>
-                        <h3 className="mt-2 text-lg font-extrabold text-neutral-900">
-                          Kepala Dukuh
-                        </h3>
-                        <p className="mt-1 text-xs font-medium text-neutral-500">
-                          Koordinator & Pemimpin Padukuhan {dk.nama_wilayah}
-                        </p>
+                return (
+                  <div className="space-y-6">
+                    {/* Tabs RW jika terdapat lebih dari 1 RW */}
+                    {rwList.length > 1 && (
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <span className="text-xs font-semibold text-neutral-500 mr-1">Pilih RW:</span>
+                        {rwList.map((rw) => (
+                          <button
+                            key={rw.id_wilayah}
+                            onClick={() => setSelectedRwId(rw.id_wilayah)}
+                            className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors ${
+                              activeRw?.id_wilayah === rw.id_wilayah
+                                ? 'border-[#14532d] bg-[#14532d] text-white shadow-xs'
+                                : 'border-stone-300 bg-white text-neutral-700 hover:border-[#14532d] hover:text-[#14532d]'
+                            }`}
+                          >
+                            {rw.nama_wilayah}
+                          </button>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    )}
 
-                  {/* Connecting Line ke Tingkat RW */}
-                  <div className="h-8 w-0.5 bg-stone-300" />
-                </div>
-              )}
+                    {/* Kontainer Bagan Organisasi (Canvas) */}
+                    <div className="rounded-2xl border border-stone-200/90 bg-[#fafaf8] p-5 sm:p-8 md:p-10 shadow-xs">
+                      <div className="overflow-x-auto pb-4 pt-2">
+                        <div className="min-w-max flex flex-col items-center mx-auto px-4">
+                          {/* TINGKAT 1: Lurah (kiri) & Dukuh (tengah) */}
+                          <div className="flex items-center justify-center">
+                            {/* Lurah */}
+                            <OrgTreeCard topText="Kalurahan" bottomText={lurahTitle} />
 
-              {/* TIER 3 & 4: RUKUN WARGA (RW) & RUKUN TETANGGA (RT) */}
-              {visibleDukuhs.length > 0 && (
-                <div className="space-y-8">
-                  {visibleDukuhs.map((dk) => {
-                    const rwList = dk.rws
-                    if (rwList.length === 0) {
-                      return (
-                        <div key={dk.id_wilayah} className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-xs text-neutral-500">
-                          Padukuhan ini belum memiliki daftar RW.
-                        </div>
-                      )
-                    }
+                            {/* Garis konektor horizontal Lurah - Dukuh */}
+                            <div className="h-0.5 w-10 sm:w-16 bg-neutral-700" />
 
-                    return rwList.map((rw) => {
-                      const rwMembers = getRwMembers(rw.id_wilayah)
-                      const rwRoles = Array.from(new Set(rwMembers.map((m) => m.jabatan?.trim()).filter(Boolean)))
-                      const displayRwRoles = rwRoles.length > 0 ? rwRoles : ['Ketua ' + rw.nama_wilayah]
+                            {/* Dukuh */}
+                            <OrgTreeCard topText="Padukuhan" bottomText={dukuhTitle} />
 
-                      return (
-                        <div
-                          key={rw.id_wilayah}
-                          className="rounded-2xl border border-stone-200/90 bg-white p-6 sm:p-8 shadow-xs"
-                        >
-                          {/* RW Header Card */}
-                          <div className="border-b border-stone-200/80 pb-5">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200/70 bg-emerald-50 text-[#14532d]">
-                                  <Icon name="users" className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">
-                                    Tingkat Rukun Warga
-                                  </span>
-                                  <h4 className="text-lg font-extrabold text-neutral-900">
-                                    {rw.nama_wilayah}
-                                  </h4>
-                                </div>
-                              </div>
-                              <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-semibold text-neutral-600">
-                                {rw.rts?.length || 0} Rukun Tetangga
-                              </span>
-                            </div>
-
-                            {/* Daftar Jabatan di RW */}
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              {displayRwRoles.map((roleName) => (
-                                <div
-                                  key={roleName}
-                                  className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50/80 px-3 py-1.5 text-xs font-bold text-neutral-800"
-                                >
-                                  <span className="h-1.5 w-1.5 rounded-full bg-[#14532d]" />
-                                  <span>{roleName}</span>
-                                </div>
-                              ))}
-                            </div>
+                            {/* Spacer penyeimbang sisi kanan agar Dukuh persis berada di tengah vertikal di atas RW */}
+                            <div className="w-[calc(7rem+2.5rem)] sm:w-[calc(8rem+4rem)] shrink-0 pointer-events-none" aria-hidden="true" />
                           </div>
 
-                          {/* RT Hierarchy under RW */}
-                          <div className="mt-6">
-                            <div className="mb-4 flex items-center justify-between">
-                              <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                                Kepengurusan Rukun Tetangga (RT) di Bawah {rw.nama_wilayah}
-                              </p>
-                            </div>
+                          {/* Garis vertikal dari Dukuh ke RW */}
+                          <div className="h-8 sm:h-10 w-0.5 bg-neutral-700" />
 
-                            {rw.rts.length === 0 ? (
-                              <p className="py-4 text-center text-xs italic text-neutral-400">
-                                Belum ada RT terdaftar di bawah RW ini.
-                              </p>
-                            ) : (
-                              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-                                {rw.rts.map((rt) => {
-                                  const rtMembers = getRtMembers(rt.id_wilayah)
-                                  const rtRoles = Array.from(new Set(rtMembers.map((m) => m.jabatan?.trim()).filter(Boolean)))
-                                  const displayRtRoles = rtRoles.length > 0 ? rtRoles : ['Ketua ' + rt.nama_wilayah]
+                          {/* TINGKAT 2: Ketua RW */}
+                          {activeRw ? (
+                            <>
+                              <OrgTreeCard topText={activeRw.nama_wilayah} bottomText={`Ketua ${activeRw.nama_wilayah}`} />
 
-                                  return (
-                                    <div
-                                      key={rt.id_wilayah}
-                                      className="flex flex-col justify-between rounded-xl border border-stone-200 bg-[#fafaf8] p-4 transition-all hover:border-[#14532d]/40 hover:bg-white hover:shadow-xs"
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-2">
-                                            <Icon name="home" className="h-4 w-4 text-stone-500" />
-                                            <span className="text-sm font-extrabold text-neutral-900">
-                                              {rt.nama_wilayah}
-                                            </span>
+                              {/* TINGKAT 3: Garis Bus & Kolom RT */}
+                              {rts.length === 0 ? (
+                                <p className="mt-6 text-xs italic text-neutral-400">Belum ada RT terdaftar di bawah RW ini.</p>
+                              ) : rts.length === 1 ? (
+                                <div className="flex flex-col items-center">
+                                  <div className="h-6 sm:h-8 w-0.5 bg-neutral-700" />
+                                  <OrgTreeCard topText={rts[0].nama_wilayah} bottomText={`Ketua ${rts[0].nama_wilayah}`} />
+                                </div>
+                              ) : (
+                                <>
+                                  {/* Garis vertikal dari RW ke Bus RT */}
+                                  <div className="h-6 sm:h-8 w-0.5 bg-neutral-700" />
+
+                                  {/* Baris Kolom RT */}
+                                  <div className="flex items-start justify-center">
+                                    {rts.map((rt, idx) => {
+                                      const isFirst = idx === 0
+                                      const isLast = idx === rts.length - 1
+                                      return (
+                                        <div key={rt.id_wilayah} className="flex flex-col items-center px-1.5 sm:px-3">
+                                          {/* Garis bus horizontal antar kolom RT */}
+                                          <div className="flex h-5 sm:h-6 w-full">
+                                            <div className={`w-1/2 ${!isFirst ? 'border-t-2 border-neutral-700' : ''}`} />
+                                            <div className={`w-1/2 ${!isLast ? 'border-t-2 border-neutral-700' : ''}`} />
                                           </div>
-                                          <span className="rounded bg-stone-200/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-700">
-                                            RT
-                                          </span>
+                                          {/* Garis vertikal masuk ke kartu RT */}
+                                          <div className="-mt-5 sm:-mt-6 h-5 sm:h-6 w-0.5 bg-neutral-700" />
+                                          <OrgTreeCard topText={rt.nama_wilayah} bottomText={`Ketua ${rt.nama_wilayah}`} />
                                         </div>
-
-                                        <div className="mt-3 space-y-1.5">
-                                          {displayRtRoles.map((roleName) => (
-                                            <div
-                                              key={roleName}
-                                              className="flex items-center gap-2 rounded-md border border-stone-200/80 bg-white px-2.5 py-1.5 text-xs font-bold text-neutral-800"
-                                            >
-                                              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600" />
-                                              <span className="truncate">{roleName}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </div>
+                                      )
+                                    })}
+                                  </div>
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <p className="mt-6 text-xs italic text-neutral-400">Padukuhan ini belum memiliki daftar RW.</p>
+                          )}
                         </div>
-                      )
-                    })
-                  })}
-                </div>
-              )}
+                      </div>
 
-              {visibleDukuhs.length === 0 && effectiveMembers.length === 0 && (
-                <p className="rounded-2xl border border-stone-200 bg-white p-12 text-center text-sm text-neutral-500">
-                  Belum ada data struktur kepengurusan wilayah yang tersedia.
-                </p>
-              )}
+                      {/* Keterangan Bagan di bagian bawah */}
+                      <p className="mt-6 border-t border-stone-200/80 pt-4 text-center text-xs sm:text-sm font-medium text-neutral-500">
+                        Bagan struktur organisasi tata kelola wilayah
+                      </p>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           )}
         </div>
